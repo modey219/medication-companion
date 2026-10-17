@@ -1,8 +1,8 @@
-# AGENTS.md - [APP_NAME] Patient Medication Companion
+# AGENTS.md - ???? ?????? (Medication Companion) Patient Medication Companion
 
 ## Project Overview
 
-[APP_NAME] is an Android app that helps patients take their medication correctly and keep a clear personal medication history. Users are mostly Arabic-speaking adults, including elderly and non-technical people. It is a companion, not a medical device: it organizes what the patient enters, reminds, records, and explains in plain language. It never replaces a doctor or pharmacist.
+???? ?????? (Medication Companion) is an Android app that helps patients take their medication correctly and keep a clear personal medication history. Users are mostly Arabic-speaking adults, including elderly and non-technical people. It is a companion, not a medical device: it organizes what the patient enters, reminds, records, and explains in plain language. It never replaces a doctor or pharmacist.
 
 ## Version 1 Scope
 
@@ -108,6 +108,6 @@ Builds cleanly; tests and lint pass; verified on an emulator, with instructions 
 
 ## Placeholders
 
-- [APP_NAME]: (to be filled in)
-- Package name: com.yourteam.appname (to be filled in)
+- ???? ?????? (Medication Companion): (to be filled in)
+- package name: com.medcompanion.app (to be filled in)
 - Local emergency number: (to be filled in)
