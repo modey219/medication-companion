@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Medication Companion</string>
+
+    <!-- Bottom navigation -->
+    <string name="tab_today">Today</string>
+    <string name="tab_medications">My medications</string>
+    <string name="tab_symptoms">Symptoms</string>
+    <string name="tab_history">History</string>
+    <string name="tab_assistant">Assistant</string>
+
+    <!-- Top bar -->
+    <string name="profile_title">Profile</string>
+    <string name="action_open_profile">Open profile</string>
+    <string name="action_back">Back</string>
+
+    <!-- Placeholder (T1 only; replaced by real screens in later tasks) -->
+    <string name="placeholder_message">This screen is under construction.</string>
+
+    <!-- Shared accessibility labels -->
+    <string name="cd_bottom_navigation">Main navigation bar</string>
+
+    <!-- Not a substitute for professional medical advice (TODO(legal): final wording) -->
+    <string name="notice_not_medical_advice">This app does not give medical advice and is not a substitute for consulting a doctor or pharmacist.</string>
+</resources>

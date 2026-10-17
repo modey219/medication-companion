@@ -1,0 +1,9 @@
+# Normalize line endings. Gradle wrapper scripts and shell scripts must keep LF.
+* text=auto eol=lf
+*.bat text eol=crlf
+gradlew text eol=lf
+*.jar binary
+*.png binary
+*.webp binary
+*.ttf binary
+*.otf binary

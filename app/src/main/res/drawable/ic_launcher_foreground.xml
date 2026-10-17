@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Simple capsule (pill) glyph used as the placeholder launcher foreground. -->
+    <group
+        android:scaleX="1.6"
+        android:scaleY="1.6"
+        android:translateX="32.4"
+        android:translateY="32.4">
+        <path
+            android:fillColor="#FFFFFFFF"
+            android:pathData="M12,2C9.79,2 7.58,2.84 5.9,4.52L4.52,5.9C1.16,9.26 1.16,14.74 4.52,18.1L5.9,19.48C7.58,21.16 9.79,22 12,22C14.21,22 16.42,21.16 18.1,19.48L19.48,18.1C22.84,14.74 22.84,9.26 19.48,5.9L18.1,4.52C16.42,2.84 14.21,2 12,2ZM12,4C13.66,4 15.32,4.63 16.73,5.9L18.1,7.27C20.66,9.83 20.66,14.17 18.1,16.73L16.73,18.1C14.17,20.66 9.83,20.66 7.27,18.1L5.9,16.73C3.34,14.17 3.34,9.83 5.9,7.27L7.27,5.9C8.68,4.63 10.34,4 12,4Z" />
+        <path
+            android:fillColor="#FFFFFFFF"
+            android:pathData="M12,4L12,20"
+            android:strokeColor="#FFFFFFFF"
+            android:strokeWidth="1.5" />
+    </group>
+</vector>

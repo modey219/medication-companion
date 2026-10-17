@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+        Arabic is the DEFAULT locale (values/). English lives in values-en/.
+        No hardcoded strings anywhere in code. See AGENTS.md > Localization and UX.
+    -->
+
+    <string name="app_name">رفيق الدواء</string>
+
+    <!-- Bottom navigation -->
+    <string name="tab_today">اليوم</string>
+    <string name="tab_medications">أدويتي</string>
+    <string name="tab_symptoms">الأعراض</string>
+    <string name="tab_history">السجل</string>
+    <string name="tab_assistant">المساعد</string>
+
+    <!-- Top bar -->
+    <string name="profile_title">الملف الشخصي</string>
+    <string name="action_open_profile">فتح الملف الشخصي</string>
+    <string name="action_back">رجوع</string>
+
+    <!-- Placeholder (T1 only; replaced by real screens in later tasks) -->
+    <string name="placeholder_message">هذه الشاشة قيد الإنشاء.</string>
+
+    <!-- Shared accessibility labels -->
+    <string name="cd_bottom_navigation">شريط التنقل الرئيسي</string>
+
+    <!-- Not a substitute for professional medical advice (TODO(legal): final wording) -->
+    <string name="notice_not_medical_advice">هذا التطبيق لا يقدّم نصيحة طبية ولا يغني عن استشارة الطبيب أو الصيدلي.</string>
+</resources>
