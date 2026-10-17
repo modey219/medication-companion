@@ -23,8 +23,8 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables { useSupportLibrary = true }
 
-        // Arabic is the default; English is the secondary locale.
-        resourceConfigurations += listOf("ar", "en")
+        // Arabic is the default resource locale; English lives in values-en/.
+        // TODO(eng): optionally restrict packaged locales via androidResources.localeFilters.
     }
 
     buildTypes {
