@@ -22,4 +22,103 @@
 
     <!-- Not a substitute for professional medical advice (TODO(legal): final wording) -->
     <string name="notice_not_medical_advice">This app does not give medical advice and is not a substitute for consulting a doctor or pharmacist.</string>
+
+    <!-- Shared actions -->
+    <string name="action_save">Save</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_edit">Edit</string>
+    <string name="action_stop">Stop</string>
+    <string name="action_remove">Remove</string>
+    <string name="summary_separator">,</string>
+
+    <!-- Medications list -->
+    <string name="action_add_medication">Add medication</string>
+    <string name="medications_empty">You have not added any medication yet. Tap “Add medication” to start.</string>
+    <string name="section_active">Active</string>
+    <string name="section_completed">Completed</string>
+    <string name="section_stopped">Stopped</string>
+    <string name="schedule_summary_daily_times">Daily at: %1$s</string>
+    <string name="schedule_summary_interval">Every %1$d hours</string>
+    <string name="schedule_summary_weekdays">On days: %1$s</string>
+    <string name="schedule_summary_as_needed">As needed</string>
+
+    <!-- Stop medication dialog -->
+    <!-- TODO(clinical-review): tone and wording of the stop explanation -->
+    <string name="stop_dialog_title">Stop this medication?</string>
+    <string name="stop_dialog_message">It will no longer appear in today’s schedule after you stop it. You can edit it or add it again later.</string>
+    <string name="stop_dialog_reason_label">Reason for stopping (optional)</string>
+
+    <!-- Add / edit medication -->
+    <string name="medication_add_title">Add medication</string>
+    <string name="medication_edit_title">Edit medication</string>
+    <string name="error_load_failed">Could not load the data.</string>
+    <string name="error_save_failed">Could not save. Try again.</string>
+
+    <!-- Medication form fields -->
+    <string name="field_name">Medication name</string>
+    <string name="field_form">Form</string>
+    <!-- TODO(clinical-review): example strength wording -->
+    <string name="field_strength">Strength</string>
+    <string name="field_strength_hint">e.g. 500 mg</string>
+    <!-- TODO(clinical-review): example instructions wording -->
+    <string name="field_instructions">Instructions</string>
+    <string name="field_instructions_hint">e.g. take after eating</string>
+    <string name="field_source">Source</string>
+    <string name="field_start_date">Start date</string>
+    <string name="field_end_date">End date (optional)</string>
+    <string name="field_schedule_type">Schedule type</string>
+    <string name="schedule_type_daily_times">Fixed times each day</string>
+    <string name="schedule_type_every_n_hours">Every N hours</string>
+    <string name="schedule_type_weekdays">Specific days of the week</string>
+    <string name="schedule_type_as_needed">As needed</string>
+    <string name="field_times">Dose times</string>
+    <string name="action_add_time">Add time</string>
+    <string name="cd_remove_time">Remove time</string>
+    <string name="field_interval_hours">Hours between doses</string>
+    <string name="field_weekdays">Days of the week</string>
+    <!-- TODO(clinical-review): example dose amount wording -->
+    <string name="field_dose_amount">Dose amount</string>
+    <string name="field_dose_amount_hint">e.g. one tablet</string>
+    <string name="field_food_relation">Relation to food</string>
+
+    <!-- Medication forms (physical forms only, never a recommendation) -->
+    <!-- TODO(clinical-review): form names -->
+    <string name="form_tablet">Tablet</string>
+    <string name="form_capsule">Capsule</string>
+    <string name="form_syrup">Syrup</string>
+    <string name="form_injection">Injection</string>
+    <string name="form_drops">Drops</string>
+    <string name="form_cream">Cream</string>
+    <string name="form_other">Other</string>
+
+    <!-- Medication source -->
+    <string name="source_self">Entered by me</string>
+    <string name="source_doctor">From the doctor</string>
+    <string name="source_pharmacy">From the pharmacy</string>
+
+    <!-- Food relation -->
+    <!-- TODO(clinical-review): food relation labels -->
+    <string name="food_any">Any time</string>
+    <string name="food_before">Before food</string>
+    <string name="food_with">With food</string>
+    <string name="food_after">After food</string>
+
+    <!-- Weekdays (short) -->
+    <string name="weekday_saturday">Sat</string>
+    <string name="weekday_sunday">Sun</string>
+    <string name="weekday_monday">Mon</string>
+    <string name="weekday_tuesday">Tue</string>
+    <string name="weekday_wednesday">Wed</string>
+    <string name="weekday_thursday">Thu</string>
+    <string name="weekday_friday">Fri</string>
+
+    <!-- Form validation (mechanical rules only, never medical advice) -->
+    <string name="error_name_required">Enter the medication name.</string>
+    <string name="error_dose_amount_required">Enter the dose amount.</string>
+    <string name="error_end_before_start">The end date is before the start date.</string>
+    <string name="error_times_required">Add at least one time.</string>
+    <string name="error_times_duplicate">Do not repeat the same time.</string>
+    <string name="error_interval_required">Enter the hours between doses.</string>
+    <string name="error_interval_range">Enter a number from 1 to 24.</string>
+    <string name="error_weekdays_required">Select at least one day.</string>
 </resources>

@@ -3,6 +3,8 @@
     <!--
         Arabic is the DEFAULT locale (values/). English lives in values-en/.
         No hardcoded strings anywhere in code. See AGENTS.md > Localization and UX.
+        Medical wording is marked TODO(clinical-review) and listed in
+        docs/CLINICAL_REVIEW.md.
     -->
 
     <string name="app_name">رفيق الدواء</string>
@@ -27,4 +29,103 @@
 
     <!-- Not a substitute for professional medical advice (TODO(legal): final wording) -->
     <string name="notice_not_medical_advice">هذا التطبيق لا يقدّم نصيحة طبية ولا يغني عن استشارة الطبيب أو الصيدلي.</string>
+
+    <!-- Shared actions -->
+    <string name="action_save">حفظ</string>
+    <string name="action_cancel">إلغاء</string>
+    <string name="action_edit">تعديل</string>
+    <string name="action_stop">إيقاف</string>
+    <string name="action_remove">حذف</string>
+    <string name="summary_separator">،</string>
+
+    <!-- Medications list -->
+    <string name="action_add_medication">إضافة دواء</string>
+    <string name="medications_empty">لم تُضِف أي دواء بعد. اضغط «إضافة دواء» للبدء.</string>
+    <string name="section_active">نشطة</string>
+    <string name="section_completed">منتهية</string>
+    <string name="section_stopped">متوقفة</string>
+    <string name="schedule_summary_daily_times">مرات يومية: %1$s</string>
+    <string name="schedule_summary_interval">كل %1$d ساعة</string>
+    <string name="schedule_summary_weekdays">أيام محددة: %1$s</string>
+    <string name="schedule_summary_as_needed">عند الحاجة</string>
+
+    <!-- Stop medication dialog -->
+    <!-- TODO(clinical-review): tone and wording of the stop explanation -->
+    <string name="stop_dialog_title">إيقاف هذا الدواء؟</string>
+    <string name="stop_dialog_message">لن يظهر ضمن جدول اليوم بعد الإيقاف. يمكنك تعديله لاحقًا أو إعادة إضافته.</string>
+    <string name="stop_dialog_reason_label">سبب الإيقاف (اختياري)</string>
+
+    <!-- Add / edit medication -->
+    <string name="medication_add_title">إضافة دواء</string>
+    <string name="medication_edit_title">تعديل الدواء</string>
+    <string name="error_load_failed">تعذر تحميل البيانات.</string>
+    <string name="error_save_failed">تعذر الحفظ. حاول مرة أخرى.</string>
+
+    <!-- Medication form fields -->
+    <string name="field_name">اسم الدواء</string>
+    <string name="field_form">الشكل</string>
+    <!-- TODO(clinical-review): example strength wording -->
+    <string name="field_strength">التركيز</string>
+    <string name="field_strength_hint">مثال: 500 ملغ</string>
+    <!-- TODO(clinical-review): example instructions wording -->
+    <string name="field_instructions">تعليمات الاستخدام</string>
+    <string name="field_instructions_hint">مثال: يُؤخذ بعد الأكل</string>
+    <string name="field_source">المصدر</string>
+    <string name="field_start_date">تاريخ البدء</string>
+    <string name="field_end_date">تاريخ الانتهاء (اختياري)</string>
+    <string name="field_schedule_type">نوع الجدول</string>
+    <string name="schedule_type_daily_times">مرات محددة يوميًا</string>
+    <string name="schedule_type_every_n_hours">كل عدد من الساعات</string>
+    <string name="schedule_type_weekdays">أيام محددة من الأسبوع</string>
+    <string name="schedule_type_as_needed">عند الحاجة</string>
+    <string name="field_times">أوقات الجرعات</string>
+    <string name="action_add_time">إضافة وقت</string>
+    <string name="cd_remove_time">حذف الوقت</string>
+    <string name="field_interval_hours">عدد الساعات بين الجرعات</string>
+    <string name="field_weekdays">أيام الأسبوع</string>
+    <!-- TODO(clinical-review): example dose amount wording -->
+    <string name="field_dose_amount">كمية الجرعة</string>
+    <string name="field_dose_amount_hint">مثال: قرص واحد</string>
+    <string name="field_food_relation">العلاقة بالطعام</string>
+
+    <!-- Medication forms (physical forms only, never a recommendation) -->
+    <!-- TODO(clinical-review): form names -->
+    <string name="form_tablet">قرص</string>
+    <string name="form_capsule">كبسولة</string>
+    <string name="form_syrup">شراب</string>
+    <string name="form_injection">حقن</string>
+    <string name="form_drops">قطرات</string>
+    <string name="form_cream">كريم</string>
+    <string name="form_other">أخرى</string>
+
+    <!-- Medication source -->
+    <string name="source_self">بنفسي</string>
+    <string name="source_doctor">من الطبيب</string>
+    <string name="source_pharmacy">من الصيدلية</string>
+
+    <!-- Food relation -->
+    <!-- TODO(clinical-review): food relation labels -->
+    <string name="food_any">في أي وقت</string>
+    <string name="food_before">قبل الأكل</string>
+    <string name="food_with">مع الأكل</string>
+    <string name="food_after">بعد الأكل</string>
+
+    <!-- Weekdays (short) -->
+    <string name="weekday_saturday">السبت</string>
+    <string name="weekday_sunday">الأحد</string>
+    <string name="weekday_monday">الاثنين</string>
+    <string name="weekday_tuesday">الثلاثاء</string>
+    <string name="weekday_wednesday">الأربعاء</string>
+    <string name="weekday_thursday">الخميس</string>
+    <string name="weekday_friday">الجمعة</string>
+
+    <!-- Form validation (mechanical rules only, never medical advice) -->
+    <string name="error_name_required">اكتب اسم الدواء.</string>
+    <string name="error_dose_amount_required">اكتب كمية الجرعة.</string>
+    <string name="error_end_before_start">تاريخ الانتهاء قبل تاريخ البدء.</string>
+    <string name="error_times_required">أضف وقتًا واحدًا على الأقل.</string>
+    <string name="error_times_duplicate">لا تكرر الوقت نفسه.</string>
+    <string name="error_interval_required">اكتب عدد الساعات بين الجرعات.</string>
+    <string name="error_interval_range">أدخل عددًا من 1 إلى 24.</string>
+    <string name="error_weekdays_required">اختر يومًا واحدًا على الأقل.</string>
 </resources>

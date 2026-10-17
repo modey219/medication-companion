@@ -4,6 +4,52 @@ Short entries. Newest first. Format: ID, date, decision, why, status.
 
 ---
 
+## D-006 — Add/edit/stop medication flow (T3)
+
+Date: 2026-10-17
+Status: Accepted (build and tests verified locally)
+
+Decision:
+- **Injectable `AppClock`** (`core/time/AppClock.kt`, bound to
+  `SystemAppClock` via Hilt `@Binds` in `core/di/TimeModule.kt`). The edit
+  ViewModel and the stop action read `now()`/`today()`/`zone()` through it so
+  tests use `FakeAppClock` (AGENTS.md > Reminders: all time logic goes through
+  an injectable Clock).
+- **Pure-Kotlin form validation**: `domain/schedule/ScheduleValidation.kt`
+  exposes `validateDraft(MedicationDraft): Set<DraftError>`. Rules: non-blank
+  name and dose amount; end date not before start; DAILY_TIMES and WEEKDAYS
+  need ≥1 time (no duplicates); EVERY_N_HOURS needs an interval in 1..24 and
+  ignores times/weekdays; WEEKDAYS needs ≥1 day; AS_NEEDED only checks
+  name/dose. All applicable errors are reported together; editing any field
+  clears previous errors (revalidated on save).
+- **Half-open date convention for medications**: start stored at
+  `startDate.atStartOfDay(zone)`, end at `(endDate + 1 day).atStartOfDay(zone)`
+  so `[startDate, endDate)` includes the picked last day. On load the end
+  instant is read back with `minusSeconds(1)` so the picker shows the original
+  chosen date. The stop action stores `clock.now()` as the end instant.
+- **Navigation**: `medications/add` and `medications/edit/{medicationId}`
+  (`ARG_MEDICATION_ID`, Long) are nested under the Medications tab;
+  `topLevelDestinationFromRoute` matches by prefix so the tab stays selected
+  and a back arrow replaces the profile action on both routes.
+- **One schedule per medication** (first row of `getByMedication`); editing
+  updates it in place, creating one only if the medication had none.
+- Weekday chips are ordered **SAT→FRI** (Arabic week start); time and date
+  formatting use `android.text.format.DateFormat`, honouring the device
+  12/24-hour setting (AGENTS.md > Localization).
+
+Why:
+- AGENTS.md fixes the schedule types, requires plain-language validation
+  without inventing medical facts, and mandates an injectable Clock for testable
+  time logic. The half-open interval matches D-005's window convention and
+  avoids duplicating the "end day" question in later dose-window code.
+
+Verification (local, JDK 21): `assembleDebug`, `ktlintCheck`,
+`testDebugUnitTest` (62 tests, 0 failures) and `lintDebug` (0 errors, 8
+accepted warnings) all pass. Lint caught `LocalDate.EPOCH` (API 34 vs minSdk
+26) — replaced with `LocalDate.of(1970, 1, 1)`.
+
+---
+
 ## D-005 — Room data layer and JVM test setup (T2)
 
 Date: 2026-10-17

@@ -27,6 +27,28 @@ enum class TopLevelDestination(
 /** Route for the profile screen, opened from the top bar. */
 const val PROFILE_ROUTE: String = "profile"
 
-/** The bottom-bar tab that is selected for a given navigation route. */
+/** Navigation argument for the medication id on the edit route. */
+const val ARG_MEDICATION_ID: String = "medicationId"
+
+/** Add a new medication. */
+const val MEDICATION_ADD_ROUTE: String = "medications/add"
+
+/** Edit an existing medication; [ARG_MEDICATION_ID] is a required Long. */
+const val MEDICATION_EDIT_ROUTE: String = "medications/edit/{$ARG_MEDICATION_ID}"
+
+/** Route for editing the medication with [id]. */
+fun medicationEditRoute(id: Long): String = "medications/edit/$id"
+
+/** True for the add and edit medication routes (they show a back arrow). */
+fun isMedicationEditRoute(route: String?): Boolean =
+    route == MEDICATION_ADD_ROUTE ||
+        (route != null && route.startsWith("medications/edit/"))
+
+/**
+ * The bottom-bar tab that is selected for a given navigation route.
+ * Nested routes (e.g. `medications/add`) keep their parent tab selected.
+ */
 fun topLevelDestinationFromRoute(route: String?): TopLevelDestination =
-    TopLevelDestination.entries.firstOrNull { it.route == route } ?: TopLevelDestination.TODAY
+    TopLevelDestination.entries.firstOrNull {
+        route == it.route || (route != null && route.startsWith("${it.route}/"))
+    } ?: TopLevelDestination.TODAY

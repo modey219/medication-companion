@@ -18,24 +18,32 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.medcompanion.app.R
 import com.medcompanion.app.feature.assistant.AssistantScreen
 import com.medcompanion.app.feature.history.HistoryScreen
 import com.medcompanion.app.feature.medications.MedicationsScreen
+import com.medcompanion.app.feature.medications.edit.MedicationEditScreen
 import com.medcompanion.app.feature.profile.ProfileScreen
 import com.medcompanion.app.feature.symptoms.SymptomsScreen
 import com.medcompanion.app.feature.today.TodayScreen
+import com.medcompanion.app.ui.navigation.ARG_MEDICATION_ID
+import com.medcompanion.app.ui.navigation.MEDICATION_ADD_ROUTE
+import com.medcompanion.app.ui.navigation.MEDICATION_EDIT_ROUTE
 import com.medcompanion.app.ui.navigation.PROFILE_ROUTE
 import com.medcompanion.app.ui.navigation.TopLevelDestination
+import com.medcompanion.app.ui.navigation.isMedicationEditRoute
+import com.medcompanion.app.ui.navigation.medicationEditRoute
 import com.medcompanion.app.ui.navigation.topLevelDestinationFromRoute
 
 /**
  * App shell: a top bar with the profile action, the five-tab bottom bar,
- * and the navigation host with placeholder screens for v1.
+ * and the navigation host with the medication add/edit flow (T3).
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -45,6 +53,8 @@ fun MedCompanionRoot() {
     val currentRoute = backStackEntry?.destination?.route
     val currentTab = topLevelDestinationFromRoute(currentRoute)
     val isProfile = currentRoute == PROFILE_ROUTE
+    val isMedicationEdit = isMedicationEditRoute(currentRoute)
+    val showBack = isProfile || isMedicationEdit
 
     Scaffold(
         topBar = {
@@ -53,12 +63,17 @@ fun MedCompanionRoot() {
                     Text(
                         text =
                             stringResource(
-                                if (isProfile) R.string.profile_title else currentTab.labelRes,
+                                when {
+                                    isProfile -> R.string.profile_title
+                                    currentRoute == MEDICATION_ADD_ROUTE -> R.string.medication_add_title
+                                    isMedicationEdit -> R.string.medication_edit_title
+                                    else -> currentTab.labelRes
+                                },
                             ),
                     )
                 },
                 navigationIcon = {
-                    if (isProfile) {
+                    if (showBack) {
                         IconButton(onClick = { navController.navigateUp() }) {
                             Icon(
                                 painter = painterResource(R.drawable.ic_profile),
@@ -68,7 +83,7 @@ fun MedCompanionRoot() {
                     }
                 },
                 actions = {
-                    if (!isProfile) {
+                    if (!showBack) {
                         IconButton(onClick = { navController.navigate(PROFILE_ROUTE) }) {
                             Icon(
                                 painter = painterResource(R.drawable.ic_profile),
@@ -118,11 +133,25 @@ fun MedCompanionRoot() {
                     .padding(innerPadding),
         ) {
             composable(TopLevelDestination.TODAY.route) { TodayScreen() }
-            composable(TopLevelDestination.MEDICATIONS.route) { MedicationsScreen() }
+            composable(TopLevelDestination.MEDICATIONS.route) {
+                MedicationsScreen(
+                    onAddClick = { navController.navigate(MEDICATION_ADD_ROUTE) },
+                    onEditClick = { id -> navController.navigate(medicationEditRoute(id)) },
+                )
+            }
             composable(TopLevelDestination.SYMPTOMS.route) { SymptomsScreen() }
             composable(TopLevelDestination.HISTORY.route) { HistoryScreen() }
             composable(TopLevelDestination.ASSISTANT.route) { AssistantScreen() }
             composable(PROFILE_ROUTE) { ProfileScreen() }
+            composable(MEDICATION_ADD_ROUTE) {
+                MedicationEditScreen(onSaved = { navController.popBackStack() })
+            }
+            composable(
+                route = MEDICATION_EDIT_ROUTE,
+                arguments = listOf(navArgument(ARG_MEDICATION_ID) { type = NavType.LongType }),
+            ) {
+                MedicationEditScreen(onSaved = { navController.popBackStack() })
+            }
         }
     }
 }
