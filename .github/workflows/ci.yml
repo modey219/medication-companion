@@ -29,25 +29,20 @@ jobs:
           distribution: temurin
           java-version: "21"
 
-      # The preinstalled cmdline-tools on the runner are outdated (v12) and
-      # android-actions/setup-android fails because it calls the removed
-      # "tools" package. Install the latest cmdline-tools manually instead.
+      # android-actions/setup-android@v3 fails because it calls the removed
+      # "tools" package. Install cmdline-tools manually and accept licenses.
       - name: Set up Android SDK
         run: |
-          ANDROID_HOME="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
-          mkdir -p "$ANDROID_HOME/cmdline-tools"
+          SDK_ROOT="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+          mkdir -p "$SDK_ROOT/cmdline-tools"
           curl -sS -o /tmp/cmdline-tools.zip \
             "https://dl.google.com/android/repository/commandlinetools-linux-12266719_latest.zip"
           unzip -q /tmp/cmdline-tools.zip -d /tmp/cmdline-tools
-          rm -rf "$ANDROID_HOME/cmdline-tools/latest"
-          mv /tmp/cmdline-tools/cmdline-tools "$ANDROID_HOME/cmdline-tools/latest"
+          rm -rf "$SDK_ROOT/cmdline-tools/latest"
+          mv /tmp/cmdline-tools/cmdline-tools "$SDK_ROOT/cmdline-tools/latest"
           rm -rf /tmp/cmdline-tools /tmp/cmdline-tools.zip
-
-      - name: Accept licenses and install SDK packages
-        run: |
-          SDKMANAGER="${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager"
-          yes | "$SDKMANAGER" --licenses > /dev/null 2>&1 || true
-          "$SDKMANAGER" \
+          yes | "$SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null 2>&1 || true
+          "$SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" \
             "platforms;android-37.1" \
             "platforms;android-37.2" \
             "build-tools;36.0.0" \
