@@ -23,14 +23,35 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up JDK 17
+      - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: "17"
+          java-version: "21"
 
+      # The preinstalled cmdline-tools on the runner are outdated (v12) and
+      # android-actions/setup-android fails because it calls the removed
+      # "tools" package. Install the latest cmdline-tools manually instead.
       - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+        run: |
+          ANDROID_HOME="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+          mkdir -p "$ANDROID_HOME/cmdline-tools"
+          curl -sS -o /tmp/cmdline-tools.zip \
+            "https://dl.google.com/android/repository/commandlinetools-linux-12266719_latest.zip"
+          unzip -q /tmp/cmdline-tools.zip -d /tmp/cmdline-tools
+          rm -rf "$ANDROID_HOME/cmdline-tools/latest"
+          mv /tmp/cmdline-tools/cmdline-tools "$ANDROID_HOME/cmdline-tools/latest"
+          rm -rf /tmp/cmdline-tools /tmp/cmdline-tools.zip
+
+      - name: Accept licenses and install SDK packages
+        run: |
+          SDKMANAGER="${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager"
+          yes | "$SDKMANAGER" --licenses > /dev/null 2>&1 || true
+          "$SDKMANAGER" \
+            "platforms;android-37.1" \
+            "platforms;android-37.2" \
+            "build-tools;36.0.0" \
+            "platform-tools"
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
