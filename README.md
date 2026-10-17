@@ -39,25 +39,25 @@ Medication Companion is an Android app that helps patients take their medication
 
 ### Local development
 
-1. Ensure Android SDK is installed with platforms ndroid-36, ndroid-37.1, ndroid-37.2
+1. Ensure Android SDK is installed with platforms android-36, android-37.1, android-37.2
 2. Set local.properties with sdk.dir=C\:/path/to/sdk
 3. Build and test from a local (non-OneDrive) directory
 
-`ash
+```bash
 ./gradlew assembleDebug
 ./gradlew testDebugUnitTest
 ./gradlew lintDebug
 ./gradlew ktlintCheck
-`
+```
 
 ### Verification (all checks)
-`ash
+```bash
 ./gradlew assembleDebug ktlintCheck testDebugUnitTest lintDebug
-`
+```
 
 ## Project Structure
 
-`
+```
 app/src/main/kotlin/com/medcompanion/app/
 ├── core/           # DI, time, common utilities
 ├── data/           # Room entities, DAOs, mappers, repositories
@@ -65,7 +65,7 @@ app/src/main/kotlin/com/medcompanion/app/
 ├── feature/        # Feature screens (today, medications, symptoms, history, assistant, profile)
 ├── ui/             # Theme, navigation, shared components
 └── ...
-`
+```
 
 ## Privacy & Safety
 
@@ -77,13 +77,13 @@ app/src/main/kotlin/com/medcompanion/app/
 
 ## Git
 
-- Branches: master, eat/t1-foundation, eat/t2-data-layer, eat/t3-medications
+- Branches: master, feat/t1-foundation, feat/t2-data-layer, feat/t3-medications
 - Conventional Commits used
 - Auto-push via post-commit hook
 
 ## APK
 
-Latest debug APK: pp-debug.apk (12.16 MB)
+Latest debug APK: app-debug.apk (12.16 MB)
 
 ## Links
 
