@@ -2,7 +2,6 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
@@ -11,7 +10,14 @@ plugins {
 
 android {
     namespace = "com.medcompanion.app"
-    compileSdk = libs.versions.compileSdk.get().toInt()
+
+    // Android 17 is API 37 with minor API levels. Compose requires 37.1, so we
+    // pin the compile SDK to the "37.1" platform using the AGP 9 DSL.
+    compileSdk {
+        version = release(libs.versions.compileSdk.get().toInt()) {
+            minorApiLevel = libs.versions.compileSdkMinor.get().toInt()
+        }
+    }
 
     defaultConfig {
         applicationId = "com.medcompanion.app"

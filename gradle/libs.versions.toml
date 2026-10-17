@@ -2,15 +2,17 @@
 # --- Build toolchain ---
 # Versions verified against the official Maven repositories (Google Maven, Maven Central,
 # Gradle Plugin Portal) as of October 2026. See docs/DECISIONS.md (D-001).
-agp = "9.0.0"
-kotlin = "2.3.21"
+agp = "9.4.1"
+kotlin = "2.4.10"
 ksp = "2.3.12"
 hilt = "2.60.1"
 ktlint = "14.2.0"
 
 # --- Android SDK levels ---
-compileSdk = "36"
-targetSdk = "36"
+# Android 17 is API 37; Compose requires compileSdk 37.1 (minor API level).
+compileSdk = "37"
+compileSdkMinor = "1"
+targetSdk = "37"
 minSdk = "26"
 
 # --- AndroidX / Compose ---
@@ -84,7 +86,8 @@ androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-co
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+# AGP 9.x has built-in Kotlin, so `org.jetbrains.kotlin.android` must NOT be applied.
+# The Compose compiler plugin still comes from the Kotlin plugin id.
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
