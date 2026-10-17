@@ -1,0 +1,72 @@
+package com.medcompanion.app.data.local.dao
+
+import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
+import androidx.room.Update
+import com.medcompanion.app.data.local.entity.DoseEventEntity
+import com.medcompanion.app.domain.model.DoseStatus
+import kotlinx.coroutines.flow.Flow
+import java.time.Instant
+
+@Dao
+interface DoseEventDao {
+    /**
+     * Idempotent insert: the unique index on (medicationId, scheduledAt) means a
+     * repeated generation run ignores duplicates and returns -1 for them.
+     */
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertIgnoringDuplicates(event: DoseEventEntity): Long
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertAllIgnoringDuplicates(events: List<DoseEventEntity>): List<Long>
+
+    @Update
+    suspend fun update(event: DoseEventEntity)
+
+    @Query("SELECT * FROM dose_events WHERE id = :id")
+    suspend fun getById(id: Long): DoseEventEntity?
+
+    @Query(
+        "SELECT * FROM dose_events WHERE scheduledAt >= :start AND scheduledAt < :end " +
+            "ORDER BY scheduledAt",
+    )
+    fun observeBetween(
+        start: Instant,
+        end: Instant,
+    ): Flow<List<DoseEventEntity>>
+
+    @Query(
+        "SELECT * FROM dose_events WHERE medicationId = :medicationId ORDER BY scheduledAt",
+    )
+    fun observeByMedication(medicationId: Long): Flow<List<DoseEventEntity>>
+
+    @Query(
+        "SELECT * FROM dose_events WHERE scheduledAt >= :start AND scheduledAt < :end " +
+            "ORDER BY scheduledAt",
+    )
+    suspend fun getBetween(
+        start: Instant,
+        end: Instant,
+    ): List<DoseEventEntity>
+
+    @Query("SELECT * FROM dose_events WHERE status = :status AND scheduledAt <= :cutoff")
+    suspend fun getByStatusBefore(
+        status: DoseStatus,
+        cutoff: Instant,
+    ): List<DoseEventEntity>
+
+    @Query("UPDATE dose_events SET status = :status, actedAt = :actedAt WHERE id = :id")
+    suspend fun updateStatus(
+        id: Long,
+        status: DoseStatus,
+        actedAt: Instant?,
+    )
+
+    @Query("DELETE FROM dose_events WHERE medicationId = :medicationId")
+    suspend fun deleteByMedication(medicationId: Long)
+
+    @Query("DELETE FROM dose_events")
+    suspend fun deleteAll()
+}

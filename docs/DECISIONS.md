@@ -4,6 +4,49 @@ Short entries. Newest first. Format: ID, date, decision, why, status.
 
 ---
 
+## D-005 — Room data layer and JVM test setup (T2)
+
+Date: 2026-10-17
+Status: Accepted (build and tests verified locally)
+
+Decision:
+- One Room database `MedCompanionDatabase` (name `medcompanion.db`, version **1**)
+  with entities `MedicationEntity`, `ScheduleEntity`, `DoseEventEntity`,
+  `SymptomLogEntity`, `ProfileEntryEntity`, DAOs for each, and a `Converters`
+  class for the domain enums and `Instant`/`LocalTime`/`DayOfWeek` values.
+- `DoseEventEntity` has a **unique index on `(medicationId, scheduledAt)`** so
+  dose generation is idempotent (`@Insert(IGNORE)` returns `-1` for duplicates).
+- Schedules and doses reference `medications` with **`ON DELETE CASCADE`**.
+- Windowed dose queries (`getBetween` / `observeBetween`) use a **half-open
+  interval `[start, end)`** so adjacent windows never double-count a dose.
+- `exportSchema = true`; the schema JSON is committed under `app/schemas/`.
+- Repositories are plain interfaces in `domain/repository/` bound to `data/`
+  implementations (`*RepositoryImpl`) via Hilt `@Binds`; `DatabaseModule`
+  provides the database and DAOs. **DataStore (settings) is deferred** to a
+  later task (Profile/reminder preferences).
+- Room tests run on the JVM with **Robolectric** (`@Config(sdk = [37])`), so they
+  run in CI without an emulator.
+
+Why:
+- AGENTS.md fixes the data model, requires explicit schemas/migrations, and
+  demands idempotent dose generation. The unique index enforces idempotency at
+  the storage layer, independent of application logic.
+
+Test JVM (important):
+- **Robolectric 4.17 needs Java 21 to simulate SDK 36/37**, while the code still
+  compiles to Java 17 bytecode. The build and the unit tests therefore run on
+  **JDK 21** (this supersedes the "JDK 17" note in D-001). On JDK 21, Robolectric
+  additionally needs OpenJDK internals opened; the unit-test task sets the
+  documented `--add-opens=java.base/...=ALL-UNNAMED` flags
+  (https://robolectric.org/getting-started/). Pinning tests to `@Config(sdk=[35])`
+  to stay on JDK 17 was rejected because it would not exercise the real target.
+
+Verification (local, JDK 21): `assembleDebug`, `ktlintCheck`,
+`testDebugUnitTest` (19 tests, 0 failures) and `lintDebug` (0 errors, same 5
+accepted warnings as D-001) all pass.
+
+---
+
 ## D-001 — Build toolchain versions (T1)
 
 Date: 2026-10-17
