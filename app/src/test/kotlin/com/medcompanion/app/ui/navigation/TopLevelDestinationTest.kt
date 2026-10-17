@@ -4,7 +4,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class TopLevelDestinationTest {
-
     @Test
     fun `there are exactly five top level destinations`() {
         assertEquals(5, TopLevelDestination.entries.size)

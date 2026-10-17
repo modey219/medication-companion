@@ -12,7 +12,6 @@ import org.junit.runner.RunWith
 /** Smoke test: the app launches and shows the Today tab. */
 @RunWith(AndroidJUnit4::class)
 class MainActivityTest {
-
     @get:Rule
     val composeRule = createAndroidComposeRule<MainActivity>()
 

@@ -51,9 +51,10 @@ fun MedCompanionRoot() {
             CenterAlignedTopAppBar(
                 title = {
                     Text(
-                        text = stringResource(
-                            if (isProfile) R.string.profile_title else currentTab.labelRes,
-                        ),
+                        text =
+                            stringResource(
+                                if (isProfile) R.string.profile_title else currentTab.labelRes,
+                            ),
                     )
                 },
                 navigationIcon = {
@@ -82,8 +83,9 @@ fun MedCompanionRoot() {
         bottomBar = {
             NavigationBar {
                 TopLevelDestination.entries.forEach { destination ->
-                    val selected = currentTab == destination &&
-                        backStackEntry?.destination?.hierarchy?.any { it.route == destination.route } == true
+                    val selected =
+                        currentTab == destination &&
+                            backStackEntry?.destination?.hierarchy?.any { it.route == destination.route } == true
                     NavigationBarItem(
                         selected = selected || (currentRoute == null && destination == TopLevelDestination.TODAY),
                         onClick = {
@@ -110,9 +112,10 @@ fun MedCompanionRoot() {
         NavHost(
             navController = navController,
             startDestination = TopLevelDestination.TODAY.route,
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
         ) {
             composable(TopLevelDestination.TODAY.route) { TodayScreen() }
             composable(TopLevelDestination.MEDICATIONS.route) { MedicationsScreen() }

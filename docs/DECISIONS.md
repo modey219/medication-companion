@@ -7,30 +7,45 @@ Short entries. Newest first. Format: ID, date, decision, why, status.
 ## D-001 — Build toolchain versions (T1)
 
 Date: 2026-10-17
-Status: Accepted (verify on first Gradle sync)
+Status: Accepted (build verified locally — see D-004)
 
 Decision:
-- AGP **9.0.0**, Gradle **9.1.0**, JDK **17**
-- Kotlin **2.3.21**, KSP **2.3.12**, Hilt **2.60.1**
-- Compose BOM **2026.09.00**, compileSdk/targetSdk **36**, minSdk **26**
+- AGP **9.4.1**, Gradle **9.6.0**, JDK **17**
+- Kotlin **2.4.10**, KSP **2.3.12**, Hilt **2.60.1**
+- Compose BOM **2026.09.00**
+- compileSdk **37.1**, targetSdk **37**, minSdk **26**
 - ktlint Gradle plugin **14.2.0**
-- AGP built-in Kotlin is disabled (`android.builtInKotlin=false`); the classic
-  `org.jetbrains.kotlin.android` plugin is applied explicitly.
+- AGP **built-in Kotlin is used**: the `org.jetbrains.kotlin.android`
+  plugin is NOT applied; `org.jetbrains.kotlin.plugin.compose` is still applied.
 
 Why:
-- The Hilt Gradle plugin (Dagger 2.59+) requires AGP 9.0.0 or newer.
-- KSP 2.3.12 is built against Kotlin 2.3.20, so the KSP-supported Kotlin line is
-  2.3.x. Kotlin 2.3.20–2.3.21 supports AGP up to 9.0.0, and AGP 9.0 requires
-  Gradle 9.1.0 — this pins the whole toolchain consistently.
-- Compose compiler comes from the Kotlin Compose plugin at the same Kotlin
-  version, avoiding a separate compiler-extension version.
-- Built-in Kotlin (AGP 9 default) is new; opting out keeps Kotlin/KSP/Hilt/
-  Compose versions explicit and predictable.
+- The current stable AndroidX/Compose releases (Compose 1.12.x, core-ktx 1.19.x,
+  navigation-compose 2.10.x, hilt-navigation-compose 1.4.x, lifecycle 2.11.x)
+  declare `minCompileSdk = 37` and require **AGP 9.1.0+**; Compose specifically
+  requires compileSdk **37.1**. That forces compileSdk 37.1 and a recent AGP.
+- **Android 17 is API 37** and, since Android 16, ships as *minor API levels*
+  (37.0/37.1). Only the minor platforms are published to the stable channel
+  (`platforms;android-37.1`, `platforms;android-37.2`); there is no base
+  `android-37`. The compile SDK is therefore pinned with the AGP 9 DSL:
+  `compileSdk { version = release(37) { minorApiLevel = 1 } }`.
+- targetSdk is **37** (latest stable; AGENTS.md asks for the latest stable
+  targetSdk). Play requires targetSdk ≥ 36 from 2026-08-31.
+- AGP 9 applies **built-in Kotlin** by default and **rejects** an explicitly
+  applied `org.jetbrains.kotlin.android` (it fails with a
+  `ClassCastException … AgpWithBuiltInKotlinAppliedCheck`). We therefore rely on
+  built-in Kotlin and only apply the Compose compiler and KSP plugins.
+- AGP 9.4.1 requires Gradle 9.6.0. Kotlin 2.4.10 is the line paired with AGP 9.4;
+  KSP 2.3.12 (latest) is compatible with it.
 
-Note: all versions above were read from Google Maven, Maven Central and the
-Gradle Plugin Portal. The build could not be executed in the authoring
-environment (no JDK/Android SDK). Run a Gradle sync and `./gradlew assembleDebug`
-to confirm; adjust only this catalog if a version is unavailable.
+Remaining lint warnings (accepted, non-blocking): a newer Gradle (9.8.1) and
+Kotlin (2.4.21) exist — deliberately pinned to the AGP-9.4-verified line; the
+`mipmap-anydpi-v26` `ObsoleteSdkInt` warning is a false positive (the `anydpi`
+density qualifier must keep `-v26` even at minSdk 26, AAPT rejects a bare
+`mipmap-anydpi`); two strings (`cd_bottom_navigation`,
+`notice_not_medical_advice`) are unused until later tasks.
+
+Verification (local, JDK 17 + Android SDK): `assembleDebug`, `ktlintCheck`,
+`testDebugUnitTest` and `lintDebug` all pass (0 lint errors).
 
 ---
 
@@ -40,7 +55,8 @@ Date: 2026-10-17
 Status: Accepted
 
 Decision: Arabic strings live in `res/values/` (default) and English in
-`res/values-en/`. `resourceConfigurations = ["ar", "en"]`.
+`res/values-en/`. No `resourceConfigurations` filter is set (it was removed
+because it is deprecated in AGP 9; the two locales are shipped as-is).
 
 Why: AGENTS.md requires Arabic as the default with full RTL. Putting Arabic in
 the default folder means it is used for any locale without a translation.
@@ -58,3 +74,27 @@ Decision: a single `:app` module with package layers `core/`, `data/`,
 Why: the v1 scope is small; a single module keeps reviews small and avoids
 premature multi-module overhead. The package layout still enforces the
 ui/domain/data separation from AGENTS.md.
+
+---
+
+## D-004 — Local build verification environment (T1)
+
+Date: 2026-10-17
+Status: Accepted
+
+Decision: T1 was verified by building locally with JDK 17 (Temurin 17.0.20.1)
+and Android SDK platform **37.1** + build-tools 36.0.0, using the wrapper's
+Gradle 9.6.0. Commands run: `assembleDebug`, `ktlintCheck`,
+`testDebugUnitTest`, `lintDebug` — all pass.
+
+Notes for humans:
+- **Build outside OneDrive.** The project lives under a OneDrive folder; Gradle
+  failed with `Unable to delete directory … app/build/intermediates/…` because
+  OneDrive/Defender locks freshly written files. Building from a plain local
+  copy (or excluding the `build/` folders from sync) fixes it. This is a
+  local-environment issue, not a project defect. CI (Linux) is unaffected.
+- **`local.properties` on Windows** should escape the drive colon, e.g.
+  `sdk.dir=C\:/path/to/sdk`, otherwise Android Lint raises `PropertyEscape`.
+  `local.properties` is git-ignored and machine-specific.
+- Manual verification on a physical phone is still pending (install the debug
+  APK, check the 5 RTL tabs + profile action, font scale 200%, TalkBack).
