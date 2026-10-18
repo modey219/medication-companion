@@ -9,6 +9,7 @@ import com.medcompanion.app.domain.model.MedicationSource
 import com.medcompanion.app.domain.model.MedicationStatus
 import com.medcompanion.app.domain.model.Schedule
 import com.medcompanion.app.domain.model.ScheduleType
+import com.medcompanion.app.domain.reminder.ReminderEngine
 import com.medcompanion.app.domain.repository.MedicationRepository
 import com.medcompanion.app.domain.repository.ScheduleRepository
 import com.medcompanion.app.domain.schedule.DraftError
@@ -39,6 +40,7 @@ class MedicationEditViewModelTest {
     private val clock = FakeAppClock()
     private val medicationRepository: MedicationRepository = mockk(relaxed = true)
     private val scheduleRepository: ScheduleRepository = mockk(relaxed = true)
+    private val reminderEngine: ReminderEngine = mockk(relaxed = true)
 
     @Before
     fun setUp() {
@@ -54,6 +56,7 @@ class MedicationEditViewModelTest {
         MedicationEditViewModel(
             medicationRepository = medicationRepository,
             scheduleRepository = scheduleRepository,
+            reminderEngine = reminderEngine,
             clock = clock,
             savedStateHandle = SavedStateHandle(id?.let { mapOf(ARG_MEDICATION_ID to it) } ?: emptyMap()),
         )
@@ -276,6 +279,35 @@ class MedicationEditViewModelTest {
                 Instant.parse("2026-10-17T00:00:00Z"),
                 saved.single().startDate,
             )
+        }
+
+    @Test
+    fun `saving a medication regenerates its dose reminders`() =
+        runTest {
+            coEvery { medicationRepository.add(any()) } returns 1L
+            val vm = viewModel()
+            vm.onNameChange("Metformin")
+            vm.onDoseAmountChange("1 tablet")
+            vm.onTimeAdded(LocalTime.of(8, 0))
+
+            vm.save()
+
+            assertTrue(vm.uiState.value.isSaved)
+            coVerify { reminderEngine.refresh() }
+        }
+
+    @Test
+    fun `a failed save does not touch the reminder engine`() =
+        runTest {
+            coEvery { medicationRepository.add(any()) } throws RuntimeException("disk full")
+            val vm = viewModel()
+            vm.onNameChange("Metformin")
+            vm.onDoseAmountChange("1 tablet")
+            vm.onTimeAdded(LocalTime.of(8, 0))
+
+            vm.save()
+
+            coVerify(exactly = 0) { reminderEngine.refresh() }
         }
 
     private fun existingMedication() =

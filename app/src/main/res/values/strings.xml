@@ -144,4 +144,35 @@
     <string name="error_interval_required">اكتب عدد الساعات بين الجرعات.</string>
     <string name="error_interval_range">أدخل عددًا من 1 إلى 24.</string>
     <string name="error_weekdays_required">اختر يومًا واحدًا على الأقل.</string>
+    <!-- Reminders: notifications (T5). Wording is TODO(clinical-review):
+         calm, neutral, never scolding about a missed dose. -->
+    <string name="notification_channel_reminders_name">تذكيرات الجرعات</string>
+    <string name="notification_channel_reminders_desc">إشعار عند موعد جرعتك.</string>
+    <string name="notification_channel_follow_up_name">متابعة الجرعات</string>
+    <string name="notification_channel_follow_up_desc">تذكير لطيف إن لم تُسجَّل الجرعة.</string>
+    <string name="notification_follow_up_text">لم تُسجَّل هذه الجرعة بعد. يمكنك تسجيلها عندما تكون جاهزًا.</string>
+
+    <!-- Reminder setup screen (T5). -->
+    <string name="reminders_setup_title">إعداد التذكيرات</string>
+    <string name="reminders_setup_intro">لكي تصل تذكيرات الجرعات في وقتها، يحتاج التطبيق إلى بعض الأذونات.</string>
+    <string name="reminders_setup_notifications_title">الإشعارات</string>
+    <string name="reminders_setup_notifications_desc">لعرض تذكير الجرعة على شاشتك.</string>
+    <string name="reminders_setup_exact_alarm_title">المنبّهات الدقيقة</string>
+    <string name="reminders_setup_exact_alarm_desc">لتصل التذكيرات في وقتها المحدد.</string>
+    <string name="reminders_setup_battery_title">العمل في الخلفية</string>
+    <string name="reminders_setup_battery_desc">لمنع النظام من تأخير التذكيرات لتوفير الطاقة.</string>
+    <string name="reminders_setup_action_grant">السماح</string>
+    <string name="reminders_setup_action_open_settings">فتح الإعدادات</string>
+    <string name="reminders_setup_status_ok">مُفعَّل</string>
+    <string name="reminders_setup_status_missing">غير مُفعَّل</string>
+    <string name="reminders_setup_all_set">كل التذكيرات جاهزة.</string>
+    <string name="reminders_setup_footer">يمكنك تغيير هذه الإعدادات لاحقًا من الملف الشخصي.</string>
+    <string name="reminders_setup_oem_title">خطوات إضافية على بعض الأجهزة</string>
+    <string name="reminders_setup_oem_desc">بعض الشركات مثل شاومي وسامسونج وهواوي وأوبو وفيفو توقف التطبيقات في الخلفية ما لم تسمح بذلك يدويًا.</string>
+    <string name="reminders_setup_oem_xiaomi">شاومي: الإعدادات &gt; التطبيقات &gt; رفيق الدواء &gt; التوفير في البطارية &gt; بلا قيود.</string>
+    <string name="reminders_setup_oem_samsung">سامسونج: الإعدادات &gt; العناية بالجهاز &gt; البطارية &gt; حدود استخدام الخلفية &gt; إزالة رفيق الدواء.</string>
+    <string name="reminders_setup_oem_huawei">هواوي: الإعدادات &gt; البطارية &gt; تشغيل التطبيقات &gt; إدارة يدوية &gt; رفيق الدواء &gt; تشغيل.</string>
+    <string name="reminders_setup_oem_oppo">أوبو: الإعدادات &gt; البطارية &gt; استهلاك الطاقة في الخلفية &gt; رفيق الدواء &gt; السماح بالعمل في الخلفية.</string>
+    <string name="reminders_setup_oem_vivo">فيفو: الإعدادات &gt; البطارية &gt; استهلاك الطاقة في الخلفية &gt; رفيق الدواء &gt; السماح بالنشاط في الخلفية.</string>
+    <string name="today_reminders_banner">التذكيرات غير مفعّلة بالكامل. اضغط للإعداد.</string>
 </resources>

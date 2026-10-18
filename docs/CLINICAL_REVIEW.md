@@ -50,6 +50,24 @@ English mirrors of every row above: `values-en/strings.xml` (same
 
 ---
 
+## T5 - Dose reminders (2026-10-18)
+
+| Item | Location | Why flagged | Status |
+| --- | --- | --- | --- |
+| `notification_channel_reminders_name` / `_desc` | `values/strings.xml:149-150` (`TODO(clinical-review): reminder notification wording`) | First thing a patient sees for a dose; neutral, no urgency beyond "it is time for your dose" | Open |
+| `notification_channel_follow_up_name` / `_desc` | `values/strings.xml:151-152` | Must not read as a second nag or as judgement for the missed dose | Open |
+| `notification_follow_up_text` | `values/strings.xml:153` (also `values-en/strings.xml`) | The only follow-up text; must stay calm and must not imply the dose is now dangerous or harmless | Open |
+| `reminders_setup_title` / `_intro` | `values/strings.xml:156-157` | Explains *why* the app needs these permissions; wording must not promise medical accuracy | Open |
+| `reminders_setup_notifications_title` / `_desc`, `reminders_setup_exact_alarm_title` / `_desc`, `reminders_setup_battery_title` / `_desc` | `values/strings.xml:158-163` | Plain-language permission explanations (notifications, exact alarms, background battery); no jargon | Open |
+| `reminders_setup_oem_xiaomi` / `_samsung` / `_huawei` / `_oppo` / `_vivo` settings paths | `values/strings.xml:172-176` | Manufacturer-specific Settings paths change between OS versions; verify on real devices before release | Open |
+| `reminders_setup_all_set` / `_footer` / `_status_ok` / `_status_missing`, `today_reminders_banner` | `values/strings.xml:164-177` | Tone of "setup complete / not complete" and the Today banner; must never imply the app guarantees a dose is taken | Open |
+| Grace period (default 60 min) and snooze (default 10 min) defaults | `core/reminder/ReminderDefaults.kt` (`TODO(eng): make configurable in T8`) | Patient-facing timing defaults; confirm they are sensible for the target users | Open |
+
+English mirrors of every row above: `values-en/strings.xml` (same
+`TODO(clinical-review)` comments).
+
+---
+
 ## T1 — Standing notices (2026-10-17)
 
 | Item | Location | Why flagged | Status |
@@ -60,8 +78,6 @@ English mirrors of every row above: `values-en/strings.xml` (same
 
 ## Not yet written (future tasks — keep this list growing)
 
-- T5: missed-dose / follow-up notification wording, grace-period explanation,
-  permission explanation screens.
 - T6: severity scale (1–5) labels and any guidance text; urgent-symptom
   emergency message and the local emergency number.
 - T7: history/adherence summary labels (never shaming language).

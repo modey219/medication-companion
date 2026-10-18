@@ -5,11 +5,12 @@ import com.medcompanion.app.domain.model.FoodRelation
 import java.time.Instant
 import java.time.LocalTime
 
-/** Immutable UI state for the Today tab (T4). */
+/** Immutable UI state for the Today tab (T4, T5). */
 data class TodayUiState(
     val isLoading: Boolean = true,
     val groups: List<DoseGroup> = emptyList(),
     val hasMedications: Boolean = false,
+    val reminderSetupIncomplete: Boolean = false,
     val error: TodayError? = null,
 ) {
     val isEmpty: Boolean

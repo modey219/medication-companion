@@ -9,6 +9,8 @@ import com.medcompanion.app.domain.model.DoseEvent
 import com.medcompanion.app.domain.model.DoseStatus
 import com.medcompanion.app.domain.model.Medication
 import com.medcompanion.app.domain.model.Schedule
+import com.medcompanion.app.domain.reminder.ReminderEngine
+import com.medcompanion.app.domain.reminder.ReminderPermissionChecker
 import com.medcompanion.app.domain.repository.DoseEventRepository
 import com.medcompanion.app.domain.repository.MedicationRepository
 import com.medcompanion.app.domain.repository.ScheduleRepository
@@ -29,9 +31,12 @@ import javax.inject.Inject
 /**
  * Today tab: today's doses grouped by time with Taken / Snooze / Skip actions.
  *
+ * Actions go through [ReminderEngine.performAction] so alarms and
+ * notifications are cancelled in the same step (T5). Missed-dose transitions
+ * (grace period) are the engine's job, not the screen's.
+ *
  * A tick every 30 seconds recomputes overdue flags so the screen stays
- * correct while it is open, without any database change. Missed-dose
- * transitions (grace period) belong to the reminder engine (T5), not here.
+ * correct while it is open, without any database change.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
@@ -41,6 +46,8 @@ class TodayViewModel
         private val doseRepository: DoseEventRepository,
         private val medicationRepository: MedicationRepository,
         private val scheduleRepository: ScheduleRepository,
+        private val reminderEngine: ReminderEngine,
+        private val permissionChecker: ReminderPermissionChecker,
         private val clock: AppClock,
         @PeriodicTicker private val ticker: Flow<Instant>,
     ) : ViewModel() {
@@ -79,13 +86,22 @@ class TodayViewModel
 
         fun dismissError() = _uiState.update { it.copy(error = null) }
 
+        /**
+         * Called when the screen is resumed (and after returning from the
+         * reminder setup screen): re-reads permissions for the banner.
+         */
+        fun onScreenResumed() =
+            _uiState.update {
+                it.copy(reminderSetupIncomplete = !permissionChecker.isReminderSetupComplete())
+            }
+
         private fun act(
             doseId: Long,
             status: DoseStatus,
         ) {
             viewModelScope.launch {
                 try {
-                    doseRepository.setStatus(doseId, status, clock.now())
+                    reminderEngine.performAction(doseId, status)
                     _uiState.update { it.copy(error = null) }
                 } catch (e: CancellationException) {
                     throw e
@@ -139,6 +155,7 @@ class TodayViewModel
                 isLoading = false,
                 groups = groups,
                 hasMedications = medications.isNotEmpty(),
+                reminderSetupIncomplete = !permissionChecker.isReminderSetupComplete(),
             )
         }
     }

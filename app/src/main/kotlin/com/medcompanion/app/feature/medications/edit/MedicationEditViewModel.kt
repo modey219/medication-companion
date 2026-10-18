@@ -11,6 +11,7 @@ import com.medcompanion.app.domain.model.MedicationSource
 import com.medcompanion.app.domain.model.MedicationStatus
 import com.medcompanion.app.domain.model.Schedule
 import com.medcompanion.app.domain.model.ScheduleType
+import com.medcompanion.app.domain.reminder.ReminderEngine
 import com.medcompanion.app.domain.repository.MedicationRepository
 import com.medcompanion.app.domain.repository.ScheduleRepository
 import com.medcompanion.app.domain.schedule.MedicationDraft
@@ -43,6 +44,7 @@ class MedicationEditViewModel
     constructor(
         private val medicationRepository: MedicationRepository,
         private val scheduleRepository: ScheduleRepository,
+        private val reminderEngine: ReminderEngine,
         private val clock: AppClock,
         savedStateHandle: SavedStateHandle,
     ) : ViewModel() {
@@ -212,6 +214,9 @@ class MedicationEditViewModel
                         }
                     }
                     _uiState.update { it.copy(isSaving = false, isSaved = true) }
+                    // Regenerate doses and reschedule alarms for the new or
+                    // edited schedule (T5); refresh never throws.
+                    reminderEngine.refresh()
                 } catch (e: Exception) {
                     _uiState.update { it.copy(isSaving = false, saveFailed = true) }
                 }

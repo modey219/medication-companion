@@ -10,15 +10,15 @@ import com.medcompanion.app.domain.model.MedicationSource
 import com.medcompanion.app.domain.model.MedicationStatus
 import com.medcompanion.app.domain.model.Schedule
 import com.medcompanion.app.domain.model.ScheduleType
+import com.medcompanion.app.domain.reminder.ReminderEngine
+import com.medcompanion.app.domain.reminder.ReminderPermissionChecker
 import com.medcompanion.app.domain.repository.DoseEventRepository
 import com.medcompanion.app.domain.repository.MedicationRepository
 import com.medcompanion.app.domain.repository.ScheduleRepository
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
-import io.mockk.just
 import io.mockk.mockk
-import io.mockk.runs
 import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -45,6 +45,8 @@ class TodayViewModelTest {
     private val doseRepository: DoseEventRepository = mockk(relaxed = true)
     private val medicationRepository: MedicationRepository = mockk(relaxed = true)
     private val scheduleRepository: ScheduleRepository = mockk(relaxed = true)
+    private val reminderEngine: ReminderEngine = mockk(relaxed = true)
+    private val permissionChecker: ReminderPermissionChecker = mockk(relaxed = true)
     private val doses = MutableStateFlow<List<DoseEvent>>(emptyList())
     private val medications = MutableStateFlow<List<Medication>>(emptyList())
     private val schedules = MutableStateFlow<List<Schedule>>(emptyList())
@@ -56,7 +58,7 @@ class TodayViewModelTest {
         every { doseRepository.observeBetween(any(), any()) } returns doses
         every { medicationRepository.observeAll() } returns medications
         every { scheduleRepository.observeAll() } returns schedules
-        coEvery { doseRepository.setStatus(any(), any(), any()) } just runs
+        every { permissionChecker.isReminderSetupComplete() } returns true
     }
 
     @After
@@ -69,6 +71,8 @@ class TodayViewModelTest {
             doseRepository = doseRepository,
             medicationRepository = medicationRepository,
             scheduleRepository = scheduleRepository,
+            reminderEngine = reminderEngine,
+            permissionChecker = permissionChecker,
             clock = clock,
             ticker = ticker,
         )
@@ -216,7 +220,7 @@ class TodayViewModelTest {
     // --- Actions ---
 
     @Test
-    fun `actions write status and the injected clock time`() =
+    fun `actions go through the reminder engine`() =
         runTest(timeout = 10.seconds) {
             val vm = viewModel()
             awaitLoaded(vm)
@@ -225,16 +229,15 @@ class TodayViewModelTest {
             vm.onSkipped(2L)
             vm.onSnoozed(3L)
 
-            val now = Instant.parse("2026-10-17T12:00:00Z")
-            coVerify { doseRepository.setStatus(1L, DoseStatus.TAKEN, now) }
-            coVerify { doseRepository.setStatus(2L, DoseStatus.SKIPPED, now) }
-            coVerify { doseRepository.setStatus(3L, DoseStatus.SNOOZED, now) }
+            coVerify { reminderEngine.performAction(1L, DoseStatus.TAKEN) }
+            coVerify { reminderEngine.performAction(2L, DoseStatus.SKIPPED) }
+            coVerify { reminderEngine.performAction(3L, DoseStatus.SNOOZED) }
         }
 
     @Test
     fun `failed action sets an error and dismiss clears it`() =
         runTest(timeout = 10.seconds) {
-            coEvery { doseRepository.setStatus(any(), any(), any()) } throws IllegalStateException("disk full")
+            coEvery { reminderEngine.performAction(any(), any()) } throws IllegalStateException("disk full")
             val vm = viewModel()
             awaitLoaded(vm)
 
@@ -245,6 +248,28 @@ class TodayViewModelTest {
             vm.dismissError()
 
             assertNull(vm.uiState.value.error)
+        }
+
+    // --- Reminder setup banner (T5) ---
+
+    @Test
+    fun `the banner shows while reminder setup is incomplete`() =
+        runTest(timeout = 10.seconds) {
+            every { permissionChecker.isReminderSetupComplete() } returns false
+
+            assertTrue(awaitLoaded(viewModel()).reminderSetupIncomplete)
+        }
+
+    @Test
+    fun `resuming the screen re-reads the reminder permissions`() =
+        runTest(timeout = 10.seconds) {
+            val vm = viewModel()
+            assertFalse(awaitLoaded(vm).reminderSetupIncomplete)
+
+            every { permissionChecker.isReminderSetupComplete() } returns false
+            vm.onScreenResumed()
+
+            assertTrue(vm.uiState.value.reminderSetupIncomplete)
         }
 
     // --- Live refresh ---

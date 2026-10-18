@@ -8,6 +8,7 @@ import com.medcompanion.app.domain.model.MedicationSource
 import com.medcompanion.app.domain.model.MedicationStatus
 import com.medcompanion.app.domain.model.Schedule
 import com.medcompanion.app.domain.model.ScheduleType
+import com.medcompanion.app.domain.reminder.ReminderEngine
 import com.medcompanion.app.domain.repository.MedicationRepository
 import com.medcompanion.app.domain.repository.ScheduleRepository
 import io.mockk.coVerify
@@ -36,6 +37,7 @@ class MedicationsViewModelTest {
     private val clock = FakeAppClock()
     private val medicationRepository: MedicationRepository = mockk(relaxed = true)
     private val scheduleRepository: ScheduleRepository = mockk(relaxed = true)
+    private val reminderEngine: ReminderEngine = mockk(relaxed = true)
     private val medications = MutableStateFlow<List<Medication>>(emptyList())
     private val schedules = MutableStateFlow<Map<Long, List<Schedule>>>(emptyMap())
 
@@ -57,6 +59,7 @@ class MedicationsViewModelTest {
         MedicationsViewModel(
             medicationRepository = medicationRepository,
             scheduleRepository = scheduleRepository,
+            reminderEngine = reminderEngine,
             clock = clock,
         )
 
@@ -160,6 +163,16 @@ class MedicationsViewModelTest {
             vm.stop(medicationId = 5, reason = "side effects")
 
             coVerify { medicationRepository.stop(5, "side effects", any()) }
+        }
+
+    @Test
+    fun `stopping a medication clears its future dose reminders`() =
+        runTest {
+            val vm = viewModel()
+
+            vm.stop(medicationId = 5, reason = "side effects")
+
+            coVerify { reminderEngine.refresh() }
         }
 
     private fun medication(

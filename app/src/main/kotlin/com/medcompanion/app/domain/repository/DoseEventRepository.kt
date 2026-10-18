@@ -14,6 +14,20 @@ interface DoseEventRepository {
 
     fun observeByMedication(medicationId: Long): Flow<List<DoseEvent>>
 
+    suspend fun getById(id: Long): DoseEvent?
+
+    /** One-shot read of a window, used by the reminder engine instead of collecting. */
+    suspend fun getBetween(
+        start: Instant,
+        end: Instant,
+    ): List<DoseEvent>
+
+    /** All events with the given status at or before [cutoff] (missed-dose catch-up). */
+    suspend fun getByStatusBefore(
+        status: DoseStatus,
+        cutoff: Instant,
+    ): List<DoseEvent>
+
     /**
      * Inserts a dose unless one already exists for the same medication and time.
      * Returns the new row id, or -1 when it was a duplicate.
@@ -32,4 +46,6 @@ interface DoseEventRepository {
     suspend fun update(event: DoseEvent)
 
     suspend fun deleteByMedication(medicationId: Long)
+
+    suspend fun deleteById(id: Long)
 }

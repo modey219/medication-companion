@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Capsule pill glyph used as the dose-reminder small icon; the system
+         tints it with the channel color, only the alpha shape matters. -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M6,8h5v8H6c-2.21,0 -4,-1.79 -4,-4s1.79,-4 4,-4z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M13,8h5c2.21,0 4,1.79 4,4s-1.79,4 -4,4h-5V8z" />
+</vector>

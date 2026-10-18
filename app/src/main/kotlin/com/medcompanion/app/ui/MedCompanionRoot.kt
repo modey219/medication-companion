@@ -30,12 +30,14 @@ import com.medcompanion.app.feature.history.HistoryScreen
 import com.medcompanion.app.feature.medications.MedicationsScreen
 import com.medcompanion.app.feature.medications.edit.MedicationEditScreen
 import com.medcompanion.app.feature.profile.ProfileScreen
+import com.medcompanion.app.feature.reminders.ReminderSetupScreen
 import com.medcompanion.app.feature.symptoms.SymptomsScreen
 import com.medcompanion.app.feature.today.TodayScreen
 import com.medcompanion.app.ui.navigation.ARG_MEDICATION_ID
 import com.medcompanion.app.ui.navigation.MEDICATION_ADD_ROUTE
 import com.medcompanion.app.ui.navigation.MEDICATION_EDIT_ROUTE
 import com.medcompanion.app.ui.navigation.PROFILE_ROUTE
+import com.medcompanion.app.ui.navigation.REMINDERS_SETUP_ROUTE
 import com.medcompanion.app.ui.navigation.TopLevelDestination
 import com.medcompanion.app.ui.navigation.isMedicationEditRoute
 import com.medcompanion.app.ui.navigation.medicationEditRoute
@@ -53,8 +55,9 @@ fun MedCompanionRoot() {
     val currentRoute = backStackEntry?.destination?.route
     val currentTab = topLevelDestinationFromRoute(currentRoute)
     val isProfile = currentRoute == PROFILE_ROUTE
+    val isReminderSetup = currentRoute == REMINDERS_SETUP_ROUTE
     val isMedicationEdit = isMedicationEditRoute(currentRoute)
-    val showBack = isProfile || isMedicationEdit
+    val showBack = isProfile || isMedicationEdit || isReminderSetup
 
     Scaffold(
         topBar = {
@@ -65,6 +68,7 @@ fun MedCompanionRoot() {
                             stringResource(
                                 when {
                                     isProfile -> R.string.profile_title
+                                    isReminderSetup -> R.string.reminders_setup_title
                                     currentRoute == MEDICATION_ADD_ROUTE -> R.string.medication_add_title
                                     isMedicationEdit -> R.string.medication_edit_title
                                     else -> currentTab.labelRes
@@ -133,7 +137,10 @@ fun MedCompanionRoot() {
                     .padding(innerPadding),
         ) {
             composable(TopLevelDestination.TODAY.route) {
-                TodayScreen(onAddMedicationClick = { navController.navigate(MEDICATION_ADD_ROUTE) })
+                TodayScreen(
+                    onAddMedicationClick = { navController.navigate(MEDICATION_ADD_ROUTE) },
+                    onReminderSetupClick = { navController.navigate(REMINDERS_SETUP_ROUTE) },
+                )
             }
             composable(TopLevelDestination.MEDICATIONS.route) {
                 MedicationsScreen(
@@ -145,6 +152,7 @@ fun MedCompanionRoot() {
             composable(TopLevelDestination.HISTORY.route) { HistoryScreen() }
             composable(TopLevelDestination.ASSISTANT.route) { AssistantScreen() }
             composable(PROFILE_ROUTE) { ProfileScreen() }
+            composable(REMINDERS_SETUP_ROUTE) { ReminderSetupScreen() }
             composable(MEDICATION_ADD_ROUTE) {
                 MedicationEditScreen(onSaved = { navController.popBackStack() })
             }

@@ -67,6 +67,9 @@ interface DoseEventDao {
     @Query("DELETE FROM dose_events WHERE medicationId = :medicationId")
     suspend fun deleteByMedication(medicationId: Long)
 
+    @Query("DELETE FROM dose_events WHERE id = :id")
+    suspend fun deleteById(id: Long)
+
     @Query("DELETE FROM dose_events")
     suspend fun deleteAll()
 }

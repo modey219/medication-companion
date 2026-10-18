@@ -1,5 +1,6 @@
 package com.medcompanion.app.feature.today
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -33,6 +34,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.medcompanion.app.R
 import com.medcompanion.app.domain.model.DoseStatus
@@ -47,12 +49,13 @@ import java.time.ZoneId
 
 /**
  * Today tab: today's doses grouped by time with overdue highlighting and
- * Taken / Snooze / Skip actions that write through the repository
- * (AGENTS.md > Part C, T4).
+ * Taken / Snooze / Skip actions that go through the reminder engine
+ * (AGENTS.md > Part C, T4; reminder setup banner from T5).
  */
 @Composable
 fun TodayScreen(
     onAddMedicationClick: () -> Unit,
+    onReminderSetupClick: () -> Unit,
     viewModel: TodayViewModel = hiltViewModel(),
     modifier: Modifier = Modifier,
 ) {
@@ -67,6 +70,11 @@ fun TodayScreen(
         }
     }
 
+    LifecycleResumeEffect(Unit) {
+        viewModel.onScreenResumed()
+        onPauseOrDispose { }
+    }
+
     Box(modifier = modifier.fillMaxSize()) {
         TodayContent(
             state = state,
@@ -74,6 +82,7 @@ fun TodayScreen(
             onSnoozed = viewModel::onSnoozed,
             onSkipped = viewModel::onSkipped,
             onAddMedicationClick = onAddMedicationClick,
+            onReminderSetupClick = onReminderSetupClick,
             modifier = Modifier.fillMaxSize(),
         )
         SnackbarHost(
@@ -93,7 +102,53 @@ internal fun TodayContent(
     onSnoozed: (Long) -> Unit,
     onSkipped: (Long) -> Unit,
     onAddMedicationClick: () -> Unit,
+    onReminderSetupClick: () -> Unit,
     modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier.fillMaxSize()) {
+        if (state.reminderSetupIncomplete && !state.isLoading) {
+            ReminderSetupBanner(onClick = onReminderSetupClick)
+        }
+        Box(modifier = Modifier.weight(1f)) {
+            TodayBody(
+                state = state,
+                onTaken = onTaken,
+                onSnoozed = onSnoozed,
+                onSkipped = onSkipped,
+                onAddMedicationClick = onAddMedicationClick,
+            )
+        }
+    }
+}
+
+@Composable
+private fun ReminderSetupBanner(onClick: () -> Unit) {
+    Card(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp)
+                .clickable(onClick = onClick),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
+    ) {
+        Text(
+            text = stringResource(R.string.today_reminders_banner),
+            style = MaterialTheme.typography.bodyMedium,
+            modifier =
+                Modifier
+                    .padding(16.dp)
+                    .heightIn(min = 24.dp),
+        )
+    }
+}
+
+@Composable
+private fun TodayBody(
+    state: TodayUiState,
+    onTaken: (Long) -> Unit,
+    onSnoozed: (Long) -> Unit,
+    onSkipped: (Long) -> Unit,
+    onAddMedicationClick: () -> Unit,
 ) {
     when {
         state.isLoading ->
@@ -386,6 +441,7 @@ private fun TodayContentPreview() {
             onSnoozed = {},
             onSkipped = {},
             onAddMedicationClick = {},
+            onReminderSetupClick = {},
         )
     }
 }
@@ -400,6 +456,7 @@ private fun TodayEmptyPreview() {
             onSnoozed = {},
             onSkipped = {},
             onAddMedicationClick = {},
+            onReminderSetupClick = {},
         )
     }
 }

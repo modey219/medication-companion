@@ -7,6 +7,16 @@
         that are not listed in AGENTS.md without asking.
     -->
 
+    <!-- T5: reminders (AGENTS.md > Reminders). -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- SCHEDULE_EXACT_ALARM (not USE_EXACT_ALARM): the app is not an
+         alarm-clock core app, so Play policy requires the special-access flow;
+         denied by default on Android 14+, checked before every scheduling. -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+
     <application
         android:name=".MedCompanionApp"
         android:allowBackup="false"
@@ -27,6 +37,31 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- Reminder and grace alarms; actions carry EXTRA_DOSE_ID. -->
+        <receiver
+            android:name=".receiver.DoseAlarmReceiver"
+            android:exported="false" />
+
+        <!-- Taken / Snooze / Skip notification actions. -->
+        <receiver
+            android:name=".receiver.DoseActionReceiver"
+            android:exported="false" />
+
+        <!-- Anything here invalidates scheduled alarms: a full refresh
+             regenerates the window and reschedules everything. -->
+        <receiver
+            android:name=".receiver.SystemChangeReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="android.app.action.SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED" />
+            </intent-filter>
+        </receiver>
     </application>
 
 </manifest>

@@ -137,4 +137,35 @@
     <string name="error_interval_required">Enter the hours between doses.</string>
     <string name="error_interval_range">Enter a number from 1 to 24.</string>
     <string name="error_weekdays_required">Select at least one day.</string>
+    <!-- Reminders: notifications (T5). Wording is TODO(clinical-review):
+         calm, neutral, never scolding about a missed dose. -->
+    <string name="notification_channel_reminders_name">Dose reminders</string>
+    <string name="notification_channel_reminders_desc">A notification when a dose is due.</string>
+    <string name="notification_channel_follow_up_name">Dose follow-up</string>
+    <string name="notification_channel_follow_up_desc">A gentle reminder if a dose is not logged.</string>
+    <string name="notification_follow_up_text">This dose is not logged yet. You can log it whenever you are ready.</string>
+
+    <!-- Reminder setup screen (T5). -->
+    <string name="reminders_setup_title">Reminder setup</string>
+    <string name="reminders_setup_intro">For dose reminders to arrive on time, the app needs a few permissions.</string>
+    <string name="reminders_setup_notifications_title">Notifications</string>
+    <string name="reminders_setup_notifications_desc">To show the dose reminder on your screen.</string>
+    <string name="reminders_setup_exact_alarm_title">Exact alarms</string>
+    <string name="reminders_setup_exact_alarm_desc">So reminders arrive at the exact time.</string>
+    <string name="reminders_setup_battery_title">Background activity</string>
+    <string name="reminders_setup_battery_desc">To stop the system from delaying reminders to save power.</string>
+    <string name="reminders_setup_action_grant">Allow</string>
+    <string name="reminders_setup_action_open_settings">Open settings</string>
+    <string name="reminders_setup_status_ok">Enabled</string>
+    <string name="reminders_setup_status_missing">Not enabled</string>
+    <string name="reminders_setup_all_set">All reminders are set up.</string>
+    <string name="reminders_setup_footer">You can change these settings later from your profile.</string>
+    <string name="reminders_setup_oem_title">Extra steps on some devices</string>
+    <string name="reminders_setup_oem_desc">Some manufacturers such as Xiaomi, Samsung, Huawei, Oppo and Vivo stop background apps unless you allow them manually.</string>
+    <string name="reminders_setup_oem_xiaomi">Xiaomi: Settings &gt; Apps &gt; Medication Companion &gt; Battery saver &gt; No restrictions.</string>
+    <string name="reminders_setup_oem_samsung">Samsung: Settings &gt; Device care &gt; Battery &gt; Background usage limits &gt; remove Medication Companion.</string>
+    <string name="reminders_setup_oem_huawei">Huawei: Settings &gt; Battery &gt; App launch &gt; Manage manually &gt; Medication Companion &gt; on.</string>
+    <string name="reminders_setup_oem_oppo">Oppo: Settings &gt; Battery &gt; Background power consumption &gt; Medication Companion &gt; allow background.</string>
+    <string name="reminders_setup_oem_vivo">Vivo: Settings &gt; Battery &gt; Background power consumption &gt; Medication Companion &gt; allow background.</string>
+    <string name="today_reminders_banner">Reminders are not fully enabled. Tap to set up.</string>
 </resources>

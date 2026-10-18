@@ -27,6 +27,9 @@ enum class TopLevelDestination(
 /** Route for the profile screen, opened from the top bar. */
 const val PROFILE_ROUTE: String = "profile"
 
+/** Reminder setup screen (T5), reached from the Today banner and later the profile. */
+const val REMINDERS_SETUP_ROUTE: String = "reminders/setup"
+
 /** Navigation argument for the medication id on the edit route. */
 const val ARG_MEDICATION_ID: String = "medicationId"
 

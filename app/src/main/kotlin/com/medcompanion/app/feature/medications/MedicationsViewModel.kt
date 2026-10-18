@@ -7,6 +7,7 @@ import com.medcompanion.app.domain.model.FoodRelation
 import com.medcompanion.app.domain.model.Medication
 import com.medcompanion.app.domain.model.MedicationStatus
 import com.medcompanion.app.domain.model.Schedule
+import com.medcompanion.app.domain.reminder.ReminderEngine
 import com.medcompanion.app.domain.repository.MedicationRepository
 import com.medcompanion.app.domain.repository.ScheduleRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -32,6 +33,7 @@ class MedicationsViewModel
     constructor(
         private val medicationRepository: MedicationRepository,
         private val scheduleRepository: ScheduleRepository,
+        private val reminderEngine: ReminderEngine,
         private val clock: AppClock,
     ) : ViewModel() {
         val uiState: StateFlow<MedicationsUiState> =
@@ -65,7 +67,11 @@ class MedicationsViewModel
                     initialValue = MedicationsUiState(),
                 )
 
-        /** Stops a medication now; the reason is optional. */
+        /**
+         * Stops a medication now; the reason is optional. Stopping deletes the
+         * medication's future dose events and cancels their alarms through the
+         * engine refresh (past history is kept).
+         */
         fun stop(
             medicationId: Long,
             reason: String?,
@@ -76,6 +82,7 @@ class MedicationsViewModel
                     reason = reason?.trim()?.ifEmpty { null },
                     endDate = clock.now(),
                 )
+                reminderEngine.refresh()
             }
         }
 

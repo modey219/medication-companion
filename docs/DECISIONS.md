@@ -4,6 +4,59 @@ Short entries. Newest first. Format: ID, date, decision, why, status.
 
 ---
 
+## D-008 — Dose reminders: exact alarms, generation and catch-up (T5)
+
+Date: 2026-10-18
+Status: Accepted (pending local build and tests verification)
+
+Decisions:
+
+1. **`AlarmManager.setAlarmClock` with `SCHEDULE_EXACT_ALARM`.** AGENTS.md asks
+   to choose between `setAlarmClock` and `setExactAndAllowWhileIdle` and justify
+   it. `setAlarmClock` is used because a dose reminder is the canonical
+   user-visible alarm: it is exempt from Doze/App Standby deferral, survives
+   more OEM battery managers (Xiaomi/Samsung/Huawei/Oppo/Vivo), is allowed to
+   fire even when the app is in the restricted bucket, and it shows the user a
+   system alarm icon - which is honest for a time-critical reminder. The cost
+   is `SCHEDULE_EXACT_ALARM` (not `USE_EXACT_ALARM`), which is denied by default
+   on Android 14+: every code path checks `canScheduleExactAlarms()` first and
+   degrades silently to "no alarms"; the setup screen explains how to grant it
+   and `ACTION_SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED` triggers a
+   `refresh()` that schedules everything that was skipped.
+2. **One reminder alarm + one grace alarm per upcoming dose**, for the whole
+   generation window (7 days) instead of a short rolling slice. The app is
+   offline-only and has no sync, so being able to fire for a week without an app
+   start is the safer failure mode. `refresh()` is idempotent and cheap
+   (one read per interval), so the window is regenerated on every relevant
+   event: app start, screen resume, schedule save, medication stop, reboot,
+   timezone/clock change, app update, permission grant.
+3. **`DoseGenerator` is pure** (`medications`, `schedules`, `zone`, window) and
+   never fabricates a time before `from`. `EVERY_N_HOURS` steps in absolute time
+   anchored at local midnight of the start date, so a 6-hour schedule does not
+   drift with DST.
+4. **Reconcile, do not wipe.** `refresh()` deletes only *future, still pending,
+   never-acted* doses that are no longer expected, then inserts with
+   `OnConflictStrategy.IGNORE`. Past doses and any dose the patient acted on are
+   history and are never deleted - stopping a medication removes only its future
+   doses.
+5. **Catch-up while the device is off is silent.** Doses older than the grace
+   period are marked MISSED with no notification; only the grace alarm path
+   notifies (with at most one follow-up), so the "never alarm the patient late"
+   rule in AGENTS.md holds. For a reminder whose trigger time passed while the
+   device was off, the alarm fires at the next refresh (`maxOf(trigger, now)`)
+   as long as the dose is still inside its grace period.
+6. **Grace is anchored at the scheduled time, snooze at the action time.**
+   Grace = `scheduledAt + 60 min`, snooze = `actedAt + 10 min`, both from
+   `ReminderDefaults` (configurable in T8 via DataStore). These anchors are
+   fixed here because they are what the tests pin down.
+7. **Notification actions work without opening the app**: `Taken`, `Snooze`,
+   `Skip` are `PendingIntent.getBroadcast` to `DoseActionReceiver`, which calls
+   `ReminderEngine.performAction` and cancels the alarms + notification. A stale
+   action on an already-handled dose is applied the same way the Today screen
+   applies it (last action wins), because refusing would only confuse the user.
+
+---
+
 ## D-007 — Today screen scope and behaviour (T4)
 
 Date: 2026-10-17
