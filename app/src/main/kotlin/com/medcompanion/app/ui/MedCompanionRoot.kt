@@ -132,7 +132,9 @@ fun MedCompanionRoot() {
                     .fillMaxSize()
                     .padding(innerPadding),
         ) {
-            composable(TopLevelDestination.TODAY.route) { TodayScreen() }
+            composable(TopLevelDestination.TODAY.route) {
+                TodayScreen(onAddMedicationClick = { navController.navigate(MEDICATION_ADD_ROUTE) })
+            }
             composable(TopLevelDestination.MEDICATIONS.route) {
                 MedicationsScreen(
                     onAddClick = { navController.navigate(MEDICATION_ADD_ROUTE) },

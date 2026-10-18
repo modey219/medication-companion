@@ -33,4 +33,7 @@ interface ScheduleDao {
 
     @Query("SELECT * FROM schedules")
     suspend fun getAll(): List<ScheduleEntity>
+
+    @Query("SELECT * FROM schedules")
+    fun observeAll(): Flow<List<ScheduleEntity>>
 }

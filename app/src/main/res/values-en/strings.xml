@@ -112,6 +112,22 @@
     <string name="weekday_thursday">Thu</string>
     <string name="weekday_friday">Fri</string>
 
+    <!-- Today screen (T4) -->
+    <string name="today_empty">No doses scheduled today.</string>
+    <string name="detail_separator">•</string>
+    <!-- TODO(clinical-review): tone of the dose status labels (never judging the patient) -->
+    <string name="dose_overdue">Overdue</string>
+    <string name="dose_pending">Scheduled</string>
+    <string name="dose_taken">Taken</string>
+    <string name="dose_skipped">Skipped</string>
+    <string name="dose_snoozed">Snoozed</string>
+    <string name="dose_missed">Missed</string>
+    <string name="action_take">Take</string>
+    <string name="action_snooze">Snooze</string>
+    <string name="action_skip">Skip</string>
+    <string name="snoozed_until">Snoozed until %1$s</string>
+    <string name="error_dose_update">Could not update the dose. Try again.</string>
+
     <!-- Form validation (mechanical rules only, never medical advice) -->
     <string name="error_name_required">Enter the medication name.</string>
     <string name="error_dose_amount_required">Enter the dose amount.</string>

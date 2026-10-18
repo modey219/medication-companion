@@ -106,6 +106,19 @@ class MedCompanionDatabaseTest {
         }
 
     @Test
+    fun `updateStatus changes status and actedAt`() =
+        runTest {
+            val medicationId = database.medicationDao().insert(medication())
+            val id = database.doseEventDao().insertIgnoringDuplicates(dose(medicationId = medicationId))
+
+            database.doseEventDao().updateStatus(id, DoseStatus.TAKEN, LATER_INSTANT)
+
+            val loaded = database.doseEventDao().getById(id)
+            assertEquals(DoseStatus.TAKEN, loaded?.status)
+            assertEquals(LATER_INSTANT, loaded?.actedAt)
+        }
+
+    @Test
     fun `insertAllIgnoringDuplicates skips existing rows`() =
         runTest {
             val medicationId = database.medicationDao().insert(medication())

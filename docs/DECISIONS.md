@@ -4,6 +4,65 @@ Short entries. Newest first. Format: ID, date, decision, why, status.
 
 ---
 
+## D-007 — Today screen scope and behaviour (T4)
+
+Date: 2026-10-17
+Status: Accepted (build and tests verified locally)
+
+Verification (2026-10-18): `assembleDebug` + `ktlintCheck` + `testDebugUnitTest`
++ `lintDebug` all pass — 75 tests, 0 failures (TodayViewModelTest: 12);
+lint 0 errors / 9 warnings (all previously accepted categories plus the same
+`ModifierParameter` warning already accepted on MedicationsScreen); APK
+13,273,561 bytes. The first verification attempt failed: the in-ViewModel
+delay loop kept `runTest` draining the test scheduler after the test body
+finished (body itself completed in 86 ms), running for minutes until
+`OutOfMemoryError`. Fix: the ticker now arrives through
+`@PeriodicTicker Flow<Instant>` (see Decision above); tests drive it with a
+controllable `MutableStateFlow`.
+
+Decision:
+- **No dose generation in T4.** The rolling-window generator is T5's
+  (AGENTS.md brief); the Today screen renders what is in `dose_events`, so on a
+  real device it stays empty until T5. Tests seed doses through the repository.
+- **No automatic MISSED transitions in T4.** Grace-period handling
+  ("no action within 60 minutes → MISSED") is T5's reminder engine. T4 only
+  *displays* MISSED rows and *highlights* a PENDING dose whose `scheduledAt`
+  is in the past.
+- **Window: today only**, `[start of today, start of tomorrow)` in the injected
+  clock's zone, recomputed from `now` on every tick so the screen rolls over
+  at midnight. Overdue from previous days shows in History (T7), not here.
+- **30-second ticker, injected**: the ViewModel combines a
+  `@PeriodicTicker Flow<Instant>` (provided by `core/di/TimeTickerModule.kt`,
+  emits `clock.now()` immediately then every 30 s) with the Room flows, so
+  overdue flags update while the screen is open without any data change (and
+  the window re-queries daily). The stream comes from Hilt rather than a
+  private delay loop so unit tests substitute a controllable
+  `MutableStateFlow` and drive ticks with `.value =`; an autonomous loop on
+  the test scheduler keeps `runTest` draining it until the heap is exhausted
+  (observed: body finishes in ms, epilogue runs for minutes, then OOM).
+- **Snooze in T4 = database only**: `setStatus(SNOOZED, clock.now())` and the
+  row shows "snoozed until actedAt + 10 minutes". The constant lives in
+  `core/time/SnoozeDefaults.DEFAULT_SNOOZE_MINUTES = 10` so the T5 alarm
+  engine reuses it; making it configurable needs DataStore (Profile, T8).
+- **Grouping** by exact local time of `scheduledAt`, groups sorted ascending,
+  rows sorted by medication name. Times formatted with the platform formatter
+  (device 12/24-hour setting).
+- **Status labels are text, never color alone**; overdue rows additionally use
+  `errorContainer`. Labels are neutral and marked `TODO(clinical-review)`.
+- **Actions** go through the single `DoseEventRepository.setStatus` path;
+  Room's Flow refreshes the UI automatically. A failed action shows a
+  Snackbar (`TodayError.UPDATE_FAILED`) and the row stays actionable.
+- Added `ScheduleRepository.observeAll()` (+ DAO query) so rows can show the
+  dose amount and food relation; the empty state without any medication offers
+  an "Add medication" CTA into the `medications/add` route.
+
+Why:
+- Keeps T4 exactly as scoped by the brief and avoids duplicating T5 logic;
+  the injectable clock + ticker makes overdue behaviour deterministic in tests
+  (AGENTS.md: all time logic through an injectable Clock).
+
+---
+
 ## D-006 — Add/edit/stop medication flow (T3)
 
 Date: 2026-10-17

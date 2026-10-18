@@ -119,6 +119,22 @@
     <string name="weekday_thursday">الخميس</string>
     <string name="weekday_friday">الجمعة</string>
 
+    <!-- Today screen (T4) -->
+    <string name="today_empty">لا توجد جرعات مجدولة اليوم.</string>
+    <string name="detail_separator">•</string>
+    <!-- TODO(clinical-review): tone of the dose status labels (never judging the patient) -->
+    <string name="dose_overdue">متأخرة</string>
+    <string name="dose_pending">مجدولة</string>
+    <string name="dose_taken">تمت</string>
+    <string name="dose_skipped">تم التخطي</string>
+    <string name="dose_snoozed">مؤجلة</string>
+    <string name="dose_missed">فاتت</string>
+    <string name="action_take">تمت</string>
+    <string name="action_snooze">تأجيل</string>
+    <string name="action_skip">تخطي</string>
+    <string name="snoozed_until">مؤجلة حتى %1$s</string>
+    <string name="error_dose_update">تعذر تحديث الجرعة. حاول مرة أخرى.</string>
+
     <!-- Form validation (mechanical rules only, never medical advice) -->
     <string name="error_name_required">اكتب اسم الدواء.</string>
     <string name="error_dose_amount_required">اكتب كمية الجرعة.</string>

@@ -16,6 +16,9 @@ class ScheduleRepositoryImpl
     constructor(
         private val scheduleDao: ScheduleDao,
     ) : ScheduleRepository {
+        override fun observeAll(): Flow<List<Schedule>> =
+            scheduleDao.observeAll().map { entities -> entities.map { it.toDomain() } }
+
         override fun observeByMedication(medicationId: Long): Flow<List<Schedule>> =
             scheduleDao.observeByMedication(medicationId).map { entities ->
                 entities.map { it.toDomain() }

@@ -38,6 +38,18 @@ English mirrors of every row above: `values-en/strings.xml` (same
 
 ---
 
+## T4 — Today screen (2026-10-17)
+
+| Item | Location | Why flagged | Status |
+| --- | --- | --- | --- |
+| Dose status labels: `dose_overdue` (متأخرة), `dose_pending` (مجدولة), `dose_taken` (تمت), `dose_skipped` (تم التخطي), `dose_snoozed` (مؤجلة), `dose_missed` (فاتت) | `values/strings.xml` (`TODO(clinical-review): tone of the dose status labels`) | Tone must stay neutral and never judge the patient for a missed dose; especially "فاتت"/"Missed" and "متأخرة"/"Overdue" | Open |
+| `snoozed_until` ("مؤجلة حتى %1$s"), `today_empty`, `error_dose_update` | `values/strings.xml` (T4 section) | Mechanical wording; confirm neutral | Open |
+
+English mirrors of every row above: `values-en/strings.xml` (same
+`TODO(clinical-review)` comments).
+
+---
+
 ## T1 — Standing notices (2026-10-17)
 
 | Item | Location | Why flagged | Status |

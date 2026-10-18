@@ -5,6 +5,8 @@ import kotlinx.coroutines.flow.Flow
 
 /** Read and write access to medication schedules. */
 interface ScheduleRepository {
+    fun observeAll(): Flow<List<Schedule>>
+
     fun observeByMedication(medicationId: Long): Flow<List<Schedule>>
 
     suspend fun getByMedication(medicationId: Long): List<Schedule>

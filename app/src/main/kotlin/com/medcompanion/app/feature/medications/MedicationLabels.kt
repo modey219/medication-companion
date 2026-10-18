@@ -2,6 +2,7 @@ package com.medcompanion.app.feature.medications
 
 import androidx.annotation.StringRes
 import com.medcompanion.app.R
+import com.medcompanion.app.domain.model.DoseStatus
 import com.medcompanion.app.domain.model.FoodRelation
 import com.medcompanion.app.domain.model.MedicationForm
 import com.medcompanion.app.domain.model.MedicationSource
@@ -57,4 +58,14 @@ fun DayOfWeek.labelRes(): Int =
         DayOfWeek.WEDNESDAY -> R.string.weekday_wednesday
         DayOfWeek.THURSDAY -> R.string.weekday_thursday
         DayOfWeek.FRIDAY -> R.string.weekday_friday
+    }
+
+@StringRes
+fun DoseStatus.labelRes(): Int =
+    when (this) {
+        DoseStatus.PENDING -> R.string.dose_pending
+        DoseStatus.TAKEN -> R.string.dose_taken
+        DoseStatus.MISSED -> R.string.dose_missed
+        DoseStatus.SKIPPED -> R.string.dose_skipped
+        DoseStatus.SNOOZED -> R.string.dose_snoozed
     }
