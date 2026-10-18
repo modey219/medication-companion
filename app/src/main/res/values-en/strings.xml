@@ -114,6 +114,9 @@
 
     <!-- Today screen (T4) -->
     <string name="today_empty">No doses scheduled today.</string>
+    <string name="today_next_dose_hint">Next dose: %1$s</string>
+    <string name="today_day_today">Today</string>
+    <string name="today_tomorrow">Tomorrow</string>
     <string name="detail_separator">•</string>
     <!-- TODO(clinical-review): tone of the dose status labels (never judging the patient) -->
     <string name="dose_overdue">Overdue</string>

@@ -183,6 +183,35 @@ class MedicationEditViewModelTest {
     }
 
     @Test
+    fun `editing a time replaces it in place and keeps the list sorted`() {
+        val vm = viewModel()
+
+        vm.onTimeAdded(LocalTime.of(20, 0))
+        vm.onTimeEdited(LocalTime.of(8, 0), LocalTime.of(9, 30))
+
+        assertEquals(listOf(LocalTime.of(9, 30), LocalTime.of(20, 0)), vm.uiState.value.times)
+    }
+
+    @Test
+    fun `editing a time onto an existing time keeps one entry`() {
+        val vm = viewModel()
+
+        vm.onTimeAdded(LocalTime.of(20, 0))
+        vm.onTimeEdited(LocalTime.of(8, 0), LocalTime.of(20, 0))
+
+        assertEquals(listOf(LocalTime.of(20, 0)), vm.uiState.value.times)
+    }
+
+    @Test
+    fun `editing a time to itself changes nothing`() {
+        val vm = viewModel()
+
+        vm.onTimeEdited(LocalTime.of(8, 0), LocalTime.of(8, 0))
+
+        assertEquals(listOf(LocalTime.of(8, 0)), vm.uiState.value.times)
+    }
+
+    @Test
     fun `weekday toggle adds and removes days`() {
         val vm = viewModel()
 

@@ -67,8 +67,9 @@ class TodayViewModel
                             ),
                             medicationRepository.observeAll(),
                             scheduleRepository.observeAll(),
-                        ) { doses, medications, schedules ->
-                            buildState(doses, medications, schedules, now)
+                            doseRepository.observeNextAfter(now),
+                        ) { doses, medications, schedules, nextDose ->
+                            buildState(doses, medications, schedules, nextDose, now)
                         }
                     }.collect { incoming ->
                         // An in-flight action error survives data refreshes; only
@@ -115,6 +116,7 @@ class TodayViewModel
             doses: List<DoseEvent>,
             medications: List<Medication>,
             schedules: List<Schedule>,
+            nextDose: DoseEvent?,
             now: Instant,
         ): TodayUiState {
             val zone = clock.zone()
@@ -156,6 +158,7 @@ class TodayViewModel
                 groups = groups,
                 hasMedications = medications.isNotEmpty(),
                 reminderSetupIncomplete = !permissionChecker.isReminderSetupComplete(),
+                nextDoseAt = nextDose?.scheduledAt,
             )
         }
     }

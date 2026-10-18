@@ -34,6 +34,7 @@ import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -42,6 +43,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardType
@@ -93,6 +95,7 @@ fun MedicationEditScreen(
         onScheduleTypeChange = viewModel::onScheduleTypeChange,
         onTimeAdded = viewModel::onTimeAdded,
         onTimeRemoved = viewModel::onTimeRemoved,
+        onTimeEdited = viewModel::onTimeEdited,
         onIntervalHoursChange = viewModel::onIntervalHoursChange,
         onWeekdayToggled = viewModel::onWeekdayToggled,
         onDoseAmountChange = viewModel::onDoseAmountChange,
@@ -114,6 +117,7 @@ internal fun MedicationEditContent(
     onScheduleTypeChange: (ScheduleType) -> Unit,
     onTimeAdded: (LocalTime) -> Unit,
     onTimeRemoved: (LocalTime) -> Unit,
+    onTimeEdited: (LocalTime, LocalTime) -> Unit,
     onIntervalHoursChange: (String) -> Unit,
     onWeekdayToggled: (DayOfWeek) -> Unit,
     onDoseAmountChange: (String) -> Unit,
@@ -143,6 +147,7 @@ internal fun MedicationEditContent(
                 onScheduleTypeChange = onScheduleTypeChange,
                 onTimeAdded = onTimeAdded,
                 onTimeRemoved = onTimeRemoved,
+                onTimeEdited = onTimeEdited,
                 onIntervalHoursChange = onIntervalHoursChange,
                 onWeekdayToggled = onWeekdayToggled,
                 onDoseAmountChange = onDoseAmountChange,
@@ -166,6 +171,7 @@ private fun EditForm(
     onScheduleTypeChange: (ScheduleType) -> Unit,
     onTimeAdded: (LocalTime) -> Unit,
     onTimeRemoved: (LocalTime) -> Unit,
+    onTimeEdited: (LocalTime, LocalTime) -> Unit,
     onIntervalHoursChange: (String) -> Unit,
     onWeekdayToggled: (DayOfWeek) -> Unit,
     onDoseAmountChange: (String) -> Unit,
@@ -270,6 +276,7 @@ private fun EditForm(
                         },
                     onTimeAdded = onTimeAdded,
                     onTimeRemoved = onTimeRemoved,
+                    onTimeEdited = onTimeEdited,
                 )
 
             ScheduleType.EVERY_N_HOURS ->
@@ -365,8 +372,12 @@ private fun TimesSection(
     requiredError: String?,
     onTimeAdded: (LocalTime) -> Unit,
     onTimeRemoved: (LocalTime) -> Unit,
+    onTimeEdited: (LocalTime, LocalTime) -> Unit,
 ) {
-    var showTimePicker by rememberSaveable { mutableStateOf(false) }
+    var pickerVisible by rememberSaveable { mutableStateOf(false) }
+    // Epoch second of the time being edited; -1 means "add a new time".
+    var pickerTimeSeconds by rememberSaveable { mutableLongStateOf(-1L) }
+    val editingTime = if (pickerTimeSeconds >= 0L) LocalTime.ofSecondOfDay(pickerTimeSeconds) else null
 
     SectionTitle(stringResource(R.string.field_times))
 
@@ -378,7 +389,18 @@ private fun TimesSection(
             Text(
                 text = time.formatTime(LocalContext.current),
                 style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.weight(1f),
+                modifier =
+                    Modifier
+                        .weight(1f)
+                        .heightIn(min = 48.dp)
+                        .clickable(
+                            onClickLabel = stringResource(R.string.action_edit),
+                            role = Role.Button,
+                            onClick = {
+                                pickerTimeSeconds = time.toSecondOfDay().toLong()
+                                pickerVisible = true
+                            },
+                        ),
             )
             TextButton(onClick = { onTimeRemoved(time) }) {
                 Text(stringResource(R.string.action_remove))
@@ -387,7 +409,10 @@ private fun TimesSection(
     }
 
     OutlinedButton(
-        onClick = { showTimePicker = true },
+        onClick = {
+            pickerTimeSeconds = -1L
+            pickerVisible = true
+        },
         modifier =
             Modifier
                 .fillMaxWidth()
@@ -400,12 +425,17 @@ private fun TimesSection(
         ErrorText(requiredError)
     }
 
-    if (showTimePicker) {
+    if (pickerVisible) {
         TimePickerDialog(
-            onDismiss = { showTimePicker = false },
+            initialTime = editingTime,
+            onDismiss = { pickerVisible = false },
             onConfirm = { time ->
-                onTimeAdded(time)
-                showTimePicker = false
+                if (editingTime == null) {
+                    onTimeAdded(time)
+                } else {
+                    onTimeEdited(editingTime, time)
+                }
+                pickerVisible = false
             },
         )
     }
@@ -536,10 +566,13 @@ private fun DateField(
 private fun TimePickerDialog(
     onDismiss: () -> Unit,
     onConfirm: (LocalTime) -> Unit,
+    initialTime: LocalTime? = null,
 ) {
     val context = LocalContext.current
     val timePickerState =
         rememberTimePickerState(
+            initialHour = initialTime?.hour ?: 0,
+            initialMinute = initialTime?.minute ?: 0,
             is24Hour =
                 android.text.format.DateFormat
                     .is24HourFormat(context),
@@ -709,6 +742,7 @@ private fun MedicationEditScreenPreview() {
             onScheduleTypeChange = {},
             onTimeAdded = {},
             onTimeRemoved = {},
+            onTimeEdited = { _, _ -> },
             onIntervalHoursChange = {},
             onWeekdayToggled = {},
             onDoseAmountChange = {},

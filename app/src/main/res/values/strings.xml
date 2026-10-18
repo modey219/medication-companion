@@ -121,6 +121,9 @@
 
     <!-- Today screen (T4) -->
     <string name="today_empty">لا توجد جرعات مجدولة اليوم.</string>
+    <string name="today_next_dose_hint">أقرب جرعة: %1$s</string>
+    <string name="today_day_today">اليوم</string>
+    <string name="today_tomorrow">غداً</string>
     <string name="detail_separator">•</string>
     <!-- TODO(clinical-review): tone of the dose status labels (never judging the patient) -->
     <string name="dose_overdue">متأخرة</string>

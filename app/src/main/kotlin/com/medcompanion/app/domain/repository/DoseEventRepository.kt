@@ -14,6 +14,9 @@ interface DoseEventRepository {
 
     fun observeByMedication(medicationId: Long): Flow<List<DoseEvent>>
 
+    /** First unacted (PENDING or SNOOZED) dose strictly after [after]; the Today next-dose hint. */
+    fun observeNextAfter(after: Instant): Flow<DoseEvent?>
+
     suspend fun getById(id: Long): DoseEvent?
 
     /** One-shot read of a window, used by the reminder engine instead of collecting. */

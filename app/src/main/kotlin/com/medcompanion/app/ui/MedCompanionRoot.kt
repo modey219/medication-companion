@@ -12,6 +12,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -49,7 +50,7 @@ import com.medcompanion.app.ui.navigation.topLevelDestinationFromRoute
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MedCompanionRoot() {
+fun MedCompanionRoot(nudgeReminderSetup: Boolean = false) {
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
@@ -58,6 +59,10 @@ fun MedCompanionRoot() {
     val isReminderSetup = currentRoute == REMINDERS_SETUP_ROUTE
     val isMedicationEdit = isMedicationEditRoute(currentRoute)
     val showBack = isProfile || isMedicationEdit || isReminderSetup
+
+    LaunchedEffect(nudgeReminderSetup) {
+        if (nudgeReminderSetup) navController.navigate(REMINDERS_SETUP_ROUTE)
+    }
 
     Scaffold(
         topBar = {

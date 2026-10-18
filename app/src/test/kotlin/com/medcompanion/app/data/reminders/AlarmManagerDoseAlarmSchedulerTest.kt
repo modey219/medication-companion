@@ -119,13 +119,31 @@ class AlarmManagerDoseAlarmSchedulerTest {
     }
 
     @Test
-    fun `scheduling is skipped while exact alarm access is revoked`() {
+    fun `without exact alarm access an inexact wakeup alarm is scheduled instead`() {
         ShadowAlarmManager.setCanScheduleExactAlarms(false)
 
         scheduler.scheduleReminder(7L, trigger)
+        val reminder = nextAlarm()
         scheduler.scheduleGrace(7L, grace)
+        val graceAlarm = nextAlarm()
 
         assertFalse(scheduler.canScheduleExact())
+        assertEquals(trigger.toEpochMilli(), reminder.triggerAtTime)
+        assertEquals(AlarmManager.RTC_WAKEUP, reminder.type)
+        assertNull(reminder.alarmClockInfo)
+        assertEquals(ReminderActions.ACTION_REMINDER, savedIntent(reminder).action)
+        assertEquals(grace.toEpochMilli(), graceAlarm.triggerAtTime)
+        assertEquals(ReminderActions.ACTION_GRACE, savedIntent(graceAlarm).action)
+    }
+
+    @Test
+    fun `cancel works for inexact fallback alarms too`() {
+        ShadowAlarmManager.setCanScheduleExactAlarms(false)
+        scheduler.scheduleReminder(7L, trigger)
+        scheduler.scheduleGrace(7L, grace)
+
+        scheduler.cancel(7L)
+
         assertNull(shadow().nextScheduledAlarm)
     }
 }

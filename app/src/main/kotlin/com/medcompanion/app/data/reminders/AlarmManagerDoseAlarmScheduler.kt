@@ -21,10 +21,11 @@ import javax.inject.Singleton
  * setExactAndAllowWhileIdle would be deferred under the Android 14+
  * inexact-quota rules, so it is not used for dose times.
  *
- * Degrades silently when SCHEDULE_EXACT_ALARM is revoked (Android 14+ denies
- * it by default): scheduling becomes a no-op and
- * [com.medcompanion.app.domain.reminder.ReminderPermissionChecker] surfaces
- * the problem in the setup screen.
+ * Fallback (D-008 rev. 2): SCHEDULE_EXACT_ALARM is denied by default on
+ * Android 14+; while it is missing the scheduler uses
+ * [AlarmManager.setAndAllowWhileIdle], an inexact wakeup that may fire a
+ * few minutes late — a late reminder beats no reminder at all. The setup
+ * screen still surfaces the missing permission.
  */
 @Singleton
 class AlarmManagerDoseAlarmScheduler
@@ -71,7 +72,6 @@ class AlarmManagerDoseAlarmScheduler
             triggerAt: Instant,
             action: String,
         ) {
-            if (!canScheduleExact()) return
             val operation =
                 PendingIntent.getBroadcast(
                     appContext,
@@ -79,18 +79,23 @@ class AlarmManagerDoseAlarmScheduler
                     alarmIntent(action, doseId),
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
                 )
-            // Tapping the alarm's system intent opens the app (Today screen).
-            val showIntent =
-                PendingIntent.getActivity(
-                    appContext,
-                    0,
-                    Intent(appContext, MainActivity::class.java),
-                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+            val triggerMillis = triggerAt.toEpochMilli()
+            if (canScheduleExact()) {
+                // Tapping the alarm's system intent opens the app (Today screen).
+                val showIntent =
+                    PendingIntent.getActivity(
+                        appContext,
+                        0,
+                        Intent(appContext, MainActivity::class.java),
+                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+                    )
+                alarmManager.setAlarmClock(
+                    AlarmManager.AlarmClockInfo(triggerMillis, showIntent),
+                    operation,
                 )
-            alarmManager.setAlarmClock(
-                AlarmManager.AlarmClockInfo(triggerAt.toEpochMilli(), showIntent),
-                operation,
-            )
+            } else {
+                alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerMillis, operation)
+            }
         }
 
         private fun alarmIntent(

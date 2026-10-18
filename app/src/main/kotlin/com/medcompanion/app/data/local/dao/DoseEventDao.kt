@@ -57,6 +57,15 @@ interface DoseEventDao {
         cutoff: Instant,
     ): List<DoseEventEntity>
 
+    @Query(
+        "SELECT * FROM dose_events WHERE scheduledAt > :after AND status IN (:statuses) " +
+            "ORDER BY scheduledAt LIMIT 1",
+    )
+    fun observeNextAfter(
+        after: Instant,
+        statuses: List<DoseStatus>,
+    ): Flow<DoseEventEntity?>
+
     @Query("UPDATE dose_events SET status = :status, actedAt = :actedAt WHERE id = :id")
     suspend fun updateStatus(
         id: Long,

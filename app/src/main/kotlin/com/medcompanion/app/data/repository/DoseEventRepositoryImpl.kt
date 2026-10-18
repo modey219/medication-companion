@@ -29,6 +29,11 @@ class DoseEventRepositoryImpl
                 entities.map { it.toDomain() }
             }
 
+        override fun observeNextAfter(after: Instant): Flow<DoseEvent?> =
+            doseEventDao
+                .observeNextAfter(after, listOf(DoseStatus.PENDING, DoseStatus.SNOOZED))
+                .map { it?.toDomain() }
+
         override suspend fun addIgnoringDuplicates(event: DoseEvent): Long =
             doseEventDao.insertIgnoringDuplicates(event.toEntity())
 

@@ -48,6 +48,7 @@ class TodayViewModelTest {
     private val reminderEngine: ReminderEngine = mockk(relaxed = true)
     private val permissionChecker: ReminderPermissionChecker = mockk(relaxed = true)
     private val doses = MutableStateFlow<List<DoseEvent>>(emptyList())
+    private val nextDose = MutableStateFlow<DoseEvent?>(null)
     private val medications = MutableStateFlow<List<Medication>>(emptyList())
     private val schedules = MutableStateFlow<List<Schedule>>(emptyList())
     private val ticker = MutableStateFlow(clock.now())
@@ -56,6 +57,7 @@ class TodayViewModelTest {
     fun setUp() {
         Dispatchers.setMain(UnconfinedTestDispatcher())
         every { doseRepository.observeBetween(any(), any()) } returns doses
+        every { doseRepository.observeNextAfter(any()) } returns nextDose
         every { medicationRepository.observeAll() } returns medications
         every { scheduleRepository.observeAll() } returns schedules
         every { permissionChecker.isReminderSetupComplete() } returns true
@@ -98,6 +100,43 @@ class TodayViewModelTest {
             val state = awaitLoaded(viewModel())
 
             assertTrue(state.showAddMedicationCta)
+        }
+
+    // --- Next-dose hint ---
+
+    @Test
+    fun `an empty today still surfaces the next scheduled dose`() =
+        runTest(timeout = 10.seconds) {
+            medications.value = listOf(medication(id = 1))
+            nextDose.value = dose(id = 40, medicationId = 1, at = "2026-10-18T08:00:00Z")
+
+            val state = awaitLoaded(viewModel())
+
+            assertTrue(state.isEmpty)
+            assertEquals(Instant.parse("2026-10-18T08:00:00Z"), state.nextDoseAt)
+        }
+
+    @Test
+    fun `next dose hint is null when nothing is scheduled ahead`() =
+        runTest(timeout = 10.seconds) {
+            medications.value = listOf(medication(id = 1))
+
+            assertNull(awaitLoaded(viewModel()).nextDoseAt)
+        }
+
+    @Test
+    fun `next dose hint disappears once the dose is taken`() =
+        runTest(timeout = 10.seconds) {
+            medications.value = listOf(medication(id = 1))
+            val upcoming = dose(id = 40, medicationId = 1, at = "2026-10-18T08:00:00Z")
+            nextDose.value = upcoming
+            val vm = viewModel()
+            awaitLoaded(vm)
+            assertEquals(Instant.parse("2026-10-18T08:00:00Z"), vm.uiState.value.nextDoseAt)
+
+            nextDose.value = null
+
+            assertNull(vm.uiState.value.nextDoseAt)
         }
 
     // --- Grouping ---

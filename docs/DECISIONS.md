@@ -6,8 +6,10 @@ Short entries. Newest first. Format: ID, date, decision, why, status.
 
 ## D-008 — Dose reminders: exact alarms, generation and catch-up (T5)
 
-Date: 2026-10-18
-Status: Accepted (pending local build and tests verification)
+Date: 2026-10-18 (revisions 2026-10-19)
+Status: Accepted (verified 2026-10-19: assembleDebug + ktlintCheck +
+testDebugUnitTest + lintDebug pass — 144 tests, 0 failures; lint 0 errors /
+9 warnings, all previously accepted categories)
 
 Decisions:
 
@@ -19,10 +21,13 @@ Decisions:
    fire even when the app is in the restricted bucket, and it shows the user a
    system alarm icon - which is honest for a time-critical reminder. The cost
    is `SCHEDULE_EXACT_ALARM` (not `USE_EXACT_ALARM`), which is denied by default
-   on Android 14+: every code path checks `canScheduleExactAlarms()` first and
-   degrades silently to "no alarms"; the setup screen explains how to grant it
-   and `ACTION_SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED` triggers a
-   `refresh()` that schedules everything that was skipped.
+   on Android 14+. **Revision 2 (2026-10-19):** while the permission is missing
+   the scheduler no longer no-ops; it degrades to
+   `AlarmManager.setAndAllowWhileIdle` (inexact wakeup, may fire a few minutes
+   late) because a late reminder beats no reminder at all; the setup screen
+   still explains how to grant exact alarms and
+   `ACTION_SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED` triggers a
+   `refresh()` that upgrades the inexact alarms back to alarm-clock alarms.
 2. **One reminder alarm + one grace alarm per upcoming dose**, for the whole
    generation window (7 days) instead of a short rolling slice. The app is
    offline-only and has no sync, so being able to fire for a week without an app
@@ -54,6 +59,11 @@ Decisions:
    `ReminderEngine.performAction` and cancels the alarms + notification. A stale
    action on an already-handled dose is applied the same way the Today screen
    applies it (last action wins), because refusing would only confuse the user.
+8. **First launch opens the reminder setup screen once**
+   (`ReminderSetupNudge`, SharedPreferences flag). AGENTS.md requires
+   plain-language explanations before permission dialogs; the Today banner
+   alone was easy to miss and left notifications blocked on Android 13+ with
+   no alarm scheduled on 14+. Later launches rely on the banner as before.
 
 ---
 

@@ -130,6 +130,14 @@ class MedicationEditViewModel
 
         fun onTimeRemoved(value: LocalTime) = updateState { it.copy(times = it.times - value) }
 
+        /** Replaces [old] with [new] in place; a duplicate collapses to one entry. */
+        fun onTimeEdited(
+            old: LocalTime,
+            new: LocalTime,
+        ) = updateState { state ->
+            state.copy(times = (state.times - old + new).distinct().sorted())
+        }
+
         fun onIntervalHoursChange(value: String) =
             updateState { it.copy(intervalHours = value.filter { c -> c.isDigit() }.take(3)) }
 

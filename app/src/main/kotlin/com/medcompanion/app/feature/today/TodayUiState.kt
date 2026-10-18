@@ -11,6 +11,7 @@ data class TodayUiState(
     val groups: List<DoseGroup> = emptyList(),
     val hasMedications: Boolean = false,
     val reminderSetupIncomplete: Boolean = false,
+    val nextDoseAt: Instant? = null,
     val error: TodayError? = null,
 ) {
     val isEmpty: Boolean

@@ -71,8 +71,6 @@ class ReminderEngineImpl
                 // gentle follow-up and may not have fired.
                 catchUpOverdue(graceCutoff)
 
-                if (!alarmScheduler.canScheduleExact()) return
-
                 // Live snoozes are found by action time, not scheduled time, so
                 // a reboot right after snoozing an overdue dose still reminds.
                 val liveSnoozes =

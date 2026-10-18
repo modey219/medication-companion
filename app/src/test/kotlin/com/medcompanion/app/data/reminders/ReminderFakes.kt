@@ -44,6 +44,15 @@ class FakeDoseEventRepository : DoseEventRepository {
     override fun observeByMedication(medicationId: Long): Flow<List<DoseEvent>> =
         stream.map { list -> list.filter { it.medicationId == medicationId } }
 
+    override fun observeNextAfter(after: Instant): Flow<DoseEvent?> =
+        stream.map { list ->
+            list
+                .filter {
+                    it.scheduledAt > after &&
+                        (it.status == DoseStatus.PENDING || it.status == DoseStatus.SNOOZED)
+                }.minByOrNull { it.scheduledAt }
+        }
+
     override suspend fun getById(id: Long): DoseEvent? = events.firstOrNull { it.id == id }
 
     override suspend fun getBetween(
@@ -210,7 +219,6 @@ class FakeDoseAlarmScheduler : DoseAlarmScheduler {
         doseId: Long,
         triggerAt: Instant,
     ) {
-        if (!canScheduleExact()) return
         reminders[doseId] = triggerAt
     }
 
@@ -218,7 +226,6 @@ class FakeDoseAlarmScheduler : DoseAlarmScheduler {
         doseId: Long,
         triggerAt: Instant,
     ) {
-        if (!canScheduleExact()) return
         graces[doseId] = triggerAt
     }
 

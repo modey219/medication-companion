@@ -40,10 +40,12 @@ import com.medcompanion.app.R
 import com.medcompanion.app.domain.model.DoseStatus
 import com.medcompanion.app.domain.model.FoodRelation
 import com.medcompanion.app.feature.medications.labelRes
+import com.medcompanion.app.ui.components.formatDate
 import com.medcompanion.app.ui.components.formatTime
 import com.medcompanion.app.ui.preview.ScreenPreviews
 import com.medcompanion.app.ui.theme.MedCompanionTheme
 import java.time.Instant
+import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
 
@@ -176,12 +178,34 @@ private fun TodayBody(
             }
 
         state.isEmpty ->
-            CenteredBox {
+            CenteredColumn {
                 Text(
                     text = stringResource(R.string.today_empty),
                     style = MaterialTheme.typography.bodyLarge,
                     textAlign = TextAlign.Center,
                 )
+                val nextDoseAt = state.nextDoseAt
+                if (nextDoseAt != null) {
+                    val context = LocalContext.current
+                    val local = nextDoseAt.atZone(ZoneId.systemDefault())
+                    val today = LocalDate.now()
+                    val dayLabel =
+                        when (local.toLocalDate()) {
+                            today -> stringResource(R.string.today_day_today)
+                            today.plusDays(1) -> stringResource(R.string.today_tomorrow)
+                            else -> local.toLocalDate().formatDate(context)
+                        }
+                    Text(
+                        text =
+                            stringResource(
+                                R.string.today_next_dose_hint,
+                                "$dayLabel ${local.toLocalTime().formatTime(context)}",
+                            ),
+                        style = MaterialTheme.typography.bodyMedium,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(top = 8.dp),
+                    )
+                }
             }
 
         else ->

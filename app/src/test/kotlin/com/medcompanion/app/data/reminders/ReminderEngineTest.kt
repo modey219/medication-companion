@@ -351,7 +351,7 @@ class ReminderEngineTest {
     // --- Degradation and reboot ---
 
     @Test
-    fun `without exact alarm access doses are still generated but no alarms are set`() =
+    fun `without exact alarm access doses are generated and alarms are still scheduled`() =
         runTest {
             medications.put(medication(id = 1))
             schedules.put(schedule(medicationId = 1, times = listOf(LocalTime.of(20, 0))))
@@ -360,8 +360,10 @@ class ReminderEngineTest {
             engine().refresh()
 
             assertTrue(doses.events.isNotEmpty())
-            assertTrue(alarms.reminders.isEmpty())
-            assertTrue(alarms.graces.isEmpty())
+            // D-008 rev. 2: the scheduler degrades to an inexact wakeup, so
+            // the engine must keep scheduling instead of skipping alarms.
+            assertEquals(doses.events.size, alarms.reminders.size)
+            assertEquals(doses.events.size, alarms.graces.size)
         }
 
     @Test

@@ -5,6 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.lifecycle.lifecycleScope
+import com.medcompanion.app.data.reminders.ReminderSetupNudge
 import com.medcompanion.app.domain.reminder.ReminderEngine
 import com.medcompanion.app.ui.MedCompanionRoot
 import com.medcompanion.app.ui.theme.MedCompanionTheme
@@ -18,12 +19,19 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var reminderEngine: ReminderEngine
 
+    @Inject
+    lateinit var setupNudge: ReminderSetupNudge
+
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+        // First launch only: open the setup screen once so the permission
+        // explanations come before any system dialog (AGENTS.md > Reminders).
+        val nudgeSetup = setupNudge.shouldNudge()
+        if (nudgeSetup) setupNudge.markNudged()
         setContent {
             MedCompanionTheme {
-                MedCompanionRoot()
+                MedCompanionRoot(nudgeReminderSetup = nudgeSetup)
             }
         }
     }
