@@ -12,6 +12,7 @@ import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -20,6 +21,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -27,6 +29,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -82,6 +85,7 @@ fun ReminderSetupScreen(
         },
         onExactAlarmClick = { openExactAlarmSettings(context) },
         onBatteryClick = { openBatteryOptimizationSettings(context) },
+        onHideNameToggle = viewModel::onHideNameToggle,
         modifier = modifier,
     )
 }
@@ -93,6 +97,7 @@ internal fun ReminderSetupContent(
     onNotificationsClick: () -> Unit,
     onExactAlarmClick: () -> Unit,
     onBatteryClick: () -> Unit,
+    onHideNameToggle: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var oemExpanded by remember { mutableStateOf(false) }
@@ -143,6 +148,12 @@ internal fun ReminderSetupContent(
                     color = MaterialTheme.colorScheme.primary,
                 )
             }
+        }
+        item(key = "lock_privacy") {
+            PrivacySwitchRow(
+                checked = state.hideNameOnLockScreen,
+                onCheckedChange = onHideNameToggle,
+            )
         }
         item(key = "oem_header") {
             Column {
@@ -230,6 +241,43 @@ private fun PermissionCard(
     }
 }
 
+@Composable
+private fun PrivacySwitchRow(
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Text(
+                    text = stringResource(R.string.reminders_lock_privacy_title),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                )
+                Text(
+                    text = stringResource(R.string.reminders_lock_privacy_desc),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Switch(
+                checked = checked,
+                onCheckedChange = onCheckedChange,
+            )
+        }
+    }
+}
+
 private fun appNotificationSettingsIntent(context: Context): Intent =
     Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
         .putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
@@ -264,6 +312,7 @@ private fun ReminderSetupPreview() {
             onNotificationsClick = {},
             onExactAlarmClick = {},
             onBatteryClick = {},
+            onHideNameToggle = {},
         )
     }
 }

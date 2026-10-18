@@ -154,8 +154,12 @@
     <string name="notification_channel_follow_up_name">متابعة الجرعات</string>
     <string name="notification_channel_follow_up_desc">تذكير لطيف إن لم تُسجَّل الجرعة.</string>
     <string name="notification_follow_up_text">لم تُسجَّل هذه الجرعة بعد. يمكنك تسجيلها عندما تكون جاهزًا.</string>
+    <!-- TODO(clinical-review): generic lock-screen wording, no drug name by user request. -->
+    <string name="notification_lock_title">تذكير بالجرعة</string>
 
     <!-- Reminder setup screen (T5). -->
+    <string name="reminders_lock_privacy_title">إخفاء اسم الدواء على شاشة القفل</string>
+    <string name="reminders_lock_privacy_desc">عند التفعيل يظهر على شاشة القفل إشعار عام بدون اسم الدواء.</string>
     <string name="reminders_setup_title">إعداد التذكيرات</string>
     <string name="reminders_setup_intro">لكي تصل تذكيرات الجرعات في وقتها، يحتاج التطبيق إلى بعض الأذونات.</string>
     <string name="reminders_setup_notifications_title">الإشعارات</string>

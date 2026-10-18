@@ -32,6 +32,7 @@ class DoseNotificationFactory
     @Inject
     constructor(
         @ApplicationContext context: Context,
+        private val lockSettings: ReminderLockSettings,
     ) {
         private val appContext = context.applicationContext
         private val notificationManager = NotificationManagerCompat.from(appContext)
@@ -49,6 +50,7 @@ class DoseNotificationFactory
             if (!notificationManager.areNotificationsEnabled()) return
             ensureChannels()
 
+            val channel = if (followUp) CHANNEL_FOLLOW_UP else CHANNEL_REMINDERS
             val header =
                 if (payload.strength.isBlank()) {
                     payload.medicationName
@@ -59,7 +61,7 @@ class DoseNotificationFactory
 
             val builder =
                 NotificationCompat
-                    .Builder(appContext, if (followUp) CHANNEL_FOLLOW_UP else CHANNEL_REMINDERS)
+                    .Builder(appContext, channel)
                     .setSmallIcon(R.drawable.ic_notification)
                     .setCategory(NotificationCompat.CATEGORY_REMINDER)
                     .setAutoCancel(true)
@@ -73,9 +75,25 @@ class DoseNotificationFactory
                     ).addAction(payload, ReminderActions.ACTION_TAKEN, R.string.action_take, 1)
                     .addAction(payload, ReminderActions.ACTION_SNOOZE, R.string.action_snooze, 2)
                     .addAction(payload, ReminderActions.ACTION_SKIP, R.string.action_skip, 3)
-                    .build()
 
-            notificationManager.notify(payload.doseId.toInt(), builder)
+            if (lockSettings.hideNameOnLockScreen()) {
+                // Lock screen shows a generic notice without the drug name;
+                // the shade keeps the full details. TODO(clinical-review).
+                builder
+                    .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
+                    .setPublicVersion(
+                        NotificationCompat
+                            .Builder(appContext, channel)
+                            .setSmallIcon(R.drawable.ic_notification)
+                            .setCategory(NotificationCompat.CATEGORY_REMINDER)
+                            .setAutoCancel(true)
+                            .setContentIntent(openAppIntent())
+                            .setContentTitle(appContext.getString(R.string.notification_lock_title))
+                            .build(),
+                    )
+            }
+
+            notificationManager.notify(payload.doseId.toInt(), builder.build())
         }
 
         private fun NotificationCompat.Builder.addAction(

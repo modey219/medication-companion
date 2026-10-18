@@ -2,6 +2,7 @@ package com.medcompanion.app.feature.reminders
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.medcompanion.app.data.reminders.ReminderLockSettings
 import com.medcompanion.app.domain.reminder.ReminderEngine
 import com.medcompanion.app.domain.reminder.ReminderPermissionChecker
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -11,11 +12,12 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-/** What the reminder setup screen shows; every flag is read from the system. */
+/** What the reminder setup screen shows; permission flags come from the system. */
 data class ReminderSetupUiState(
     val notificationsGranted: Boolean = false,
     val exactAlarmsGranted: Boolean = false,
     val batteryExempt: Boolean = false,
+    val hideNameOnLockScreen: Boolean = false,
 ) {
     val isComplete: Boolean
         get() = notificationsGranted && exactAlarmsGranted && batteryExempt
@@ -32,6 +34,7 @@ class ReminderSetupViewModel
     constructor(
         private val permissionChecker: ReminderPermissionChecker,
         private val reminderEngine: ReminderEngine,
+        private val lockSettings: ReminderLockSettings,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(ReminderSetupUiState())
         val uiState: StateFlow<ReminderSetupUiState> = _uiState.asStateFlow()
@@ -50,11 +53,17 @@ class ReminderSetupViewModel
                     notificationsGranted = permissionChecker.notificationsEnabled(),
                     exactAlarmsGranted = permissionChecker.exactAlarmsEnabled(),
                     batteryExempt = permissionChecker.batteryOptimizationExempt(),
+                    hideNameOnLockScreen = lockSettings.hideNameOnLockScreen(),
                 )
             val changed = next != _uiState.value
             _uiState.value = next
             if (changed && next.isComplete) {
                 viewModelScope.launch { reminderEngine.refresh() }
             }
+        }
+
+        fun onHideNameToggle(enabled: Boolean) {
+            lockSettings.setHideNameOnLockScreen(enabled)
+            _uiState.value = _uiState.value.copy(hideNameOnLockScreen = enabled)
         }
     }

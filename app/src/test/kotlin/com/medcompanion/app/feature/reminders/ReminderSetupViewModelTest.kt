@@ -1,10 +1,12 @@
 package com.medcompanion.app.feature.reminders
 
+import com.medcompanion.app.data.reminders.ReminderLockSettings
 import com.medcompanion.app.domain.reminder.ReminderEngine
 import com.medcompanion.app.domain.reminder.ReminderPermissionChecker
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -21,10 +23,12 @@ import org.junit.Test
 class ReminderSetupViewModelTest {
     private val permissionChecker: ReminderPermissionChecker = mockk()
     private val reminderEngine: ReminderEngine = mockk(relaxed = true)
+    private val lockSettings: ReminderLockSettings = mockk(relaxed = true)
 
     @Before
     fun setUp() {
         Dispatchers.setMain(UnconfinedTestDispatcher())
+        every { lockSettings.hideNameOnLockScreen() } returns false
     }
 
     @After
@@ -42,7 +46,7 @@ class ReminderSetupViewModelTest {
         every { permissionChecker.batteryOptimizationExempt() } returns battery
     }
 
-    private fun viewModel() = ReminderSetupViewModel(permissionChecker, reminderEngine)
+    private fun viewModel() = ReminderSetupViewModel(permissionChecker, reminderEngine, lockSettings)
 
     @Test
     fun `state mirrors the three system permissions`() {
@@ -98,4 +102,25 @@ class ReminderSetupViewModelTest {
             assertFalse(vm.uiState.value.isComplete)
             coVerify(exactly = 1) { reminderEngine.refresh() }
         }
+
+    @Test
+    fun `lock-screen hiding starts off and toggling persists the setting`() {
+        stubPermissions(notifications = true, exact = true, battery = true)
+        val vm = viewModel()
+        assertFalse(vm.uiState.value.hideNameOnLockScreen)
+
+        vm.onHideNameToggle(true)
+
+        assertTrue(vm.uiState.value.hideNameOnLockScreen)
+        verify { lockSettings.setHideNameOnLockScreen(true) }
+    }
+
+    @Test
+    fun `refresh re-reads the stored lock-screen setting`() {
+        every { lockSettings.hideNameOnLockScreen() } returns true
+        stubPermissions(notifications = true, exact = true, battery = true)
+        val vm = viewModel()
+
+        assertTrue(vm.uiState.value.hideNameOnLockScreen)
+    }
 }

@@ -147,8 +147,12 @@
     <string name="notification_channel_follow_up_name">Dose follow-up</string>
     <string name="notification_channel_follow_up_desc">A gentle reminder if a dose is not logged.</string>
     <string name="notification_follow_up_text">This dose is not logged yet. You can log it whenever you are ready.</string>
+    <!-- TODO(clinical-review): generic lock-screen wording, no drug name by user request. -->
+    <string name="notification_lock_title">Dose reminder</string>
 
     <!-- Reminder setup screen (T5). -->
+    <string name="reminders_lock_privacy_title">Hide medicine name on the lock screen</string>
+    <string name="reminders_lock_privacy_desc">When on, the lock screen shows a generic notice without the medicine name.</string>
     <string name="reminders_setup_title">Reminder setup</string>
     <string name="reminders_setup_intro">For dose reminders to arrive on time, the app needs a few permissions.</string>
     <string name="reminders_setup_notifications_title">Notifications</string>
