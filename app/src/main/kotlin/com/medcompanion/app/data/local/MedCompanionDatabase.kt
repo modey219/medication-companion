@@ -28,7 +28,7 @@ import com.medcompanion.app.data.local.entity.SymptomLogEntity
         SymptomLogEntity::class,
         ProfileEntryEntity::class,
     ],
-    version = 1,
+    version = 2,
     exportSchema = true,
 )
 @TypeConverters(Converters::class)

@@ -87,6 +87,20 @@
     <string name="field_dose_amount">كمية الجرعة</string>
     <string name="field_dose_amount_hint">مثال: قرص واحد</string>
     <string name="field_food_relation">العلاقة بالطعام</string>
+    <!-- TODO(clinical-review): stock/expiry wording and the low-stock hint
+         (must not read as advice about continuing treatment); the refill
+         message must stay a request to the pharmacy, never a recommendation. -->
+    <string name="field_stock_title">المخزون والتواريخ</string>
+    <string name="field_expiry_date">تاريخ انتهاء الصلاحية (اختياري)</string>
+    <string name="field_opened_date">تاريخ فتح العبوة (اختياري)</string>
+    <string name="field_remaining_doses">عدد الجرعات المتبقية (اختياري)</string>
+    <string name="field_remaining_doses_hint">مثال: 10</string>
+    <string name="meds_expiry">تاريخ انتهاء الصلاحية: %1$s</string>
+    <string name="meds_expired">انتهت الصلاحية</string>
+    <string name="meds_remaining">جرعات متبقية: %1$d</string>
+    <string name="meds_low_stock">المخزون منخفض — يُفضل طلب إعادة التعبئة</string>
+    <string name="action_refill_order">طلب إعادة تعبئة عبر واتساب</string>
+    <string name="refill_message">أود طلب إعادة تعبئة دواء %1$s، الرجاء تأكيد التكلفة والتوفر.</string>
 
     <!-- Medication forms (physical forms only, never a recommendation) -->
     <!-- TODO(clinical-review): form names -->

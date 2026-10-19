@@ -102,6 +102,9 @@ class MedicationEditViewModel
                         weekdays = schedule?.weekdays ?: it.weekdays,
                         doseAmount = schedule?.doseAmount ?: it.doseAmount,
                         foodRelation = schedule?.foodRelation ?: it.foodRelation,
+                        expiryDate = medication.expiryDate?.atZone(clock.zone())?.toLocalDate(),
+                        openedDate = medication.openedAt?.atZone(clock.zone())?.toLocalDate(),
+                        remainingDoses = medication.remainingDoses?.toString() ?: "",
                     )
                 }
             }
@@ -157,6 +160,13 @@ class MedicationEditViewModel
 
         fun onFoodRelationChange(value: FoodRelation) = updateState { it.copy(foodRelation = value) }
 
+        fun onExpiryDateChange(value: LocalDate?) = updateState { it.copy(expiryDate = value) }
+
+        fun onOpenedDateChange(value: LocalDate?) = updateState { it.copy(openedDate = value) }
+
+        fun onRemainingDosesChange(value: String) =
+            updateState { it.copy(remainingDoses = value.filter { c -> c.isDigit() }.take(5)) }
+
         fun save() {
             val state = _uiState.value
             val draft =
@@ -197,6 +207,13 @@ class MedicationEditViewModel
                             status = MedicationStatus.ACTIVE,
                             stopReason = null,
                             createdAt = existingCreatedAt ?: clock.now(),
+                            expiryDate = state.expiryDate?.atStartOfDay(zone)?.toInstant(),
+                            openedAt = state.openedDate?.atStartOfDay(zone)?.toInstant(),
+                            remainingDoses =
+                                state.remainingDoses
+                                    .trim()
+                                    .toIntOrNull()
+                                    ?.coerceAtLeast(0),
                         )
                     val schedule =
                         Schedule(

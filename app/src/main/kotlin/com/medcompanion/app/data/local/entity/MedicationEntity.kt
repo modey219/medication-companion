@@ -24,4 +24,8 @@ data class MedicationEntity(
     val status: MedicationStatus,
     val stopReason: String?,
     val createdAt: Instant,
+    // Phase 1 stock fields (migration 1 -> 2); null until the patient enters them.
+    val expiryDate: Instant? = null,
+    val openedAt: Instant? = null,
+    val remainingDoses: Int? = null,
 )

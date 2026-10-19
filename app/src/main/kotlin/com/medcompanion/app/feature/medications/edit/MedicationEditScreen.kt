@@ -100,6 +100,9 @@ fun MedicationEditScreen(
         onWeekdayToggled = viewModel::onWeekdayToggled,
         onDoseAmountChange = viewModel::onDoseAmountChange,
         onFoodRelationChange = viewModel::onFoodRelationChange,
+        onExpiryDateChange = viewModel::onExpiryDateChange,
+        onOpenedDateChange = viewModel::onOpenedDateChange,
+        onRemainingDosesChange = viewModel::onRemainingDosesChange,
         onSave = viewModel::save,
     )
 }
@@ -122,6 +125,9 @@ internal fun MedicationEditContent(
     onWeekdayToggled: (DayOfWeek) -> Unit,
     onDoseAmountChange: (String) -> Unit,
     onFoodRelationChange: (FoodRelation) -> Unit,
+    onExpiryDateChange: (LocalDate?) -> Unit = {},
+    onOpenedDateChange: (LocalDate?) -> Unit = {},
+    onRemainingDosesChange: (String) -> Unit = {},
     onSave: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -152,6 +158,9 @@ internal fun MedicationEditContent(
                 onWeekdayToggled = onWeekdayToggled,
                 onDoseAmountChange = onDoseAmountChange,
                 onFoodRelationChange = onFoodRelationChange,
+                onExpiryDateChange = onExpiryDateChange,
+                onOpenedDateChange = onOpenedDateChange,
+                onRemainingDosesChange = onRemainingDosesChange,
                 onSave = onSave,
                 modifier = modifier,
             )
@@ -176,6 +185,9 @@ private fun EditForm(
     onWeekdayToggled: (DayOfWeek) -> Unit,
     onDoseAmountChange: (String) -> Unit,
     onFoodRelationChange: (FoodRelation) -> Unit,
+    onExpiryDateChange: (LocalDate?) -> Unit,
+    onOpenedDateChange: (LocalDate?) -> Unit,
+    onRemainingDosesChange: (String) -> Unit,
     onSave: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -341,6 +353,32 @@ private fun EditForm(
                 onClick = { onFoodRelationChange(relation) },
             )
         }
+
+        SectionTitle(stringResource(R.string.field_stock_title))
+
+        DateField(
+            label = stringResource(R.string.field_expiry_date),
+            date = state.expiryDate,
+            onDateChange = onExpiryDateChange,
+            allowClear = true,
+        )
+
+        DateField(
+            label = stringResource(R.string.field_opened_date),
+            date = state.openedDate,
+            onDateChange = onOpenedDateChange,
+            allowClear = true,
+        )
+
+        OutlinedTextField(
+            value = state.remainingDoses,
+            onValueChange = onRemainingDosesChange,
+            label = { Text(stringResource(R.string.field_remaining_doses)) },
+            placeholder = { Text(stringResource(R.string.field_remaining_doses_hint)) },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            modifier = Modifier.fillMaxWidth(),
+        )
 
         if (state.saveFailed) {
             ErrorText(stringResource(R.string.error_save_failed))

@@ -111,6 +111,7 @@ class ReminderEngineImpl
             doseEventRepository.setStatus(doseId, status, clock.now())
             alarmScheduler.cancel(doseId)
             notificationFactory.cancel(doseId)
+            if (status == DoseStatus.TAKEN) decrementRemaining(doseId)
             if (status != DoseStatus.SNOOZED) return
 
             val now = clock.now()
@@ -121,6 +122,19 @@ class ReminderEngineImpl
             if (graceAt >= now) {
                 alarmScheduler.scheduleGrace(doseId, graceAt)
             }
+        }
+
+        /**
+         * Taking a dose consumes one unit when the patient tracks stock.
+         * `null` means the stock is not tracked; zero floors at zero so the
+         * count never goes negative (TODO(eng) T8: configurable threshold).
+         */
+        private suspend fun decrementRemaining(doseId: Long) {
+            val dose = doseEventRepository.getById(doseId) ?: return
+            val medication = medicationRepository.getById(dose.medicationId) ?: return
+            val remaining = medication.remainingDoses ?: return
+            if (remaining <= 0) return
+            medicationRepository.update(medication.copy(remainingDoses = remaining - 1))
         }
 
         override suspend fun onReminderFired(doseId: Long): DoseReminderPayload? {

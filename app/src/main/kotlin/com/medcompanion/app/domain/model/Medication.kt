@@ -19,4 +19,10 @@ data class Medication(
     val status: MedicationStatus = MedicationStatus.ACTIVE,
     val stopReason: String? = null,
     val createdAt: Instant,
+    /** Patient-entered expiry date (start of that day); null when unknown. */
+    val expiryDate: Instant? = null,
+    /** Patient-entered date the bottle/drops were opened; null when unknown. */
+    val openedAt: Instant? = null,
+    /** Doses left before refill; null means the patient is not tracking stock. */
+    val remainingDoses: Int? = null,
 )

@@ -31,6 +31,10 @@ data class MedicationEditUiState(
     val weekdays: Set<DayOfWeek> = emptySet(),
     val doseAmount: String = "",
     val foodRelation: FoodRelation = FoodRelation.ANY,
+    // Phase 1 stock fields; all optional (null/empty until entered).
+    val expiryDate: LocalDate? = null,
+    val openedDate: LocalDate? = null,
+    val remainingDoses: String = "",
     val errors: Set<DraftError> = emptySet(),
     val loadFailed: Boolean = false,
     val saveFailed: Boolean = false,

@@ -4,6 +4,48 @@ Short entries. Newest first. Format: ID, date, decision, why, status.
 
 ---
 
+## D-010 — Stock, expiry dates and refill request (Phase 1, F2)
+
+Date: 2026-10-19
+Status: Accepted (verified 2026-10-19: 159 tests, 0 failures; lint 0 errors)
+
+Decisions:
+1. `medications` gains three nullable columns (**migration 1 -> 2**):
+   `expiryDate`, `openedAt`, `remainingDoses`. All are patient-entered and
+   optional; `null` means "not provided / not tracking", never an assumption.
+2. Both dates are stored at the **start of the chosen calendar day** in the
+   user's zone (calendar dates, not intervals, so no half-open convention).
+   Device timezone changes can therefore shift them by a day; accepted for v1
+   (documented here), same trade-off as the schedule times.
+- Status: ONGOING
+- TODO(eng) T8: revisiting timezone-stable storage (e.g. store the ISO date
+  string) together with profiles and reminder settings.
+
+## D-009 — Hide the medicine name on the lock screen (Phase 1)
+
+Date: 2026-10-19
+Status: Accepted (verified 2026-10-19: assembleDebug + ktlintCheck +
+testDebugUnitTest + lintDebug pass — 149 tests, 0 failures; lint 0 errors /
+9 warnings, all previously accepted categories)
+
+Decision: a privacy toggle on the reminder setup screen (off by default,
+stored in SharedPreferences) makes dose notifications post a generic public
+version (`VISIBILITY_PRIVATE` + `setPublicVersion`) so the lock screen shows
+only "Dose reminder" instead of the medicine name. The expanded shade keeps
+the full details for the user.
+
+Why: AGENTS.md keeps all data on the device and treats medical data as
+private; a phone on a table should not reveal which medicine the patient
+takes.
+
+Notes:
+- The generic wording is marked TODO(clinical-review) like every medical
+  string.
+- The setting is read when each notification is posted, so toggling applies
+  to the next reminder without a restart.
+
+---
+
 ## D-008 — Dose reminders: exact alarms, generation and catch-up (T5)
 
 Date: 2026-10-18 (revisions 2026-10-19)

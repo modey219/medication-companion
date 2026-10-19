@@ -172,6 +172,54 @@ class MedicationEditViewModelTest {
     }
 
     @Test
+    fun `remaining doses input keeps digits only`() {
+        val vm = viewModel()
+
+        vm.onRemainingDosesChange("1a2 3!")
+
+        assertEquals("123", vm.uiState.value.remainingDoses)
+    }
+
+    @Test
+    fun `save stores stock dates at the start of the chosen day`() =
+        runTest {
+            val saved = mutableListOf<Medication>()
+            coEvery { medicationRepository.add(capture(saved)) } returns 11L
+            val vm = viewModel()
+            vm.onNameChange("Metformin")
+            vm.onDoseAmountChange("1 tablet")
+            vm.onTimeAdded(LocalTime.of(8, 0))
+            vm.onExpiryDateChange(LocalDate.of(2027, 3, 10))
+            vm.onOpenedDateChange(LocalDate.of(2026, 10, 17))
+            vm.onRemainingDosesChange("12")
+
+            vm.save()
+
+            val medication = saved.single()
+            assertEquals(Instant.parse("2027-03-10T00:00:00Z"), medication.expiryDate)
+            assertEquals(Instant.parse("2026-10-17T00:00:00Z"), medication.openedAt)
+            assertEquals(12, medication.remainingDoses)
+        }
+
+    @Test
+    fun `blank stock fields are stored as null`() =
+        runTest {
+            val saved = mutableListOf<Medication>()
+            coEvery { medicationRepository.add(capture(saved)) } returns 1L
+            val vm = viewModel()
+            vm.onNameChange("Metformin")
+            vm.onDoseAmountChange("1 tablet")
+            vm.onTimeAdded(LocalTime.of(8, 0))
+
+            vm.save()
+
+            val medication = saved.single()
+            assertNull(medication.expiryDate)
+            assertNull(medication.openedAt)
+            assertNull(medication.remainingDoses)
+        }
+
+    @Test
     fun `added times are sorted and deduplicated`() {
         val vm = viewModel()
 
@@ -273,6 +321,25 @@ class MedicationEditViewModelTest {
             coVerify { medicationRepository.update(match { it.id == 7L && it.strength == "850 mg" }) }
             coVerify { scheduleRepository.update(match { it.id == 73L && it.medicationId == 7L }) }
             coVerify(exactly = 0) { scheduleRepository.add(any()) }
+        }
+
+    @Test
+    fun `loading reads the stored stock fields`() =
+        runTest {
+            coEvery { medicationRepository.getById(7L) } returns
+                existingMedication()
+                    .copy(
+                        expiryDate = Instant.parse("2027-03-10T00:00:00Z"),
+                        openedAt = Instant.parse("2026-10-17T00:00:00Z"),
+                        remainingDoses = 4,
+                    )
+            coEvery { scheduleRepository.getByMedication(7L) } returns listOf(existingSchedule())
+
+            val state = viewModel(id = 7L).uiState.value
+
+            assertEquals(LocalDate.of(2027, 3, 10), state.expiryDate)
+            assertEquals(LocalDate.of(2026, 10, 17), state.openedDate)
+            assertEquals("4", state.remainingDoses)
         }
 
     @Test

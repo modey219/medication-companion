@@ -6,6 +6,7 @@ import com.medcompanion.app.domain.model.MedicationStatus
 import com.medcompanion.app.domain.model.ScheduleType
 import java.time.DayOfWeek
 import java.time.Instant
+import java.time.LocalDate
 import java.time.LocalTime
 
 /** Immutable UI state for the My medications tab. */
@@ -34,4 +35,9 @@ data class MedicationListItem(
     val intervalHours: Int?,
     val weekdays: Set<DayOfWeek>,
     val foodRelation: FoodRelation,
+    // Phase 1 stock data (null until the patient enters it).
+    val expiryDate: LocalDate? = null,
+    val remainingDoses: Int? = null,
+    val isExpired: Boolean = false,
+    val isLowStock: Boolean = false,
 )

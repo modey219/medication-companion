@@ -1,5 +1,7 @@
 package com.medcompanion.app.feature.medications
 
+import android.content.Context
+import android.content.Intent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -31,6 +33,7 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.medcompanion.app.R
@@ -38,9 +41,11 @@ import com.medcompanion.app.domain.model.FoodRelation
 import com.medcompanion.app.domain.model.MedicationForm
 import com.medcompanion.app.domain.model.MedicationStatus
 import com.medcompanion.app.domain.model.ScheduleType
+import com.medcompanion.app.ui.components.formatDate
 import com.medcompanion.app.ui.components.formatTime
 import com.medcompanion.app.ui.preview.ScreenPreviews
 import com.medcompanion.app.ui.theme.MedCompanionTheme
+import java.net.URLEncoder
 import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalTime
@@ -188,6 +193,7 @@ private fun MedicationCard(
     onEditClick: () -> Unit,
     onStopClick: (() -> Unit)?,
 ) {
+    val context = LocalContext.current
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(
             modifier = Modifier.padding(16.dp),
@@ -208,6 +214,7 @@ private fun MedicationCard(
                 style = MaterialTheme.typography.bodyMedium,
             )
             ScheduleSummary(item)
+            StockSummary(item, context)
             if (item.status == MedicationStatus.STOPPED && !item.stopReason.isNullOrBlank()) {
                 Text(
                     text = item.stopReason,
@@ -268,6 +275,65 @@ private fun ScheduleSummary(item: MedicationListItem) {
             style = MaterialTheme.typography.bodyMedium,
         )
     }
+}
+
+/**
+ * Expiry and stock lines. Expired / low-stock states use color AND text, never
+ * color alone (AGENTS.md > Accessibility).
+ */
+@Composable
+private fun StockSummary(
+    item: MedicationListItem,
+    context: Context,
+) {
+    item.expiryDate?.let { expiry ->
+        Text(
+            text = stringResource(R.string.meds_expiry, expiry.formatDate(context)),
+            style = MaterialTheme.typography.bodyMedium,
+            color = if (item.isExpired) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
+        )
+        if (item.isExpired) {
+            Text(
+                text = stringResource(R.string.meds_expired),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+            )
+        }
+    }
+    item.remainingDoses?.let { remaining ->
+        Text(
+            text = stringResource(R.string.meds_remaining, remaining),
+            style = MaterialTheme.typography.bodyMedium,
+        )
+        if (item.isLowStock && item.status == MedicationStatus.ACTIVE) {
+            Text(
+                text = stringResource(R.string.meds_low_stock),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+            )
+            OutlinedButton(
+                onClick = { openWhatsAppRefill(context, item.name) },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(stringResource(R.string.action_refill_order))
+            }
+        }
+    }
+}
+
+/**
+ * Opens WhatsApp with a pre-filled refill message to the pharmacy contact the
+ * patient picks (TODO(eng) T8: jump straight to a saved pharmacy number once
+ * profiles exist). Failures are silent: WhatsApp may not be installed.
+ */
+private fun openWhatsAppRefill(
+    context: Context,
+    medicationName: String,
+) {
+    val message = context.getString(R.string.refill_message, medicationName)
+    val uri =
+        "https://api.whatsapp.com/send?text=${URLEncoder.encode(message, "UTF-8")}".toUri()
+    runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, uri)) }
 }
 
 /** Resolves all weekday short names in composable context (no stringResource in lambdas). */

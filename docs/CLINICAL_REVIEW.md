@@ -68,6 +68,20 @@ English mirrors of every row above: `values-en/strings.xml` (same
 
 ---
 
+## Phase 1 - Lock-screen privacy and medication stock (2026-10-19)
+
+| Item | Location | Why flagged | Status |
+| --- | --- | --- | --- |
+| `notification_lock_title` ("تذكير بالجرعة" / "Dose reminder") | `values/strings.xml` (`TODO(clinical-review): generic lock-screen wording`) | Only text allowed to appear on a locked screen; must not name the medicine and must stay neutral | Open |
+| `reminders_lock_privacy_title` / `_desc` | `values/strings.xml` | Explains that the toggle hides the medicine name; wording must not imply the reminder itself becomes less safe | Open |
+| `field_stock_title`, `field_expiry_date`, `field_opened_date`, `field_remaining_doses` + `_hint` | `values/strings.xml` (`TODO(clinical-review): stock/expiry wording`) | Labelling patient-entered expiry/opened dates and remaining quantity; must not imply the app validates the medicine is still safe to use after the expiry date | Open |
+| `meds_expiry` / `meds_expired` ("انتهت الصلاحية" / "Expired") | `values/strings.xml` | Stating a medicine is expired is medical information; a clinician must confirm the wording does not suggest what to do about it | Open |
+| `meds_remaining` / `meds_low_stock` ("المخزون منخفض — يُفضل طلب إعادة التعبئة") | `values/strings.xml` | The low-stock hint borders on advice to refill; must not read as advice to keep taking or to change treatment | Open |
+| `action_refill_order` / `refill_message` (WhatsApp prefill) | `values/strings.xml`, `feature/medications/MedicationsScreen.kt` | Opens WhatsApp with a prefilled refill request to the patient's chosen contact; must stay a request for availability/price, never a prescription or a recommendation | Open |
+| Low-stock threshold constant (3 doses) and the rule that taking a dose decrements the tracked quantity | `feature/medications/MedicationsViewModel.kt`, `data/reminders/ReminderEngineImpl.kt` (both marked `TODO(eng) T8`/`TODO(clinical-review)` at the call site) | Patient-facing default; confirm it is sensible and that the decrement never implies the dose must be taken | Open |
+
+---
+
 ## T1 — Standing notices (2026-10-17)
 
 | Item | Location | Why flagged | Status |

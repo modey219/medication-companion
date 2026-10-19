@@ -2,6 +2,7 @@ package com.medcompanion.app.core.di
 
 import android.content.Context
 import androidx.room.Room
+import com.medcompanion.app.data.local.MIGRATION_1_2
 import com.medcompanion.app.data.local.MedCompanionDatabase
 import com.medcompanion.app.data.local.dao.DoseEventDao
 import com.medcompanion.app.data.local.dao.MedicationDao
@@ -26,6 +27,7 @@ object DatabaseModule {
     ): MedCompanionDatabase =
         Room
             .databaseBuilder(context, MedCompanionDatabase::class.java, MedCompanionDatabase.NAME)
+            .addMigrations(MIGRATION_1_2)
             .build()
 
     @Provides

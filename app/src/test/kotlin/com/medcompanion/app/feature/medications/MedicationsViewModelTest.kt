@@ -25,11 +25,13 @@ import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import java.time.DayOfWeek
 import java.time.Instant
+import java.time.LocalDate
 import java.time.LocalTime
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -128,6 +130,50 @@ class MedicationsViewModelTest {
         }
 
     @Test
+    fun `stock flags reflect expiry and low quantity`() =
+        runTest {
+            medications.value =
+                listOf(
+                    medication(
+                        id = 1,
+                        status = MedicationStatus.ACTIVE,
+                        expiryDate = Instant.parse("2026-10-01T00:00:00Z"),
+                        remainingDoses = 2,
+                    ),
+                    medication(
+                        id = 2,
+                        status = MedicationStatus.ACTIVE,
+                        expiryDate = Instant.parse("2027-01-01T00:00:00Z"),
+                        remainingDoses = 90,
+                    ),
+                    medication(id = 3, status = MedicationStatus.ACTIVE),
+                )
+
+            val items =
+                viewModel()
+                    .uiState
+                    .first { !it.isLoading }
+                    .active
+                    .associateBy { it.id }
+
+            val expiredLow = items.getValue(1L)
+            assertTrue(expiredLow.isExpired)
+            assertTrue(expiredLow.isLowStock)
+            assertEquals(LocalDate.of(2026, 10, 1), expiredLow.expiryDate)
+            assertEquals(2, expiredLow.remainingDoses)
+
+            val healthy = items.getValue(2L)
+            assertFalse(healthy.isExpired)
+            assertFalse(healthy.isLowStock)
+
+            val untracked = items.getValue(3L)
+            assertFalse(untracked.isExpired)
+            assertFalse(untracked.isLowStock)
+            assertNull(untracked.expiryDate)
+            assertNull(untracked.remainingDoses)
+        }
+
+    @Test
     fun `stop passes trimmed reason and the injected clock`() =
         runTest {
             val vm = viewModel()
@@ -179,6 +225,8 @@ class MedicationsViewModelTest {
         id: Long,
         name: String = "Medication $id",
         status: MedicationStatus,
+        expiryDate: Instant? = null,
+        remainingDoses: Int? = null,
     ) = Medication(
         id = id,
         name = name,
@@ -191,5 +239,8 @@ class MedicationsViewModelTest {
         status = status,
         stopReason = null,
         createdAt = Instant.parse("2026-10-01T00:00:00Z"),
+        expiryDate = expiryDate,
+        openedAt = null,
+        remainingDoses = remainingDoses,
     )
 }

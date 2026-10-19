@@ -80,6 +80,20 @@
     <string name="field_dose_amount">Dose amount</string>
     <string name="field_dose_amount_hint">e.g. one tablet</string>
     <string name="field_food_relation">Relation to food</string>
+    <!-- TODO(clinical-review): stock/expiry wording and the low-stock hint
+         (must not read as advice about continuing treatment); the refill
+         message must stay a request to the pharmacy, never a recommendation. -->
+    <string name="field_stock_title">Stock &amp; dates</string>
+    <string name="field_expiry_date">Expiry date (optional)</string>
+    <string name="field_opened_date">Opened date (optional)</string>
+    <string name="field_remaining_doses">Remaining doses (optional)</string>
+    <string name="field_remaining_doses_hint">e.g. 10</string>
+    <string name="meds_expiry">Expires: %1$s</string>
+    <string name="meds_expired">Expired</string>
+    <string name="meds_remaining">Remaining: %1$d</string>
+    <string name="meds_low_stock">Low stock — consider ordering a refill</string>
+    <string name="action_refill_order">Order refill via WhatsApp</string>
+    <string name="refill_message">I\'d like to order a refill for %1$s. Please confirm availability and price.</string>
 
     <!-- Medication forms (physical forms only, never a recommendation) -->
     <!-- TODO(clinical-review): form names -->

@@ -25,6 +25,9 @@ fun MedicationEntity.toDomain(): Medication =
         status = status,
         stopReason = stopReason,
         createdAt = createdAt,
+        expiryDate = expiryDate,
+        openedAt = openedAt,
+        remainingDoses = remainingDoses,
     )
 
 fun Medication.toEntity(): MedicationEntity =
@@ -40,6 +43,9 @@ fun Medication.toEntity(): MedicationEntity =
         status = status,
         stopReason = stopReason,
         createdAt = createdAt,
+        expiryDate = expiryDate,
+        openedAt = openedAt,
+        remainingDoses = remainingDoses,
     )
 
 fun ScheduleEntity.toDomain(): Schedule =

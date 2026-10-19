@@ -86,8 +86,10 @@ class MedicationsViewModel
             }
         }
 
-        private fun Medication.toListItem(schedule: Schedule?): MedicationListItem =
-            MedicationListItem(
+        private fun Medication.toListItem(schedule: Schedule?): MedicationListItem {
+            val today = clock.today()
+            val expiry = expiryDate?.atZone(clock.zone())?.toLocalDate()
+            return MedicationListItem(
                 id = id,
                 name = name,
                 strength = strength,
@@ -101,5 +103,15 @@ class MedicationsViewModel
                 intervalHours = schedule?.intervalHours,
                 weekdays = schedule?.weekdays.orEmpty(),
                 foodRelation = schedule?.foodRelation ?: FoodRelation.ANY,
+                expiryDate = expiry,
+                remainingDoses = remainingDoses,
+                isExpired = expiry != null && expiry.isBefore(today),
+                // TODO(eng) T8: make the low-stock threshold configurable.
+                isLowStock = remainingDoses != null && remainingDoses <= LOW_STOCK_THRESHOLD,
             )
+        }
+
+        private companion object {
+            const val LOW_STOCK_THRESHOLD = 3
+        }
     }

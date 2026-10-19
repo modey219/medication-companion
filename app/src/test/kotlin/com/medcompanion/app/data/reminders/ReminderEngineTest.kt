@@ -316,6 +316,62 @@ class ReminderEngineTest {
         }
 
     @Test
+    fun `taking a dose decrements the tracked remaining quantity`() =
+        runTest {
+            medications.put(medication(id = 1, remainingDoses = 5))
+            schedules.put(schedule(medicationId = 1, times = listOf(LocalTime.of(20, 0))))
+            val engine = engine()
+            engine.refresh()
+            val dose = doses.events.first()
+
+            engine.performAction(dose.id, DoseStatus.TAKEN)
+
+            assertEquals(4, medications.items.single().remainingDoses)
+        }
+
+    @Test
+    fun `doses that are not taken never change the remaining quantity`() =
+        runTest {
+            medications.put(medication(id = 1, remainingDoses = 5))
+            schedules.put(schedule(medicationId = 1, times = listOf(LocalTime.of(20, 0))))
+            val engine = engine()
+            engine.refresh()
+            val dose = doses.events.first()
+
+            engine.performAction(dose.id, DoseStatus.SKIPPED)
+
+            assertEquals(5, medications.items.single().remainingDoses)
+        }
+
+    @Test
+    fun `medications without tracked stock are left alone`() =
+        runTest {
+            medications.put(medication(id = 1, remainingDoses = null))
+            schedules.put(schedule(medicationId = 1, times = listOf(LocalTime.of(20, 0))))
+            val engine = engine()
+            engine.refresh()
+            val dose = doses.events.first()
+
+            engine.performAction(dose.id, DoseStatus.TAKEN)
+
+            assertNull(medications.items.single().remainingDoses)
+        }
+
+    @Test
+    fun `the remaining quantity never goes below zero`() =
+        runTest {
+            medications.put(medication(id = 1, remainingDoses = 0))
+            schedules.put(schedule(medicationId = 1, times = listOf(LocalTime.of(20, 0))))
+            val engine = engine()
+            engine.refresh()
+            val dose = doses.events.first()
+
+            engine.performAction(dose.id, DoseStatus.TAKEN)
+
+            assertEquals(0, medications.items.single().remainingDoses)
+        }
+
+    @Test
     fun `snoozing reschedules a reminder ten minutes later and keeps the grace alarm`() =
         runTest {
             medications.put(medication(id = 1))
@@ -405,6 +461,7 @@ class ReminderEngineTest {
         id: Long,
         name: String = "Medication $id",
         strength: String = "500 mg",
+        remainingDoses: Int? = null,
     ) = Medication(
         id = id,
         name = name,
@@ -417,6 +474,7 @@ class ReminderEngineTest {
         status = MedicationStatus.ACTIVE,
         stopReason = null,
         createdAt = Instant.parse("2026-10-01T00:00:00Z"),
+        remainingDoses = remainingDoses,
     )
 
     private fun schedule(
