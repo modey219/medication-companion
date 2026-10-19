@@ -69,8 +69,6 @@ app/src/main/kotlin/com/medcompanion/app/
 
 ## Privacy & Safety
 
-## Privacy & Safety
-
 - All health data stays on-device (except Assistant backend)
 - Automatic cloud backup is disabled (`allowBackup="false"` + extraction rules); the patient can export instead
 - Profile offers "Export my data" (JSON and PDF) and "Delete all my data"
@@ -88,7 +86,7 @@ app/src/main/kotlin/com/medcompanion/app/
 
 ## APK
 
-Latest debug APK: app-debug.apk (14.42 MB)
+Latest debug APK: app-debug.apk (15.19 MB)
 
 ## Links
 
@@ -97,7 +95,8 @@ Latest debug APK: app-debug.apk (14.42 MB)
 ## Notes
 
 - T1–T7 shipped and verified (foundation, data layer, medications, today, reminders, symptoms, history + PDF export)
-- T8a in progress: profile (allergies/conditions), first-run consent + privacy placeholder, language choice, emergency number, export/delete all data
-- T8b next: reminder preferences (grace period, snooze, repeat interval, low-stock, pharmacy number)
+- T8a shipped: profile (allergies/conditions), first-run consent + privacy placeholder, language choice, emergency number, export/delete all data
+- T8b in progress: patient reminder preferences (grace period, snooze, repeat interval), low-stock level and pharmacy number
+- T9/T10 next: the AI assistant (backend proxy, consent, emergency keyword check)
 - See docs/DECISIONS.md for key architectural decisions
 - See AGENTS.md for full specifications

@@ -319,4 +319,29 @@ TODO(legal): the privacy policy is a placeholder.
 <string name="data_pdf_counts">عدد الأدوية: %1$d، وعدد الأعراض المسجّلة: %2$d</string>
 <string name="data_pdf_medications_title">الأدوية ومواعيدها</string>
 <string name="data_pdf_every_hours">كل %1$d ساعة</string>
+    <!-- TODO(clinical-review): the reminder ranges and the wording of the
+         grace period, snooze and repeat cadence need clinical sign-off; the
+         grace period must never read as a deadline the patient failed. -->
+    <string name="reminders_preferences_title">تفضيلات التذكير</string>
+    <string name="reminders_preferences_desc">يمكنك تغيير مواعيد التذكير بما يناسبك. تُطبَّق التغييرات على الجرعات القادمة فوراً.</string>
+    <string name="reminders_grace_title">مدة الانتظار قبل اعتبار الجرعة فائتة</string>
+    <string name="reminders_grace_desc">الوقت بعد موعد الجرعة قبل أن يسجّلها التطبيق كفائتة.</string>
+    <string name="reminders_snooze_title">مدة التأجيل</string>
+    <string name="reminders_snooze_desc">المدة التي يؤجّل بها زر «تأجيل» الجرعة.</string>
+    <string name="reminders_repeat_title">الفاصل بين التذكيرات المتكرّرة</string>
+    <string name="reminders_repeat_desc">المدة بين التذكيرات المتكرّرة ما دامت الجرعة لم تُتَّخذ بعد وداخل مدة الانتظار.</string>
+    <string name="reminders_minutes_value">%1$d دقيقة</string>
+    <string name="action_increase">زيادة %1$s</string>
+    <string name="action_decrease">إنقاص %1$s</string>
+    <string name="profile_stock_title">الكمية المتبقية</string>
+    <string name="profile_stock_desc">تنبيه المخزون المنخفض يظهر على الأدوية النشطة فقط.</string>
+    <string name="profile_low_stock_title">حدّ تنبيه المخزون</string>
+    <string name="profile_low_stock_desc">عند وصول الجرعات المتبقية إلى هذا العدد يظهر تنبيه على الدواء.</string>
+    <string name="profile_low_stock_value">%1$d جرعة</string>
+    <string name="profile_pharmacy_title">الصيدلية</string>
+    <string name="profile_pharmacy_label">رقم الصيدلية (اختياري)</string>
+    <string name="profile_pharmacy_desc">إن أضفت الرقم يُرسَل طلب إعادة التعبئة إليه. إذا تركت الحقل فارغاً، يختار التطبيق صيدليتك في كل مرة.</string>
+    <string name="profile_pharmacy_hint">مثال: 01234567</string>
+    <string name="profile_stock_saved">تم الحفظ.</string>
+    <string name="profile_pharmacy_saved">تم حفظ رقم الصيدلية.</string>
 </resources>

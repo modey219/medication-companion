@@ -5,9 +5,12 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
+import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.medcompanion.app.domain.settings.AppLanguage
 import com.medcompanion.app.domain.settings.AppSettings
+import com.medcompanion.app.domain.settings.ReminderPreferences
 import com.medcompanion.app.domain.settings.SettingsRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
@@ -20,6 +23,9 @@ import javax.inject.Singleton
  * DataStore-backed settings (D-014). A read error falls back to the defaults
  * instead of crashing the app, which matters because settings are read on
  * startup before the first frame.
+ *
+ * The reminder and stock values are clamped on write and on read: a value that
+ * somehow ended up out of range can never reach the reminder engine.
  */
 @Singleton
 class DataStoreSettingsRepository
@@ -36,6 +42,23 @@ class DataStoreSettingsRepository
                         language = AppLanguage.fromTag(preferences[LANGUAGE]),
                         emergencyNumber = preferences[EMERGENCY_NUMBER].orEmpty(),
                         onboardingCompleted = preferences[ONBOARDING_COMPLETED] == true,
+                        graceMinutes =
+                            ReminderPreferences.clampGraceMinutes(
+                                preferences[GRACE_MINUTES] ?: ReminderPreferences.DEFAULT_GRACE_MINUTES,
+                            ),
+                        snoozeMinutes =
+                            ReminderPreferences.clampSnoozeMinutes(
+                                preferences[SNOOZE_MINUTES] ?: ReminderPreferences.DEFAULT_SNOOZE_MINUTES,
+                            ),
+                        repeatMinutes =
+                            ReminderPreferences.clampRepeatMinutes(
+                                preferences[REPEAT_MINUTES] ?: ReminderPreferences.DEFAULT_REPEAT_MINUTES,
+                            ),
+                        lowStockThreshold =
+                            ReminderPreferences.clampLowStockThreshold(
+                                preferences[LOW_STOCK_THRESHOLD] ?: ReminderPreferences.DEFAULT_LOW_STOCK_THRESHOLD,
+                            ),
+                        pharmacyNumber = preferences[PHARMACY_NUMBER].orEmpty(),
                     )
                 }
 
@@ -55,6 +78,36 @@ class DataStoreSettingsRepository
             }
         }
 
+        override suspend fun setGraceMinutes(minutes: Long) {
+            dataStore.edit { preferences ->
+                preferences[GRACE_MINUTES] = ReminderPreferences.clampGraceMinutes(minutes)
+            }
+        }
+
+        override suspend fun setSnoozeMinutes(minutes: Long) {
+            dataStore.edit { preferences ->
+                preferences[SNOOZE_MINUTES] = ReminderPreferences.clampSnoozeMinutes(minutes)
+            }
+        }
+
+        override suspend fun setRepeatMinutes(minutes: Long) {
+            dataStore.edit { preferences ->
+                preferences[REPEAT_MINUTES] = ReminderPreferences.clampRepeatMinutes(minutes)
+            }
+        }
+
+        override suspend fun setLowStockThreshold(doses: Int) {
+            dataStore.edit { preferences ->
+                preferences[LOW_STOCK_THRESHOLD] = ReminderPreferences.clampLowStockThreshold(doses)
+            }
+        }
+
+        override suspend fun setPharmacyNumber(number: String) {
+            dataStore.edit { preferences ->
+                preferences[PHARMACY_NUMBER] = number.trim()
+            }
+        }
+
         override suspend fun completeOnboarding() {
             dataStore.edit { preferences ->
                 preferences[ONBOARDING_COMPLETED] = true
@@ -63,9 +116,9 @@ class DataStoreSettingsRepository
 
         override suspend fun clear() {
             dataStore.edit { preferences ->
-                val consent = preferences[ONBOARDING_COMPLETED]
+                val consented = preferences[ONBOARDING_COMPLETED] == true
                 preferences.clear()
-                if (consent != null) preferences[ONBOARDING_COMPLETED] = consent
+                if (consented) preferences[ONBOARDING_COMPLETED] = true
             }
         }
 
@@ -73,5 +126,10 @@ class DataStoreSettingsRepository
             val LANGUAGE = stringPreferencesKey("language")
             val EMERGENCY_NUMBER = stringPreferencesKey("emergency_number")
             val ONBOARDING_COMPLETED = booleanPreferencesKey("onboarding_completed")
+            val GRACE_MINUTES = longPreferencesKey("reminder_grace_minutes")
+            val SNOOZE_MINUTES = longPreferencesKey("reminder_snooze_minutes")
+            val REPEAT_MINUTES = longPreferencesKey("reminder_repeat_minutes")
+            val LOW_STOCK_THRESHOLD = intPreferencesKey("low_stock_threshold")
+            val PHARMACY_NUMBER = stringPreferencesKey("pharmacy_number")
         }
     }

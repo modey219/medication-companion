@@ -46,7 +46,9 @@ import com.medcompanion.app.R
 import com.medcompanion.app.domain.model.ProfileEntry
 import com.medcompanion.app.domain.model.ProfileEntryType
 import com.medcompanion.app.domain.settings.AppLanguage
+import com.medcompanion.app.domain.settings.ReminderPreferences
 import com.medcompanion.app.ui.components.LanguageSelector
+import com.medcompanion.app.ui.components.ValueStepperRow
 import com.medcompanion.app.ui.preview.ScreenPreviews
 import com.medcompanion.app.ui.theme.MedCompanionTheme
 
@@ -100,6 +102,9 @@ internal data class ProfileActions(
     val onLanguageSelected: (AppLanguage) -> Unit,
     val onEmergencyNumberChange: (String) -> Unit,
     val onEmergencyNumberSave: () -> Unit,
+    val onLowStockThresholdChange: (Int) -> Unit,
+    val onPharmacyNumberChange: (String) -> Unit,
+    val onPharmacyNumberSave: () -> Unit,
     val onExportJson: () -> Unit,
     val onExportPdf: () -> Unit,
     val onDeleteAllRequested: () -> Unit,
@@ -117,6 +122,9 @@ internal data class ProfileActions(
         onLanguageSelected = viewModel::onLanguageSelected,
         onEmergencyNumberChange = viewModel::onEmergencyNumberChange,
         onEmergencyNumberSave = viewModel::onEmergencyNumberSave,
+        onLowStockThresholdChange = viewModel::onLowStockThresholdChange,
+        onPharmacyNumberChange = viewModel::onPharmacyNumberChange,
+        onPharmacyNumberSave = viewModel::onPharmacyNumberSave,
         onExportJson = viewModel::onExportJson,
         onExportPdf = viewModel::onExportPdf,
         onDeleteAllRequested = viewModel::onDeleteAllRequested,
@@ -188,6 +196,12 @@ internal fun ProfileContent(
             }
             item(key = "emergency") {
                 EmergencyNumberCard(state = state, actions = actions)
+            }
+            item(key = "stock") {
+                StockCard(state = state, actions = actions)
+            }
+            item(key = "pharmacy") {
+                PharmacyCard(state = state, actions = actions)
             }
             item(key = "data") {
                 DataCard(state = state, actions = actions)
@@ -310,6 +324,67 @@ private fun EmergencyNumberCard(
             if (state.isEmergencyNumberDirty) {
                 Button(
                     onClick = actions.onEmergencyNumberSave,
+                    modifier = Modifier.heightIn(min = 48.dp),
+                ) {
+                    Text(stringResource(R.string.action_save))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun StockCard(
+    state: ProfileUiState,
+    actions: ProfileActions,
+) {
+    val thresholdTitle = stringResource(R.string.profile_low_stock_title)
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            SectionHeading(stringResource(R.string.profile_stock_title))
+            BodyText(stringResource(R.string.profile_stock_desc))
+            ValueStepperRow(
+                title = thresholdTitle,
+                description = stringResource(R.string.profile_low_stock_desc),
+                valueText = stringResource(R.string.profile_low_stock_value, state.lowStockThreshold),
+                decreaseContentDescription = stringResource(R.string.action_decrease, thresholdTitle),
+                increaseContentDescription = stringResource(R.string.action_increase, thresholdTitle),
+                canDecrease = state.lowStockThreshold > ReminderPreferences.LOW_STOCK_THRESHOLD_RANGE.first,
+                canIncrease = state.lowStockThreshold < ReminderPreferences.LOW_STOCK_THRESHOLD_RANGE.last,
+                onDecrease = { actions.onLowStockThresholdChange(-1) },
+                onIncrease = { actions.onLowStockThresholdChange(1) },
+            )
+        }
+    }
+}
+
+@Composable
+private fun PharmacyCard(
+    state: ProfileUiState,
+    actions: ProfileActions,
+) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            SectionHeading(stringResource(R.string.profile_pharmacy_title))
+            OutlinedTextField(
+                value = state.pharmacyNumber,
+                onValueChange = actions.onPharmacyNumberChange,
+                label = { Text(stringResource(R.string.profile_pharmacy_label)) },
+                supportingText = { BodyText(stringResource(R.string.profile_pharmacy_desc)) },
+                placeholder = { Text(stringResource(R.string.profile_pharmacy_hint)) },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                modifier = Modifier.fillMaxWidth(),
+            )
+            if (state.isPharmacyNumberDirty) {
+                Button(
+                    onClick = actions.onPharmacyNumberSave,
                     modifier = Modifier.heightIn(min = 48.dp),
                 ) {
                     Text(stringResource(R.string.action_save))
@@ -507,6 +582,9 @@ private fun ProfilePreview() {
                     onLanguageSelected = {},
                     onEmergencyNumberChange = {},
                     onEmergencyNumberSave = {},
+                    onLowStockThresholdChange = {},
+                    onPharmacyNumberChange = {},
+                    onPharmacyNumberSave = {},
                     onExportJson = {},
                     onExportPdf = {},
                     onDeleteAllRequested = {},

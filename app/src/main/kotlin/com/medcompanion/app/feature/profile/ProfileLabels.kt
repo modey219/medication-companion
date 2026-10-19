@@ -43,6 +43,8 @@ fun AppLanguage.labelRes(): Int =
 fun ProfileMessage.messageRes(): Int =
     when (this) {
         ProfileMessage.EMERGENCY_NUMBER_SAVED -> R.string.profile_emergency_saved
+        ProfileMessage.STOCK_THRESHOLD_SAVED -> R.string.profile_stock_saved
+        ProfileMessage.PHARMACY_NUMBER_SAVED -> R.string.profile_pharmacy_saved
         ProfileMessage.DATA_DELETED -> R.string.profile_delete_confirmed
         ProfileMessage.EXPORT_FAILED -> R.string.profile_error_export
         ProfileMessage.DELETE_FAILED -> R.string.profile_error_delete

@@ -39,6 +39,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.medcompanion.app.R
+import com.medcompanion.app.domain.settings.ReminderPreferences
+import com.medcompanion.app.ui.components.ValueStepperRow
 import com.medcompanion.app.ui.preview.ScreenPreviews
 import com.medcompanion.app.ui.theme.MedCompanionTheme
 
@@ -86,6 +88,9 @@ fun ReminderSetupScreen(
         onExactAlarmClick = { openExactAlarmSettings(context) },
         onBatteryClick = { openBatteryOptimizationSettings(context) },
         onHideNameToggle = viewModel::onHideNameToggle,
+        onGraceMinutesChange = viewModel::onGraceMinutesChange,
+        onSnoozeMinutesChange = viewModel::onSnoozeMinutesChange,
+        onRepeatMinutesChange = viewModel::onRepeatMinutesChange,
         modifier = modifier,
     )
 }
@@ -98,6 +103,9 @@ internal fun ReminderSetupContent(
     onExactAlarmClick: () -> Unit,
     onBatteryClick: () -> Unit,
     onHideNameToggle: (Boolean) -> Unit,
+    onGraceMinutesChange: (Int) -> Unit,
+    onSnoozeMinutesChange: (Int) -> Unit,
+    onRepeatMinutesChange: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var oemExpanded by remember { mutableStateOf(false) }
@@ -153,6 +161,62 @@ internal fun ReminderSetupContent(
             PrivacySwitchRow(
                 checked = state.hideNameOnLockScreen,
                 onCheckedChange = onHideNameToggle,
+            )
+        }
+        item(key = "preferences_header") {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(
+                    text = stringResource(R.string.reminders_preferences_title),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                )
+                Text(
+                    text = stringResource(R.string.reminders_preferences_desc),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+        item(key = "grace") {
+            val title = stringResource(R.string.reminders_grace_title)
+            ValueStepperRow(
+                title = title,
+                description = stringResource(R.string.reminders_grace_desc),
+                valueText = stringResource(R.string.reminders_minutes_value, state.graceMinutes),
+                decreaseContentDescription = stringResource(R.string.action_decrease, title),
+                increaseContentDescription = stringResource(R.string.action_increase, title),
+                canDecrease = state.graceMinutes > ReminderPreferences.GRACE_MINUTES_RANGE.first,
+                canIncrease = state.graceMinutes < ReminderPreferences.GRACE_MINUTES_RANGE.last,
+                onDecrease = { onGraceMinutesChange(-1) },
+                onIncrease = { onGraceMinutesChange(1) },
+            )
+        }
+        item(key = "snooze") {
+            val title = stringResource(R.string.reminders_snooze_title)
+            ValueStepperRow(
+                title = title,
+                description = stringResource(R.string.reminders_snooze_desc),
+                valueText = stringResource(R.string.reminders_minutes_value, state.snoozeMinutes),
+                decreaseContentDescription = stringResource(R.string.action_decrease, title),
+                increaseContentDescription = stringResource(R.string.action_increase, title),
+                canDecrease = state.snoozeMinutes > ReminderPreferences.SNOOZE_MINUTES_RANGE.first,
+                canIncrease = state.snoozeMinutes < ReminderPreferences.SNOOZE_MINUTES_RANGE.last,
+                onDecrease = { onSnoozeMinutesChange(-1) },
+                onIncrease = { onSnoozeMinutesChange(1) },
+            )
+        }
+        item(key = "repeat") {
+            val title = stringResource(R.string.reminders_repeat_title)
+            ValueStepperRow(
+                title = title,
+                description = stringResource(R.string.reminders_repeat_desc),
+                valueText = stringResource(R.string.reminders_minutes_value, state.repeatMinutes),
+                decreaseContentDescription = stringResource(R.string.action_decrease, title),
+                increaseContentDescription = stringResource(R.string.action_increase, title),
+                canDecrease = state.repeatMinutes > ReminderPreferences.REPEAT_MINUTES_RANGE.first,
+                canIncrease = state.repeatMinutes < ReminderPreferences.REPEAT_MINUTES_RANGE.last,
+                onDecrease = { onRepeatMinutesChange(-1) },
+                onIncrease = { onRepeatMinutesChange(1) },
             )
         }
         item(key = "oem_header") {
@@ -313,6 +377,9 @@ private fun ReminderSetupPreview() {
             onExactAlarmClick = {},
             onBatteryClick = {},
             onHideNameToggle = {},
+            onGraceMinutesChange = {},
+            onSnoozeMinutesChange = {},
+            onRepeatMinutesChange = {},
         )
     }
 }

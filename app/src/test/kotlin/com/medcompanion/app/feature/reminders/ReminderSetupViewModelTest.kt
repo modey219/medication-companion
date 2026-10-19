@@ -3,6 +3,8 @@ package com.medcompanion.app.feature.reminders
 import com.medcompanion.app.data.reminders.ReminderLockSettings
 import com.medcompanion.app.domain.reminder.ReminderEngine
 import com.medcompanion.app.domain.reminder.ReminderPermissionChecker
+import com.medcompanion.app.domain.settings.FakeSettingsRepository
+import com.medcompanion.app.domain.settings.ReminderPreferences
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
@@ -14,6 +16,7 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -24,6 +27,7 @@ class ReminderSetupViewModelTest {
     private val permissionChecker: ReminderPermissionChecker = mockk()
     private val reminderEngine: ReminderEngine = mockk(relaxed = true)
     private val lockSettings: ReminderLockSettings = mockk(relaxed = true)
+    private val settings = FakeSettingsRepository()
 
     @Before
     fun setUp() {
@@ -46,7 +50,13 @@ class ReminderSetupViewModelTest {
         every { permissionChecker.batteryOptimizationExempt() } returns battery
     }
 
-    private fun viewModel() = ReminderSetupViewModel(permissionChecker, reminderEngine, lockSettings)
+    private fun viewModel() =
+        ReminderSetupViewModel(
+            permissionChecker = permissionChecker,
+            reminderEngine = reminderEngine,
+            lockSettings = lockSettings,
+            settingsRepository = settings,
+        )
 
     @Test
     fun `state mirrors the three system permissions`() {
@@ -123,4 +133,47 @@ class ReminderSetupViewModelTest {
 
         assertTrue(vm.uiState.value.hideNameOnLockScreen)
     }
+
+    @Test
+    fun `the stepper moves each reminder preference by its own step`() =
+        runTest {
+            stubPermissions(notifications = true, exact = true, battery = true)
+            val vm = viewModel()
+
+            vm.onGraceMinutesChange(+1)
+            vm.onSnoozeMinutesChange(+1)
+            vm.onRepeatMinutesChange(+1)
+
+            // defaults 60 / 10 / 5 with steps 15 / 5 / 5.
+            assertEquals(75, vm.uiState.value.graceMinutes)
+            assertEquals(15, vm.uiState.value.snoozeMinutes)
+            assertEquals(10, vm.uiState.value.repeatMinutes)
+        }
+
+    @Test
+    fun `a reminder preference change refreshes the alarms`() =
+        runTest {
+            stubPermissions(notifications = true, exact = true, battery = true)
+            val vm = viewModel()
+
+            vm.onSnoozeMinutesChange(+1)
+
+            assertEquals(15, settings.current.snoozeMinutes)
+            coVerify { reminderEngine.refresh() }
+        }
+
+    @Test
+    fun `the reminder preferences stay inside their allowed range`() =
+        runTest {
+            stubPermissions(notifications = true, exact = true, battery = true)
+            val vm = viewModel()
+
+            repeat(20) { vm.onGraceMinutesChange(-1) }
+            repeat(20) { vm.onSnoozeMinutesChange(+1) }
+            vm.onRepeatMinutesChange(-1)
+
+            assertEquals(ReminderPreferences.GRACE_MINUTES_RANGE.first, vm.uiState.value.graceMinutes)
+            assertEquals(ReminderPreferences.SNOOZE_MINUTES_RANGE.last, vm.uiState.value.snoozeMinutes)
+            assertEquals(ReminderPreferences.REPEAT_MINUTES_RANGE.first, vm.uiState.value.repeatMinutes)
+        }
 }

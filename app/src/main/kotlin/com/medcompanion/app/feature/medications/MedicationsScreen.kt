@@ -127,6 +127,7 @@ internal fun MedicationsContent(
                     title = activeTitle,
                     items = state.active,
                     showSection = state.active.isNotEmpty(),
+                    pharmacyNumber = state.pharmacyNumber,
                     onEditClick = onEditClick,
                     onStopClick = onStopClick,
                 )
@@ -134,6 +135,7 @@ internal fun MedicationsContent(
                     title = completedTitle,
                     items = state.completed,
                     showSection = state.completed.isNotEmpty(),
+                    pharmacyNumber = state.pharmacyNumber,
                     onEditClick = onEditClick,
                     onStopClick = null,
                 )
@@ -141,6 +143,7 @@ internal fun MedicationsContent(
                     title = stoppedTitle,
                     items = state.stopped,
                     showSection = state.stopped.isNotEmpty(),
+                    pharmacyNumber = state.pharmacyNumber,
                     onEditClick = onEditClick,
                     onStopClick = null,
                 )
@@ -153,6 +156,7 @@ private fun LazyListScope.section(
     title: String,
     items: List<MedicationListItem>,
     showSection: Boolean,
+    pharmacyNumber: String,
     onEditClick: (Long) -> Unit,
     onStopClick: ((MedicationListItem) -> Unit)?,
 ) {
@@ -163,6 +167,7 @@ private fun LazyListScope.section(
     items(items, key = { it.id }) { item ->
         MedicationCard(
             item = item,
+            pharmacyNumber = pharmacyNumber,
             onEditClick = { onEditClick(item.id) },
             onStopClick =
                 if (onStopClick != null) {
@@ -190,6 +195,7 @@ private fun SectionHeader(text: String) {
 @Composable
 private fun MedicationCard(
     item: MedicationListItem,
+    pharmacyNumber: String,
     onEditClick: () -> Unit,
     onStopClick: (() -> Unit)?,
 ) {
@@ -214,7 +220,7 @@ private fun MedicationCard(
                 style = MaterialTheme.typography.bodyMedium,
             )
             ScheduleSummary(item)
-            StockSummary(item, context)
+            StockSummary(item, context, pharmacyNumber)
             if (item.status == MedicationStatus.STOPPED && !item.stopReason.isNullOrBlank()) {
                 Text(
                     text = item.stopReason,
@@ -285,6 +291,7 @@ private fun ScheduleSummary(item: MedicationListItem) {
 private fun StockSummary(
     item: MedicationListItem,
     context: Context,
+    pharmacyNumber: String,
 ) {
     item.expiryDate?.let { expiry ->
         Text(
@@ -312,7 +319,7 @@ private fun StockSummary(
                 color = MaterialTheme.colorScheme.error,
             )
             OutlinedButton(
-                onClick = { openWhatsAppRefill(context, item.name) },
+                onClick = { openWhatsAppRefill(context, item.name, pharmacyNumber) },
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text(stringResource(R.string.action_refill_order))
@@ -322,17 +329,26 @@ private fun StockSummary(
 }
 
 /**
- * Opens WhatsApp with a pre-filled refill message to the pharmacy contact the
- * patient picks (TODO(eng) T8: jump straight to a saved pharmacy number once
- * profiles exist). Failures are silent: WhatsApp may not be installed.
+ * Opens WhatsApp with a pre-filled refill message. When the patient saved a
+ * pharmacy number in the Profile tab the request goes straight to it, otherwise
+ * WhatsApp asks the patient which contact to use. The message is a request to
+ * the pharmacy, never a recommendation about the medication. Failures are
+ * silent: WhatsApp may not be installed.
  */
 private fun openWhatsAppRefill(
     context: Context,
     medicationName: String,
+    pharmacyNumber: String,
 ) {
     val message = context.getString(R.string.refill_message, medicationName)
+    val encoded = URLEncoder.encode(message, "UTF-8")
+    val pharmacy = pharmacyNumber.filter { it.isDigit() || it == '+' }
     val uri =
-        "https://api.whatsapp.com/send?text=${URLEncoder.encode(message, "UTF-8")}".toUri()
+        if (pharmacy.isBlank()) {
+            "https://api.whatsapp.com/send?text=$encoded".toUri()
+        } else {
+            "https://api.whatsapp.com/send?phone=$pharmacy&text=$encoded".toUri()
+        }
     runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, uri)) }
 }
 

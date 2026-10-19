@@ -10,6 +10,7 @@ import com.medcompanion.app.domain.repository.ProfileRepository
 import com.medcompanion.app.domain.settings.AppLanguage
 import com.medcompanion.app.domain.settings.AppSettings
 import com.medcompanion.app.domain.settings.FakeSettingsRepository
+import com.medcompanion.app.domain.settings.ReminderPreferences
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -218,5 +219,34 @@ class ProfileViewModelTest {
         viewModel.onEntryDelete(entry)
 
         coVerify(exactly = 1) { profileRepository.delete(entry) }
+    }
+
+    @Test
+    fun `the low-stock stepper saves immediately and stays in range`() {
+        val viewModel = viewModel()
+
+        viewModel.onLowStockThresholdChange(+1)
+        assertEquals(4, settings.current.lowStockThreshold)
+
+        repeat(20) { viewModel.onLowStockThresholdChange(+1) }
+
+        assertEquals(ReminderPreferences.LOW_STOCK_THRESHOLD_RANGE.last, settings.current.lowStockThreshold)
+        assertEquals(ProfileMessage.STOCK_THRESHOLD_SAVED, viewModel.uiState.value.message)
+        assertEquals(settings.current.lowStockThreshold, viewModel.uiState.value.lowStockThreshold)
+    }
+
+    @Test
+    fun `the pharmacy number is written only when the patient saves it`() {
+        val viewModel = viewModel()
+
+        viewModel.onPharmacyNumberChange("  01234567  ")
+        assertEquals("", settings.current.pharmacyNumber)
+        assertTrue(viewModel.uiState.value.isPharmacyNumberDirty)
+
+        viewModel.onPharmacyNumberSave()
+
+        assertEquals("01234567", settings.current.pharmacyNumber)
+        assertEquals(ProfileMessage.PHARMACY_NUMBER_SAVED, viewModel.uiState.value.message)
+        assertFalse(viewModel.uiState.value.isPharmacyNumberDirty)
     }
 }

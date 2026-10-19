@@ -3,9 +3,10 @@ package com.medcompanion.app.feature.profile
 import com.medcompanion.app.domain.model.ProfileEntry
 import com.medcompanion.app.domain.model.ProfileEntryType
 import com.medcompanion.app.domain.settings.AppLanguage
+import com.medcompanion.app.domain.settings.ReminderPreferences
 
 /**
- * State of the Profile tab (T8a). The screen is stateless: everything it
+ * State of the Profile tab (T8a, T8b). The screen is stateless: everything it
  * shows comes from here, and every change goes back through the ViewModel.
  */
 data class ProfileUiState(
@@ -14,6 +15,9 @@ data class ProfileUiState(
     val language: AppLanguage = AppLanguage.SYSTEM,
     val emergencyNumber: String = "",
     val isEmergencyNumberDirty: Boolean = false,
+    val lowStockThreshold: Int = ReminderPreferences.DEFAULT_LOW_STOCK_THRESHOLD,
+    val pharmacyNumber: String = "",
+    val isPharmacyNumberDirty: Boolean = false,
     val isExporting: Boolean = false,
     val share: ProfileShare? = null,
     val isDeleteConfirmVisible: Boolean = false,
@@ -51,6 +55,8 @@ data class EntryDialogState(
 /** One-line feedback (snackbar), never a medical statement. */
 enum class ProfileMessage {
     EMERGENCY_NUMBER_SAVED,
+    STOCK_THRESHOLD_SAVED,
+    PHARMACY_NUMBER_SAVED,
     DATA_DELETED,
     EXPORT_FAILED,
     DELETE_FAILED,

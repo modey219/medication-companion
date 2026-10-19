@@ -4,6 +4,48 @@ Short entries. Newest first. Format: ID, date, decision, why, status.
 
 ---
 
+## D-017 — Patient-editable reminder and stock preferences (T8b)
+
+Decision: the patient can change five values, all stored in the same DataStore as
+the other settings:
+
+- **Grace period** (default 60 min, 15–180 in steps of 15): how long after the
+  dose time the dose still counts as unacted before it becomes MISSED.
+- **Snooze length** (default 10 min, 5–60 in steps of 5): what the notification's
+  Snooze action adds to the dose time.
+- **Repeat cadence** (default 5 min, 5–30 in steps of 5): the gap between repeated
+  reminders while the dose is unacted and still inside the grace period.
+- **Low-stock level** (default 3 doses, 1–10): the remaining-dose count at which
+  an active medication shows the low-stock hint.
+- **Pharmacy number** (free text, optional): where the WhatsApp refill request goes;
+  empty means the patient picks the contact each time.
+
+1. Values are entered with bounded **± steppers** (`ui/components/ValueStepper.kt`),
+   never typed. The ranges are narrow and reviewed (ReminderPreferences), so a dose
+   can never be silently marked MISSED because of an accidental keystroke.
+2. Clamping happens in the repository on every write (`ReminderPreferences.clamp*`),
+   so a value read back from disk is always usable even if it was written by an
+   older version.
+3. `ReminderEngineImpl` reads the settings on every pass instead of caching them:
+   the engine already re-reads the clock on every pass, so alarms can never fire
+   on a value the patient has since changed.
+4. Changing the grace, snooze, or repeat value refreshes the engine in the same step
+   (`ReminderSetupViewModel.updatePreferences`), because those three decide when the
+   already-scheduled alarms fire.
+5. The reminder preferences live on the reminder setup screen (they are reminder
+   behaviour); the low-stock level and the pharmacy number live in the Profile tab
+   next to the other patient facts.
+
+Why: AGENTS.md asks for a configurable grace period and snooze, and gives the app a
+low-stock hint and a pharmacy refill request. Putting them in the settings keeps the
+same single source of truth as the language and the emergency number, and the stepper
+removes the failure mode of a typed value. The defaults and ranges are provisional
+until clinical review (see CLINICAL_REVIEW.md).
+
+Status: implemented; defaults and ranges pending clinical review.
+
+---
+
 ## D-014 — Patient settings and "delete all my data" (T8a)
 
 Date: 2026-10-19

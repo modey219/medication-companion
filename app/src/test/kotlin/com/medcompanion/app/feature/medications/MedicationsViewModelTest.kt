@@ -11,6 +11,7 @@ import com.medcompanion.app.domain.model.ScheduleType
 import com.medcompanion.app.domain.reminder.ReminderEngine
 import com.medcompanion.app.domain.repository.MedicationRepository
 import com.medcompanion.app.domain.repository.ScheduleRepository
+import com.medcompanion.app.domain.settings.FakeSettingsRepository
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
@@ -40,6 +41,7 @@ class MedicationsViewModelTest {
     private val medicationRepository: MedicationRepository = mockk(relaxed = true)
     private val scheduleRepository: ScheduleRepository = mockk(relaxed = true)
     private val reminderEngine: ReminderEngine = mockk(relaxed = true)
+    private val settings = FakeSettingsRepository()
     private val medications = MutableStateFlow<List<Medication>>(emptyList())
     private val schedules = MutableStateFlow<Map<Long, List<Schedule>>>(emptyMap())
 
@@ -62,6 +64,7 @@ class MedicationsViewModelTest {
             medicationRepository = medicationRepository,
             scheduleRepository = scheduleRepository,
             reminderEngine = reminderEngine,
+            settingsRepository = settings,
             clock = clock,
         )
 
@@ -171,6 +174,25 @@ class MedicationsViewModelTest {
             assertFalse(untracked.isLowStock)
             assertNull(untracked.expiryDate)
             assertNull(untracked.remainingDoses)
+        }
+
+    @Test
+    fun `the low-stock level and the pharmacy number come from the patient settings`() =
+        runTest {
+            settings.setLowStockThreshold(5)
+            settings.setPharmacyNumber("01234567")
+            medications.value =
+                listOf(
+                    medication(id = 1, status = MedicationStatus.ACTIVE, remainingDoses = 4),
+                    medication(id = 2, status = MedicationStatus.ACTIVE, remainingDoses = 6),
+                )
+
+            val state = viewModel().uiState.first { !it.isLoading }
+
+            // 4 is at or below the chosen level of 5; 6 is above it.
+            assertTrue(state.active.single { it.id == 1L }.isLowStock)
+            assertFalse(state.active.single { it.id == 2L }.isLowStock)
+            assertEquals("01234567", state.pharmacyNumber)
         }
 
     @Test

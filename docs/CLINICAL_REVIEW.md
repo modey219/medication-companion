@@ -78,8 +78,8 @@ English mirrors of every row above: `values-en/strings.xml` (same
 | `meds_expiry` / `meds_expired` ("انتهت الصلاحية" / "Expired") | `values/strings.xml` | Stating a medicine is expired is medical information; a clinician must confirm the wording does not suggest what to do about it | Open |
 | `meds_remaining` / `meds_low_stock` ("المخزون منخفض — يُفضل طلب إعادة التعبئة") | `values/strings.xml` | The low-stock hint borders on advice to refill; must not read as advice to keep taking or to change treatment | Open |
 | `action_refill_order` / `refill_message` (WhatsApp prefill) | `values/strings.xml`, `feature/medications/MedicationsScreen.kt` | Opens WhatsApp with a prefilled refill request to the patient's chosen contact; must stay a request for availability/price, never a prescription or a recommendation | Open |
-| Low-stock threshold constant (3 doses) and the rule that taking a dose decrements the tracked quantity | `feature/medications/MedicationsViewModel.kt`, `data/reminders/ReminderEngineImpl.kt` (both marked `TODO(eng) T8`/`TODO(clinical-review)` at the call site) | Patient-facing default; confirm it is sensible and that the decrement never implies the dose must be taken | Open |
-| Repeat reminder cadence (every 5 minutes while unacted, within the 60 minute grace period) | `core/reminder/ReminderDefaults.kt` (`REPEAT_INTERVAL_MINUTES`), `data/reminders/ReminderEngineImpl.kt` | Reminder frequency for the target users; confirm it is helpful rather than distressing, and that repeats stop at the grace boundary | Open |
+| Low-stock threshold level (default 3 doses, now patient-changeable 1–10) and the rule that taking a dose decrements the tracked quantity | `domain/settings/ReminderPreferences.kt`, `feature/medications/MedicationsViewModel.kt`, `data/reminders/ReminderEngineImpl.kt` (superseded by the T8b row below) | Patient-facing default; confirm it is sensible and that the decrement never implies the dose must be taken | Open |
+| Repeat reminder cadence (default every 5 minutes while unacted, now patient-changeable 5–30, inside the grace period) | `domain/settings/ReminderPreferences.kt`, `data/reminders/ReminderEngineImpl.kt` (superseded by the T8b row below) | Reminder frequency for the target users; confirm it is helpful rather than distressing, and that repeats stop at the grace boundary | Open |
 
 ---
 
@@ -126,6 +126,25 @@ English mirrors of every row above: `values-en/strings.xml` (same
 | Export wording: `profile_export_json`, `profile_export_pdf`, `profile_export_note`, `profile_export_share_title`, `data_pdf_title`, `data_pdf_counts`, `data_pdf_medications_title`, `data_pdf_every_hours` | `values/strings.xml`, `data/export/DataPdfContent.kt`, `data/export/DataJsonExporter.kt` | The exported document is read by a clinician; the wording and the "every N hours" phrasing must be accurate | Open |
 | Decision: the export lists what the patient entered and never interprets it; the safety footer is the same as the History export | `docs/DECISIONS.md` D-014 point 4; `data/export/DataPdfContent.kt` | Confirm no interpretation is expected, and that reusing the History footer (including its "not a substitute for professional advice" line) is right for the my-data document | Open |
 | Decision: the app language may be changed by the patient (`language_system`, `language_arabic`, `language_english`) | `docs/DECISIONS.md` D-015; `ui/components/LanguageSelector.kt` | The Arabic option is labelled in Arabic and the English one in English, so neither relies on translation; confirm this is not confusing for the elderly target user | Open |
+
+English mirrors of every row above: `values-en/strings.xml` (same
+`TODO(clinical-review)` comments).
+
+---
+
+## T8b — Patient-editable reminder and stock preferences (2026-10-19)
+
+| Item | Location | Why flagged | Status |
+| --- | --- | --- | --- |
+| Grace-period wording: `reminders_grace_title`, `reminders_grace_desc` | `values/strings.xml`, `feature/reminders/ReminderSetupScreen.kt` | Describes the time before a dose counts as MISSED; must never read as a deadline the patient failed, and "فائتة"/"missed" must stay factual | Open |
+| Snooze wording: `reminders_snooze_title`, `reminders_snooze_desc` | `values/strings.xml`, `feature/reminders/ReminderSetupScreen.kt` | Explains what the Snooze action does; must not imply the delayed dose is now safe or unsafe | Open |
+| Repeat-cadence wording: `reminders_repeat_title`, `reminders_repeat_desc` | `values/strings.xml`, `feature/reminders/ReminderSetupScreen.kt` | Explains repeated reminders inside the grace period; frequency for elderly patients needs sign-off | Open |
+| Preferences heading and value copy: `reminders_preferences_title`, `reminders_preferences_desc`, `reminders_minutes_value` | `values/strings.xml`, `feature/reminders/ReminderSetupScreen.kt` | Sets expectation that changing these affects future reminders; wording must be plain and calm | Open |
+| Reminder ranges and defaults: grace 15–180 (default 60, step 15), snooze 5–60 (default 10, step 5), repeat 5–30 (default 5, step 5) | `domain/settings/ReminderPreferences.kt`, `docs/DECISIONS.md` D-017 | The exact numbers a patient can choose; a clinician must confirm the bounds are safe and useful (e.g. that a 180-minute grace or a 5-minute repeat is acceptable) | Open |
+| Stepper descriptions: `action_increase`, `action_decrease` (used for the steppers' TalkBack labels) | `values/strings.xml`, `ui/components/ValueStepper.kt`, `feature/profile/ProfileScreen.kt` | Read aloud by TalkBack as "Increase/Decrease <value>"; confirm the phrasing is understandable without sight of the number | Open |
+| Low-stock level wording and range: `profile_stock_title`, `profile_stock_desc`, `profile_low_stock_title`, `profile_low_stock_desc`, `profile_low_stock_value`, default 3, range 1–10 | `values/strings.xml`, `feature/profile/ProfileScreen.kt`, `domain/settings/ReminderPreferences.kt` | Patient sets when the refill hint appears; must not read as advice to stop or continue treatment | Open |
+| Pharmacy wording: `profile_pharmacy_title`, `profile_pharmacy_label`, `profile_pharmacy_desc`, `profile_pharmacy_hint`, `profile_pharmacy_saved` | `values/strings.xml`, `feature/profile/ProfileScreen.kt` | The saved number is where the WhatsApp refill request is sent; the copy must make clear it is optional and only used for refill requests | Open |
+| Decision: the refill request is a plain availability/price request and never a prescription or a recommendation; the saved number only changes the recipient | `feature/medications/MedicationsScreen.kt` (`openWhatsAppRefill`), `docs/DECISIONS.md` D-017 | Confirm the request wording and the "starts a chat, never sends by itself" behaviour are acceptable | Open |
 
 English mirrors of every row above: `values-en/strings.xml` (same
 `TODO(clinical-review)` comments).

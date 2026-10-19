@@ -10,6 +10,7 @@ import com.medcompanion.app.domain.model.ProfileEntry
 import com.medcompanion.app.domain.model.ProfileEntryType
 import com.medcompanion.app.domain.repository.ProfileRepository
 import com.medcompanion.app.domain.settings.AppLanguage
+import com.medcompanion.app.domain.settings.ReminderPreferences
 import com.medcompanion.app.domain.settings.SettingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
@@ -45,15 +46,22 @@ class ProfileViewModel
         init {
             viewModelScope.launch {
                 settingsRepository.observe().collect { settings ->
-                    _uiState.update { state ->
-                        state.copy(
+                    _uiState.update { current ->
+                        current.copy(
                             isLoading = false,
                             language = settings.language,
                             emergencyNumber =
-                                if (state.isEmergencyNumberDirty) {
-                                    state.emergencyNumber
+                                if (current.isEmergencyNumberDirty) {
+                                    current.emergencyNumber
                                 } else {
                                     settings.emergencyNumber
+                                },
+                            lowStockThreshold = settings.lowStockThreshold,
+                            pharmacyNumber =
+                                if (current.isPharmacyNumberDirty) {
+                                    current.pharmacyNumber
+                                } else {
+                                    settings.pharmacyNumber
                                 },
                         )
                     }
@@ -86,6 +94,33 @@ class ProfileViewModel
                 settingsRepository.setEmergencyNumber(number)
                 _uiState.update {
                     it.copy(isEmergencyNumberDirty = false, message = ProfileMessage.EMERGENCY_NUMBER_SAVED)
+                }
+            }
+        }
+
+        /**
+         * Steps the low-stock threshold. It is applied immediately (there is
+         * nothing to type), so the medications screen follows in the same pass.
+         */
+        fun onLowStockThresholdChange(steps: Int) {
+            val next =
+                _uiState.value.lowStockThreshold + steps * ReminderPreferences.LOW_STOCK_STEP
+            viewModelScope.launch {
+                settingsRepository.setLowStockThreshold(next)
+                _uiState.update { it.copy(message = ProfileMessage.STOCK_THRESHOLD_SAVED) }
+            }
+        }
+
+        fun onPharmacyNumberChange(number: String) {
+            _uiState.update { it.copy(pharmacyNumber = number, isPharmacyNumberDirty = true) }
+        }
+
+        fun onPharmacyNumberSave() {
+            val number = _uiState.value.pharmacyNumber
+            viewModelScope.launch {
+                settingsRepository.setPharmacyNumber(number)
+                _uiState.update {
+                    it.copy(isPharmacyNumberDirty = false, message = ProfileMessage.PHARMACY_NUMBER_SAVED)
                 }
             }
         }

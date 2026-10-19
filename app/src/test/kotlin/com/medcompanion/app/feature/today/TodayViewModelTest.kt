@@ -15,6 +15,7 @@ import com.medcompanion.app.domain.reminder.ReminderPermissionChecker
 import com.medcompanion.app.domain.repository.DoseEventRepository
 import com.medcompanion.app.domain.repository.MedicationRepository
 import com.medcompanion.app.domain.repository.ScheduleRepository
+import com.medcompanion.app.domain.settings.FakeSettingsRepository
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -47,6 +48,7 @@ class TodayViewModelTest {
     private val scheduleRepository: ScheduleRepository = mockk(relaxed = true)
     private val reminderEngine: ReminderEngine = mockk(relaxed = true)
     private val permissionChecker: ReminderPermissionChecker = mockk(relaxed = true)
+    private val settings = FakeSettingsRepository()
     private val doses = MutableStateFlow<List<DoseEvent>>(emptyList())
     private val nextDose = MutableStateFlow<DoseEvent?>(null)
     private val medications = MutableStateFlow<List<Medication>>(emptyList())
@@ -75,6 +77,7 @@ class TodayViewModelTest {
             scheduleRepository = scheduleRepository,
             reminderEngine = reminderEngine,
             permissionChecker = permissionChecker,
+            settingsRepository = settings,
             clock = clock,
             ticker = ticker,
         )
@@ -257,6 +260,32 @@ class TodayViewModelTest {
         }
 
     // --- Actions ---
+
+    @Test
+    fun `the snooze end follows the snooze length the patient chose`() =
+        runTest(timeout = 10.seconds) {
+            settings.setSnoozeMinutes(20)
+            medications.value = listOf(medication(id = 1))
+            doses.value =
+                listOf(
+                    dose(
+                        id = 10,
+                        medicationId = 1,
+                        at = "2026-10-17T11:50:00Z",
+                        status = DoseStatus.SNOOZED,
+                        actedAt = Instant.parse("2026-10-17T11:50:00Z"),
+                    ),
+                )
+
+            val row =
+                awaitLoaded(viewModel())
+                    .groups
+                    .single()
+                    .doses
+                    .single()
+
+            assertEquals(Instant.parse("2026-10-17T12:10:00Z"), row.snoozedUntil)
+        }
 
     @Test
     fun `actions go through the reminder engine`() =

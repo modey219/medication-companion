@@ -10,6 +10,7 @@ import com.medcompanion.app.domain.model.Schedule
 import com.medcompanion.app.domain.reminder.ReminderEngine
 import com.medcompanion.app.domain.repository.MedicationRepository
 import com.medcompanion.app.domain.repository.ScheduleRepository
+import com.medcompanion.app.domain.settings.SettingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.SharingStarted
@@ -34,6 +35,7 @@ class MedicationsViewModel
         private val medicationRepository: MedicationRepository,
         private val scheduleRepository: ScheduleRepository,
         private val reminderEngine: ReminderEngine,
+        private val settingsRepository: SettingsRepository,
         private val clock: AppClock,
     ) : ViewModel() {
         val uiState: StateFlow<MedicationsUiState> =
@@ -53,13 +55,15 @@ class MedicationsViewModel
                             medications to schedulePairs.toMap()
                         }
                     }
-                }.map { (medications, schedules) ->
-                    val items = medications.map { it.toListItem(schedules[it.id]) }
+                }.combine(settingsRepository.observe()) { (medications, schedules), settings ->
+                    val items =
+                        medications.map { it.toListItem(schedules[it.id], settings.lowStockThreshold) }
                     MedicationsUiState(
                         isLoading = false,
                         active = items.filter { it.status == MedicationStatus.ACTIVE },
                         completed = items.filter { it.status == MedicationStatus.COMPLETED },
                         stopped = items.filter { it.status == MedicationStatus.STOPPED },
+                        pharmacyNumber = settings.pharmacyNumber,
                     )
                 }.stateIn(
                     scope = viewModelScope,
@@ -86,7 +90,10 @@ class MedicationsViewModel
             }
         }
 
-        private fun Medication.toListItem(schedule: Schedule?): MedicationListItem {
+        private fun Medication.toListItem(
+            schedule: Schedule?,
+            lowStockThreshold: Int,
+        ): MedicationListItem {
             val today = clock.today()
             val expiry = expiryDate?.atZone(clock.zone())?.toLocalDate()
             return MedicationListItem(
@@ -106,12 +113,7 @@ class MedicationsViewModel
                 expiryDate = expiry,
                 remainingDoses = remainingDoses,
                 isExpired = expiry != null && expiry.isBefore(today),
-                // TODO(eng) T8: make the low-stock threshold configurable.
-                isLowStock = remainingDoses != null && remainingDoses <= LOW_STOCK_THRESHOLD,
+                isLowStock = remainingDoses != null && remainingDoses <= lowStockThreshold,
             )
-        }
-
-        private companion object {
-            const val LOW_STOCK_THRESHOLD = 3
         }
     }

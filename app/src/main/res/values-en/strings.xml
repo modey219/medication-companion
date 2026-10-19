@@ -312,5 +312,30 @@ TODO(legal): the privacy policy is a placeholder.
 <string name="data_pdf_counts">Medications: %1$d, recorded symptoms: %2$d</string>
 <string name="data_pdf_medications_title">Medications and schedules</string>
 <string name="data_pdf_every_hours">Every %1$d hours</string>
+    <!-- TODO(clinical-review): the reminder ranges and the wording of the
+         grace period, snooze and repeat cadence need clinical sign-off; the
+         grace period must never read as a deadline the patient failed. -->
+    <string name="reminders_preferences_title">Reminder preferences</string>
+    <string name="reminders_preferences_desc">You can change when reminders come to suit you. Changes apply to the coming doses right away.</string>
+    <string name="reminders_grace_title">Waiting time before a dose counts as missed</string>
+    <string name="reminders_grace_desc">The time after the dose time before the app records it as missed.</string>
+    <string name="reminders_snooze_title">Snooze length</string>
+    <string name="reminders_snooze_desc">How long the "Snooze" button postpones the dose.</string>
+    <string name="reminders_repeat_title">Gap between repeated reminders</string>
+    <string name="reminders_repeat_desc">The time between repeated reminders while the dose is still not acted on and inside the waiting time.</string>
+    <string name="reminders_minutes_value">%1$d min</string>
+    <string name="action_increase">Increase %1$s</string>
+    <string name="action_decrease">Decrease %1$s</string>
+    <string name="profile_stock_title">Remaining quantity</string>
+    <string name="profile_stock_desc">The low-stock hint only appears on active medications.</string>
+    <string name="profile_low_stock_title">Low-stock alert level</string>
+    <string name="profile_low_stock_desc">When the remaining doses reach this number, the medication shows a hint.</string>
+    <string name="profile_low_stock_value">%1$d doses</string>
+    <string name="profile_pharmacy_title">Pharmacy</string>
+    <string name="profile_pharmacy_label">Pharmacy number (optional)</string>
+    <string name="profile_pharmacy_desc">If you add the number, the refill request goes to it. If you leave the field empty, the app asks you to pick your pharmacy each time.</string>
+    <string name="profile_pharmacy_hint">For example: 01234567</string>
+    <string name="profile_stock_saved">Saved.</string>
+    <string name="profile_pharmacy_saved">Pharmacy number saved.</string>
 </resources>
 

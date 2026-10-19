@@ -2,7 +2,6 @@ package com.medcompanion.app.data.reminders
 
 import com.medcompanion.app.core.reminder.ReminderDefaults
 import com.medcompanion.app.core.time.AppClock
-import com.medcompanion.app.core.time.SnoozeDefaults
 import com.medcompanion.app.domain.model.DoseEvent
 import com.medcompanion.app.domain.model.DoseStatus
 import com.medcompanion.app.domain.model.FoodRelation
@@ -13,6 +12,8 @@ import com.medcompanion.app.domain.reminder.ReminderEngine
 import com.medcompanion.app.domain.repository.DoseEventRepository
 import com.medcompanion.app.domain.repository.MedicationRepository
 import com.medcompanion.app.domain.repository.ScheduleRepository
+import com.medcompanion.app.domain.settings.AppSettings
+import com.medcompanion.app.domain.settings.SettingsRepository
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.first
 import java.time.Instant
@@ -28,6 +29,10 @@ import javax.inject.Singleton
  * app start and inside receivers, where a database hiccup must degrade into
  * missing rescheduling rather than a crash. See D-008 in docs/DECISIONS.md
  * for the reconcile and missed-dose rules.
+ *
+ * The grace period, the snooze length and the repeat cadence come from the
+ * patient's settings (T8b, D-017) and are re-read on every pass, so changing a
+ * value takes effect on the next refresh without restarting the app.
  */
 @Singleton
 class ReminderEngineImpl
@@ -38,10 +43,14 @@ class ReminderEngineImpl
         private val scheduleRepository: ScheduleRepository,
         private val alarmScheduler: DoseAlarmScheduler,
         private val notificationFactory: DoseNotificationFactory,
+        private val settingsRepository: SettingsRepository,
         private val clock: AppClock,
     ) : ReminderEngine {
         override suspend fun refresh() {
             try {
+                val settings = settingsRepository.observe().first()
+                val graceSeconds = settings.graceSeconds()
+                val snoozeSeconds = settings.snoozeSeconds()
                 val now = clock.now()
                 val zone = clock.zone()
                 val windowStart = now.atZone(zone).toLocalDate()
@@ -50,7 +59,7 @@ class ReminderEngineImpl
                         .plusDays(ReminderDefaults.GENERATION_WINDOW_DAYS)
                         .atStartOfDay(zone)
                         .toInstant()
-                val graceCutoff = now.minusSeconds(GRACE_SECONDS)
+                val graceCutoff = now.minusSeconds(graceSeconds)
 
                 val medications = medicationRepository.observeAll().first()
                 val schedules = scheduleRepository.observeAll().first()
@@ -69,14 +78,14 @@ class ReminderEngineImpl
                 // Missed-dose catch-up after sleep or a device that was off:
                 // silent by design, because the grace alarm owns the single
                 // gentle follow-up and may not have fired.
-                catchUpOverdue(graceCutoff)
+                catchUpOverdue(graceCutoff, snoozeSeconds)
 
                 // Live snoozes are found by action time, not scheduled time, so
                 // a reboot right after snoozing an overdue dose still reminds.
                 val liveSnoozes =
                     doseEventRepository
                         .getByStatusBefore(DoseStatus.SNOOZED, now)
-                        .filter { (it.actedAt ?: it.scheduledAt).plusSeconds(SNOOZE_SECONDS) >= now }
+                        .filter { (it.actedAt ?: it.scheduledAt).plusSeconds(snoozeSeconds) >= now }
                 val unacted =
                     (doseEventRepository.getBetween(graceCutoff, windowEnd) + liveSnoozes)
                         .distinctBy { it.id }
@@ -84,14 +93,14 @@ class ReminderEngineImpl
                 unacted.forEach { dose ->
                     val reminderAt =
                         if (dose.status == DoseStatus.SNOOZED) {
-                            (dose.actedAt ?: dose.scheduledAt).plusSeconds(SNOOZE_SECONDS)
+                            (dose.actedAt ?: dose.scheduledAt).plusSeconds(snoozeSeconds)
                         } else {
                             dose.scheduledAt
                         }
                     // A reminder whose time passed while the device was off fires
                     // at the next refresh instead of vanishing.
                     alarmScheduler.scheduleReminder(dose.id, maxOf(reminderAt, now))
-                    val graceAt = dose.scheduledAt.plusSeconds(GRACE_SECONDS)
+                    val graceAt = dose.scheduledAt.plusSeconds(graceSeconds)
                     if (graceAt >= now) {
                         alarmScheduler.scheduleGrace(dose.id, graceAt)
                     }
@@ -114,11 +123,12 @@ class ReminderEngineImpl
             if (status == DoseStatus.TAKEN) decrementRemaining(doseId)
             if (status != DoseStatus.SNOOZED) return
 
+            val settings = settingsRepository.observe().first()
             val now = clock.now()
             val dose = doseEventRepository.getById(doseId) ?: return
-            val snoozeEnd = (dose.actedAt ?: now).plusSeconds(SNOOZE_SECONDS)
+            val snoozeEnd = (dose.actedAt ?: now).plusSeconds(settings.snoozeSeconds())
             alarmScheduler.scheduleReminder(doseId, maxOf(snoozeEnd, now))
-            val graceAt = dose.scheduledAt.plusSeconds(GRACE_SECONDS)
+            val graceAt = dose.scheduledAt.plusSeconds(settings.graceSeconds())
             if (graceAt >= now) {
                 alarmScheduler.scheduleGrace(doseId, graceAt)
             }
@@ -127,7 +137,7 @@ class ReminderEngineImpl
         /**
          * Taking a dose consumes one unit when the patient tracks stock.
          * `null` means the stock is not tracked; zero floors at zero so the
-         * count never goes negative (TODO(eng) T8: configurable threshold).
+         * count never goes negative.
          */
         private suspend fun decrementRemaining(doseId: Long) {
             val dose = doseEventRepository.getById(doseId) ?: return
@@ -139,18 +149,19 @@ class ReminderEngineImpl
 
         /**
          * A reminder that fired while the dose is still unacted is repeated
-         * every [ReminderDefaults.REPEAT_INTERVAL_MINUTES] until the patient
-         * acts or the grace period ends; the repeat is a fresh alarm for the
-         * same dose, so acting on the notification cancels it like any other.
+         * every `repeatMinutes` until the patient acts or the grace period
+         * ends; the repeat is a fresh alarm for the same dose, so acting on the
+         * notification cancels it like any other.
          */
         override suspend fun onReminderFired(doseId: Long): DoseReminderPayload? {
+            val settings = settingsRepository.observe().first()
             val now = clock.now()
             val dose = doseEventRepository.getById(doseId) ?: return null
             if (dose.status != DoseStatus.PENDING && dose.status != DoseStatus.SNOOZED) return null
-            val graceAt = dose.scheduledAt.plusSeconds(GRACE_SECONDS)
+            val graceAt = dose.scheduledAt.plusSeconds(settings.graceSeconds())
             if (graceAt >= now) {
                 alarmScheduler.scheduleGrace(doseId, graceAt)
-                val repeatAt = now.plusSeconds(REPEAT_SECONDS)
+                val repeatAt = now.plusSeconds(settings.repeatSeconds())
                 if (repeatAt <= graceAt) {
                     alarmScheduler.scheduleReminder(doseId, repeatAt)
                 }
@@ -194,14 +205,17 @@ class ReminderEngineImpl
         }
 
         /** PENDING past its grace, or SNOOZED whose snooze expired after grace. */
-        private suspend fun catchUpOverdue(graceCutoff: Instant) {
+        private suspend fun catchUpOverdue(
+            graceCutoff: Instant,
+            snoozeSeconds: Long,
+        ) {
             val now = clock.now()
             val overdue =
                 doseEventRepository.getByStatusBefore(DoseStatus.PENDING, graceCutoff) +
                     doseEventRepository
                         .getByStatusBefore(DoseStatus.SNOOZED, graceCutoff)
                         .filter { dose ->
-                            val snoozeEnd = (dose.actedAt ?: dose.scheduledAt).plusSeconds(SNOOZE_SECONDS)
+                            val snoozeEnd = (dose.actedAt ?: dose.scheduledAt).plusSeconds(snoozeSeconds)
                             snoozeEnd <= now
                         }
             overdue.forEach { dose -> doseEventRepository.setStatus(dose.id, DoseStatus.MISSED, null) }
@@ -219,9 +233,13 @@ class ReminderEngineImpl
             )
         }
 
+        private fun AppSettings.graceSeconds(): Long = graceMinutes * SECONDS_PER_MINUTE
+
+        private fun AppSettings.snoozeSeconds(): Long = snoozeMinutes * SECONDS_PER_MINUTE
+
+        private fun AppSettings.repeatSeconds(): Long = repeatMinutes * SECONDS_PER_MINUTE
+
         private companion object {
-            const val GRACE_SECONDS = ReminderDefaults.GRACE_PERIOD_MINUTES * 60
-            const val SNOOZE_SECONDS = SnoozeDefaults.DEFAULT_SNOOZE_MINUTES * 60
-            const val REPEAT_SECONDS = ReminderDefaults.REPEAT_INTERVAL_MINUTES * 60
+            const val SECONDS_PER_MINUTE = 60L
         }
     }

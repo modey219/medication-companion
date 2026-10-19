@@ -15,6 +15,8 @@ data class MedicationsUiState(
     val active: List<MedicationListItem> = emptyList(),
     val completed: List<MedicationListItem> = emptyList(),
     val stopped: List<MedicationListItem> = emptyList(),
+    /** The pharmacy the refill request goes to; empty means the patient picks. */
+    val pharmacyNumber: String = "",
 ) {
     val isEmpty: Boolean
         get() = !isLoading && active.isEmpty() && completed.isEmpty() && stopped.isEmpty()

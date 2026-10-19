@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.test.core.app.ApplicationProvider
 import com.medcompanion.app.domain.settings.AppLanguage
+import com.medcompanion.app.domain.settings.ReminderPreferences
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -96,10 +97,15 @@ class DataStoreSettingsRepositoryTest {
         }
 
     @Test
-    fun `clearing resets the settings but keeps the consent record`() =
+    fun `clearing resets everything except the first-run consent record`() =
         runTest {
             repository.setLanguage(AppLanguage.ENGLISH)
             repository.setEmergencyNumber("997")
+            repository.setGraceMinutes(30)
+            repository.setSnoozeMinutes(20)
+            repository.setRepeatMinutes(15)
+            repository.setLowStockThreshold(5)
+            repository.setPharmacyNumber("01234567")
             repository.completeOnboarding()
 
             repository.clear()
@@ -107,6 +113,49 @@ class DataStoreSettingsRepositoryTest {
             val settings = repository.observe().first()
             assertEquals(AppLanguage.SYSTEM, settings.language)
             assertEquals("", settings.emergencyNumber)
+            assertEquals(ReminderPreferences.DEFAULT_GRACE_MINUTES, settings.graceMinutes)
+            assertEquals(ReminderPreferences.DEFAULT_SNOOZE_MINUTES, settings.snoozeMinutes)
+            assertEquals(ReminderPreferences.DEFAULT_REPEAT_MINUTES, settings.repeatMinutes)
+            assertEquals(ReminderPreferences.DEFAULT_LOW_STOCK_THRESHOLD, settings.lowStockThreshold)
+            assertEquals("", settings.pharmacyNumber)
             assertTrue(settings.onboardingCompleted)
+        }
+
+    @Test
+    fun `the reminder and stock preferences round-trip through the store`() =
+        runTest {
+            repository.setGraceMinutes(30)
+            repository.setSnoozeMinutes(20)
+            repository.setRepeatMinutes(15)
+            repository.setLowStockThreshold(5)
+
+            val settings = repository.observe().first()
+            assertEquals(30, settings.graceMinutes)
+            assertEquals(20, settings.snoozeMinutes)
+            assertEquals(15, settings.repeatMinutes)
+            assertEquals(5, settings.lowStockThreshold)
+        }
+
+    @Test
+    fun `out-of-range reminder values are clamped on write`() =
+        runTest {
+            repository.setGraceMinutes(1000)
+            repository.setSnoozeMinutes(1)
+            repository.setRepeatMinutes(99)
+            repository.setLowStockThreshold(0)
+
+            val settings = repository.observe().first()
+            assertEquals(ReminderPreferences.GRACE_MINUTES_RANGE.last, settings.graceMinutes)
+            assertEquals(ReminderPreferences.SNOOZE_MINUTES_RANGE.first, settings.snoozeMinutes)
+            assertEquals(ReminderPreferences.REPEAT_MINUTES_RANGE.last, settings.repeatMinutes)
+            assertEquals(ReminderPreferences.LOW_STOCK_THRESHOLD_RANGE.first, settings.lowStockThreshold)
+        }
+
+    @Test
+    fun `the pharmacy number is stored trimmed`() =
+        runTest {
+            repository.setPharmacyNumber("  01234567  ")
+
+            assertEquals("01234567", repository.observe().first().pharmacyNumber)
         }
 }

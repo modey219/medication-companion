@@ -10,6 +10,7 @@ import com.medcompanion.app.domain.model.MedicationStatus
 import com.medcompanion.app.domain.model.Schedule
 import com.medcompanion.app.domain.model.ScheduleType
 import com.medcompanion.app.domain.repository.MedicationRepository
+import com.medcompanion.app.domain.settings.FakeSettingsRepository
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -36,6 +37,7 @@ class ReminderEngineTest {
     private val medications = FakeMedicationRepository()
     private val schedules = FakeScheduleRepository()
     private val alarms = FakeDoseAlarmScheduler()
+    private val settings = FakeSettingsRepository()
     private val notifications = mockk<DoseNotificationFactory>(relaxed = true)
 
     private fun engine() =
@@ -45,6 +47,7 @@ class ReminderEngineTest {
             scheduleRepository = schedules,
             alarmScheduler = alarms,
             notificationFactory = notifications,
+            settingsRepository = settings,
             clock = clock,
         )
 
@@ -474,6 +477,48 @@ class ReminderEngineTest {
             assertFalse(alarms.graces.containsKey(dose.id))
         }
 
+    // --- Patient reminder preferences ---
+
+    @Test
+    fun `the grace period and snooze length come from the patient settings`() =
+        runTest {
+            settings.setGraceMinutes(30)
+            settings.setSnoozeMinutes(20)
+            medications.put(medication(id = 1))
+            schedules.put(schedule(medicationId = 1, times = listOf(LocalTime.of(20, 0))))
+            val engine = engine()
+
+            engine.refresh()
+
+            val dose = doses.events.single { it.scheduledAt == Instant.parse("2026-10-17T20:00:00Z") }
+            // Grace 30 min instead of the default 60.
+            assertEquals(Instant.parse("2026-10-17T20:30:00Z"), alarms.graces[dose.id])
+
+            clock.setNow(Instant.parse("2026-10-17T20:00:00Z"))
+            engine.performAction(dose.id, DoseStatus.SNOOZED)
+
+            // Snooze 20 min instead of the default 10.
+            assertEquals(Instant.parse("2026-10-17T20:20:00Z"), alarms.reminders[dose.id])
+        }
+
+    @Test
+    fun `the repeat cadence comes from the patient settings`() =
+        runTest {
+            settings.setRepeatMinutes(15)
+            medications.put(medication(id = 1))
+            schedules.put(schedule(medicationId = 1, times = listOf(LocalTime.of(20, 0))))
+            val engine = engine()
+            engine.refresh()
+            val dose = doses.events.single { it.scheduledAt == Instant.parse("2026-10-17T20:00:00Z") }
+            clock.setNow(Instant.parse("2026-10-17T20:00:00Z"))
+            alarms.clear()
+
+            engine.onReminderFired(dose.id)
+
+            // 15 min instead of the default 5.
+            assertEquals(Instant.parse("2026-10-17T20:15:00Z"), alarms.reminders[dose.id])
+        }
+
     // --- Degradation and reboot ---
 
     @Test
@@ -521,6 +566,7 @@ class ReminderEngineTest {
                     scheduleRepository = schedules,
                     alarmScheduler = alarms,
                     notificationFactory = notifications,
+                    settingsRepository = settings,
                     clock = clock,
                 )
 

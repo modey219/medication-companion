@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.medcompanion.app.core.di.PeriodicTicker
 import com.medcompanion.app.core.time.AppClock
-import com.medcompanion.app.core.time.SnoozeDefaults
 import com.medcompanion.app.domain.model.DoseEvent
 import com.medcompanion.app.domain.model.DoseStatus
 import com.medcompanion.app.domain.model.Medication
@@ -14,6 +13,8 @@ import com.medcompanion.app.domain.reminder.ReminderPermissionChecker
 import com.medcompanion.app.domain.repository.DoseEventRepository
 import com.medcompanion.app.domain.repository.MedicationRepository
 import com.medcompanion.app.domain.repository.ScheduleRepository
+import com.medcompanion.app.domain.settings.AppSettings
+import com.medcompanion.app.domain.settings.SettingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -48,6 +49,7 @@ class TodayViewModel
         private val scheduleRepository: ScheduleRepository,
         private val reminderEngine: ReminderEngine,
         private val permissionChecker: ReminderPermissionChecker,
+        private val settingsRepository: SettingsRepository,
         private val clock: AppClock,
         @PeriodicTicker private val ticker: Flow<Instant>,
     ) : ViewModel() {
@@ -68,8 +70,9 @@ class TodayViewModel
                             medicationRepository.observeAll(),
                             scheduleRepository.observeAll(),
                             doseRepository.observeNextAfter(now),
-                        ) { doses, medications, schedules, nextDose ->
-                            buildState(doses, medications, schedules, nextDose, now)
+                            settingsRepository.observe(),
+                        ) { doses, medications, schedules, nextDose, settings ->
+                            buildState(doses, medications, schedules, nextDose, settings, now)
                         }
                     }.collect { incoming ->
                         // An in-flight action error survives data refreshes; only
@@ -117,6 +120,7 @@ class TodayViewModel
             medications: List<Medication>,
             schedules: List<Schedule>,
             nextDose: DoseEvent?,
+            settings: AppSettings,
             now: Instant,
         ): TodayUiState {
             val zone = clock.zone()
@@ -140,7 +144,7 @@ class TodayViewModel
                         isActionable = dose.status == DoseStatus.PENDING || dose.status == DoseStatus.SNOOZED,
                         snoozedUntil =
                             if (dose.status == DoseStatus.SNOOZED) {
-                                dose.actedAt?.plusSeconds(SnoozeDefaults.DEFAULT_SNOOZE_MINUTES * 60)
+                                dose.actedAt?.plusSeconds(settings.snoozeMinutes * SECONDS_PER_MINUTE)
                             } else {
                                 null
                             },
@@ -160,5 +164,9 @@ class TodayViewModel
                 reminderSetupIncomplete = !permissionChecker.isReminderSetupComplete(),
                 nextDoseAt = nextDose?.scheduledAt,
             )
+        }
+
+        private companion object {
+            const val SECONDS_PER_MINUTE = 60L
         }
     }
