@@ -4,6 +4,52 @@ Short entries. Newest first. Format: ID, date, decision, why, status.
 
 ---
 
+## D-019 — Assistant chat UI: no new dependencies, nothing kept (T10)
+
+Decision: the Assistant tab is a plain Jetpack Compose screen that talks to the
+T9 proxy with `HttpURLConnection` and the platform's `org.json`. No HTTP client,
+serialization or chat library was added, and the conversation is never stored.
+
+1. **Transport**: one `POST /v1/chat` with a JSON body. `HttpURLConnection` on
+   `Dispatchers.IO` (10 s connect, 20 s read) is enough for one request, and
+   `org.json` is already used by the JSON export. Adding OkHttp or
+   kotlinx.serialization for a single call would be a dependency the app does not
+   need; the wire shape lives in one tested object (`AssistantPayloads`).
+2. **No key, no account**: the app sends only the typed messages and an opaque
+   random install id (`X-Install-Id`, 32 hex characters, kept in DataStore). The
+   base URL comes from `BuildConfig.ASSISTANT_BASE_URL`, filled from the
+   `assistantBaseUrl` Gradle property, so pointing at `wrangler dev`, staging or
+   production needs no code change. The default placeholder must be replaced
+   before release.
+3. **Conversation in memory only**: the messages live in the `ViewModel` and die
+   with the process. "Clear conversation" empties the list; nothing is written to
+   Room, DataStore or a file, so "delete all my data" has nothing to delete here.
+4. **Consent and sharing**: a first-use consent screen states exactly what is
+   sent. "Share my medication list with the assistant" sits there, is **off by
+   default**, and can be changed later from "Privacy and sharing" in the chat.
+   The medication block is built only when it is on, and a failure to read the
+   list never blocks the question. Deleting all data clears both flags, so the
+   patient is asked again.
+5. **Defence in depth on emergencies**: the client runs the same
+   `EmergencySymptoms` check as the Symptoms tab before anything is sent; while
+   it matches, `canSend` is false and the emergency card is shown instead. A
+   server `emergency: true` reply renders the same card rather than model text.
+6. **`INTERNET` permission**: the Assistant tab is the only network traffic in
+   v1, so the manifest carries the permission with a comment saying exactly that.
+7. **Report a problem**: the share sheet opens with a prefilled template that
+   includes the answer only because the patient tapped that message; nothing is
+   sent until they choose an app.
+
+Why: AGENTS.md asks for a chat that never holds a key, never stores
+conversations, is clear about what leaves the device, and cannot crash on a
+network error. This keeps the app dependency-free beyond what it already uses
+and puts every safety decision in a place a test can reach.
+
+Status: shipped in T10 (300 app tests). Play Integrity client-side token is still
+future work; the backend verifier is ready but disabled (D-018).
+
+---
+
 ## D-018 — Assistant backend: one Cloudflare Worker, provider-agnostic (T9)
 
 Decision: the Assistant tab calls a single small proxy in `backend/`, deployed as a

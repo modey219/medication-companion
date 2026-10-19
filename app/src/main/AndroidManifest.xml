@@ -2,10 +2,14 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <!--
-        v1 has no network permission except the Assistant tab (added in T10).
-        Reminders, alarms and receivers are added in T5. Do not add permissions
-        that are not listed in AGENTS.md without asking.
+        v1 has no network permission except the Assistant tab. Do not add
+        permissions that are not listed in AGENTS.md without asking.
     -->
+
+    <!-- T10: the Assistant tab is the only network traffic the app makes. It
+         calls the backend proxy over HTTPS; there is no other network use and
+         no analytics. -->
+    <uses-permission android:name="android.permission.INTERNET" />
 
     <!-- T5: reminders (AGENTS.md > Reminders). -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />

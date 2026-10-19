@@ -342,6 +342,42 @@ TODO(legal): the privacy policy is a placeholder.
     <string name="profile_pharmacy_label">رقم الصيدلية (اختياري)</string>
     <string name="profile_pharmacy_desc">إن أضفت الرقم يُرسَل طلب إعادة التعبئة إليه. إذا تركت الحقل فارغاً، يختار التطبيق صيدليتك في كل مرة.</string>
     <string name="profile_pharmacy_hint">مثال: 01234567</string>
-    <string name="profile_stock_saved">تم الحفظ.</string>
-    <string name="profile_pharmacy_saved">تم حفظ رقم الصيدلية.</string>
+<string name="profile_stock_saved">تم الحفظ.</string>
+<string name="profile_pharmacy_saved">تم حفظ رقم الصيدلية.</string>
+
+<!--
+T10 assistant chat: first-use consent, the conversation and the failure
+sentences.
+TODO(clinical-review): the consent wording, the disclaimer, the failure
+sentences and the emergency card reach the patient directly; confirm they stay
+calm and never suggest a medical action.
+TODO(legal): the consent text and what leaves the device need sign-off.
+-->
+<string name="assistant_consent_title">المساعد</string>
+<string name="assistant_consent_intro">المساعد يشرح ما سجّلته بلغة واضحة. هو ليس طبيبًا ولا صيدليًا، ولا يشخّص، ولا يطلب تغيير أي دواء أو جرعة.</string>
+<string name="assistant_consent_sent_title">ما الذي يُرسل؟</string>
+<string name="assistant_consent_sent_body">تُرسل الرسائل التي تكتبها فقط إلى خدمة المساعد، بدون اسمك أو رقمك أو بريدك.</string>
+<string name="assistant_consent_medicine_body">لا تُرسل أسماء أدويتك ولا مواعيدها إلا إذا شغّلت الخيار التالي، وهو مُطفأ افتراضيًا.</string>
+<string name="assistant_consent_share_title">مشاركة قائمة أدويتي مع المساعد</string>
+<string name="assistant_consent_share_desc">عند تشغيله تُرسل أسماء أدويتك ومواعيدها مع سؤالك لتكون الإجابة أدق. يمكنك إطفاؤه في أي وقت.</string>
+<string name="assistant_consent_privacy_note">لا يحفظ التطبيق المحادثة عند إغلاقه، ولا تسجّل خدمة المساعد ما تكتبه.</string>
+<string name="assistant_consent_accept">أوافق وأبدأ</string>
+<string name="assistant_consent_close">إغلاق</string>
+<string name="assistant_disclaimer">المساعد قد يخطئ، ولا يُغني عن استشارة الطبيب أو الصيدلي.</string>
+<string name="assistant_empty">اكتب سؤالك عن أدويتك، وسيظهر الرد هنا.</string>
+<string name="assistant_input_label">سؤالك</string>
+<string name="assistant_input_hint">مثال: متى آخذ الدواء؟</string>
+<string name="assistant_send">إرسال</string>
+<string name="assistant_clear">مسح المحادثة</string>
+<string name="assistant_settings">الخصوصية والمشاركة</string>
+<string name="assistant_thinking">جارٍ تجهيز الرد…</string>
+<string name="assistant_retry">إعادة المحاولة</string>
+<string name="assistant_report">الإبلاغ عن مشكلة</string>
+<string name="assistant_report_share_title">الإبلاغ عن مشكلة</string>
+<string name="assistant_report_template">أُبلّغ عن مشكلة في إجابة المساعد في تطبيق رفيق الدواء (الإصدار %1$s).\n\nنص الإجابة:\n%2$s</string>
+<string name="assistant_error_offline">لا يوجد اتصال بالإنترنت. تحقّق من الشبكة ثم أعد المحاولة.</string>
+<string name="assistant_error_timeout">استغرق الرد وقتًا طويلًا. أعد المحاولة.</string>
+<string name="assistant_error_rate_limited">أسئلة كثيرة في وقت قصير. انتظر قليلًا ثم أعد المحاولة.</string>
+<string name="assistant_error_server">تعذّر الوصول إلى المساعد الآن. أعد المحاولة بعد قليل.</string>
+<string name="assistant_error_invalid">تعذّر إرسال الرسالة. حاول مرة أخرى.</string>
 </resources>

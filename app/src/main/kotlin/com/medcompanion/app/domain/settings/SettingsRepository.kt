@@ -6,6 +6,10 @@ import kotlinx.coroutines.flow.Flow
  * Everything the patient can set (D-014). Writes are clamped to the reviewed
  * ranges of [ReminderPreferences], and [clear] resets the settings to their
  * defaults while keeping the first-run consent record.
+ *
+ * The assistant consent and the "share my medication list" switch are *not*
+ * kept by [clear]: after deleting all data the patient is asked again and
+ * sharing starts off, so no data leaves the device by default.
  */
 interface SettingsRepository {
     fun observe(): Flow<AppSettings>
@@ -28,6 +32,15 @@ interface SettingsRepository {
 
     /** The pharmacy the refill request goes to; empty means the patient picks. */
     suspend fun setPharmacyNumber(number: String)
+
+    /** Must only be called after the assistant's first-use consent was read. */
+    suspend fun completeAssistantConsent()
+
+    /**
+     * Turns sharing of the medication list with the assistant on or off. It is
+     * written immediately because it takes effect on the very next message.
+     */
+    suspend fun setShareMedicationsWithAssistant(share: Boolean)
 
     /** Must only be called after the first-run consent was confirmed. */
     suspend fun completeOnboarding()

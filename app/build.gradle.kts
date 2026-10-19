@@ -44,6 +44,15 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables { useSupportLibrary = true }
 
+        // The assistant backend (T9) lives outside the app; the URL is kept out
+        // of the source so a local `wrangler dev` or a staging proxy can be used
+        // without editing code: ./gradlew assembleDebug -PassistantBaseUrl=...
+        val assistantBaseUrl =
+            providers
+                .gradleProperty("assistantBaseUrl")
+                .getOrElse("https://REPLACE_ME_ASSISTANT_BASE_URL")
+        buildConfigField("String", "ASSISTANT_BASE_URL", "\"$assistantBaseUrl\"")
+
         // Arabic is the default resource locale; English lives in values-en/.
         // TODO(eng): optionally restrict packaged locales via androidResources.localeFilters.
     }
@@ -69,6 +78,8 @@ android {
 
     buildFeatures {
         compose = true
+        // BuildConfig carries the assistant backend URL (see defaultConfig).
+        buildConfig = true
     }
 
     testOptions {

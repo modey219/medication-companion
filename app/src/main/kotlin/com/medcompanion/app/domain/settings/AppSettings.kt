@@ -31,4 +31,16 @@ data class AppSettings(
      * pharmacy.
      */
     val pharmacyNumber: String = "",
+    /**
+     * Whether the patient agreed to the assistant's first-use consent. Until
+     * this is true the Assistant tab shows the consent text instead of the
+     * chat.
+     */
+    val assistantConsentCompleted: Boolean = false,
+    /**
+     * Whether the typed messages are sent together with the patient's
+     * medication names and schedules. Off by default: the assistant receives
+     * nothing about the patient's medicines unless they turn this on.
+     */
+    val shareMedicationsWithAssistant: Boolean = false,
 )

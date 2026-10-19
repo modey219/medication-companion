@@ -169,6 +169,21 @@ reviewer must confirm both.
 
 ---
 
+## T10 — Assistant chat screen (2026-10-19)
+
+| Item | Location | Why flagged | Status |
+| --- | --- | --- | --- |
+| First-use consent text (`assistant_consent_*`) | `values/strings.xml`, `values-en/strings.xml` (`TODO(clinical-review)`), rendered by `feature/assistant/AssistantScreen.kt` | The only place the patient learns what leaves the device; it also promises what the assistant will not do | Open |
+| Persistent one-line disclaimer (`assistant_disclaimer`) | `values/strings.xml`, `values-en/strings.xml` | Shown above every conversation; must stay short enough to remain visible and must not read as reassurance | Open |
+| Client-side urgent-symptom check and the decision to block sending entirely | `core/emergency/EmergencySymptoms.kt`, `feature/assistant/AssistantViewModel.kt` (`onSend`), D-019 | While a term matches, the patient cannot send; confirm this is better than sending the question and showing the card next to the answer | Open |
+| Reused emergency card wording in the assistant (`emergency_*`) | `ui/components/EmergencyCard.kt`, `values/strings.xml` (shared with the Symptoms tab, T6) | The same card now appears before a message is sent and when the server flags an emergency; confirm the wording suits both | Open |
+| Failure and rate-limit sentences (`assistant_error_*`) | `values/strings.xml`, `values-en/strings.xml`, `feature/assistant/AssistantLabels.kt` | Shown when the network fails; must be calm, blame nobody and never suggest a medical action | Open |
+| Medication block field names and the decision to include the patient's instruction text | `data/assistant/AssistantMedicationContextBuilder.kt` (`TODO(clinical-review)`) | Only sent when the patient turns sharing on; confirm the block cannot be read as advice | Open |
+| "Report a problem" share template (`assistant_report_template`) | `values/strings.xml`, `values-en/strings.xml` (`TODO(legal)`) | Contains the assistant answer and only leaves the device when the patient taps an app | Open |
+| Claim in the consent text that the service does not record what is typed | consent strings, `docs/DECISIONS.md` D-018 | Must stay true of the deployed backend; wording is a legal claim as much as a clinical one | Open |
+
+---
+
 ## T1 — Standing notices (2026-10-17)
 
 | Item | Location | Why flagged | Status |
@@ -179,5 +194,5 @@ reviewer must confirm both.
 
 ## Not yet written (future tasks — keep this list growing)
 
-- T10: assistant first-use consent text, the one-line disclaimer, the client-side
-  emergency card wording, and the "Report a problem" template.
+- Nothing pending: every screen and string up to and including T10 is recorded
+  above. New tasks add their rows here before release.

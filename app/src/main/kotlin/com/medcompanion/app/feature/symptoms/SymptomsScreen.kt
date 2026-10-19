@@ -1,7 +1,6 @@
 package com.medcompanion.app.feature.symptoms
 
 import android.content.Context
-import android.content.Intent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -15,9 +14,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
@@ -32,10 +29,10 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
-import androidx.core.net.toUri
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.medcompanion.app.R
+import com.medcompanion.app.ui.components.EmergencyCard
 import com.medcompanion.app.ui.components.formatDateTime
 import com.medcompanion.app.ui.preview.ScreenPreviews
 import com.medcompanion.app.ui.theme.MedCompanionTheme
@@ -197,58 +194,6 @@ private fun SeverityRow(
             modifier = Modifier.padding(start = 8.dp),
         )
     }
-}
-
-/**
- * Shown while the typed name matches the urgent list. It urges contacting
- * emergency services, and the call button only appears once the local
- * emergency number is set (in the Profile tab, or the built-in default from
- * the resources). TODO(clinical-review): the number itself is still a
- * placeholder.
- */
-@Composable
-private fun EmergencyCard(number: String) {
-    val context = LocalContext.current
-    val defaultNumber = stringResource(R.string.emergency_number).trim()
-    val localNumber = number.ifBlank { defaultNumber }
-    Card(
-        colors =
-            CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.errorContainer,
-                contentColor = MaterialTheme.colorScheme.onErrorContainer,
-            ),
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            SectionTitle(stringResource(R.string.emergency_title))
-            Text(
-                text = stringResource(R.string.emergency_body),
-                style = MaterialTheme.typography.bodyLarge,
-            )
-            if (localNumber.isNotEmpty()) {
-                Text(
-                    text = stringResource(R.string.emergency_number_hint, localNumber),
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-                OutlinedButton(
-                    onClick = { dialEmergency(context, localNumber) },
-                    modifier = Modifier.heightIn(min = 48.dp),
-                ) {
-                    Text(stringResource(R.string.emergency_call))
-                }
-            }
-        }
-    }
-}
-
-/** Opens the dialer; a missing dialer app is ignored, never a crash. */
-private fun dialEmergency(
-    context: Context,
-    number: String,
-) {
-    runCatching { context.startActivity(Intent(Intent.ACTION_DIAL, "tel:$number".toUri())) }
 }
 
 @Composable

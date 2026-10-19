@@ -337,5 +337,41 @@ TODO(legal): the privacy policy is a placeholder.
     <string name="profile_pharmacy_hint">For example: 01234567</string>
     <string name="profile_stock_saved">Saved.</string>
     <string name="profile_pharmacy_saved">Pharmacy number saved.</string>
+
+    <!--
+    T10 assistant chat: first-use consent, the conversation and the failure
+    sentences.
+    TODO(clinical-review): the consent wording, the disclaimer, the failure
+    sentences and the emergency card reach the patient directly; confirm they
+    stay calm and never suggest a medical action.
+    TODO(legal): the consent text and what leaves the device need sign-off.
+    -->
+    <string name="assistant_consent_title">Assistant</string>
+    <string name="assistant_consent_intro">The assistant explains what you recorded in plain language. It is not a doctor or a pharmacist: it never diagnoses and never asks you to change a medicine or a dose.</string>
+    <string name="assistant_consent_sent_title">What is sent?</string>
+    <string name="assistant_consent_sent_body">Only the messages you type are sent, to the assistant service, without your name, phone number or email.</string>
+    <string name="assistant_consent_medicine_body">Your medication names and schedules are not sent unless you turn on the option below, which is off by default.</string>
+    <string name="assistant_consent_share_title">Share my medication list with the assistant</string>
+    <string name="assistant_consent_share_desc">When on, your medication names and schedules are sent with your question so the answer is more accurate. You can turn it off at any time.</string>
+    <string name="assistant_consent_privacy_note">The app does not keep the conversation when it closes, and the assistant service does not record what you type.</string>
+    <string name="assistant_consent_accept">I agree, start</string>
+    <string name="assistant_consent_close">Close</string>
+    <string name="assistant_disclaimer">The assistant can be wrong and is not a substitute for your doctor or pharmacist.</string>
+    <string name="assistant_empty">Type your question about your medication and the answer will appear here.</string>
+    <string name="assistant_input_label">Your question</string>
+    <string name="assistant_input_hint">For example: when do I take it?</string>
+    <string name="assistant_send">Send</string>
+    <string name="assistant_clear">Clear conversation</string>
+    <string name="assistant_settings">Privacy and sharing</string>
+    <string name="assistant_thinking">Preparing the answer…</string>
+    <string name="assistant_retry">Try again</string>
+    <string name="assistant_report">Report a problem</string>
+    <string name="assistant_report_share_title">Report a problem</string>
+    <string name="assistant_report_template">I am reporting a problem with an answer from the assistant in the Medication Companion app (version %1$s).\n\nThe answer:\n%2$s</string>
+    <string name="assistant_error_offline">No internet connection. Check your network and try again.</string>
+    <string name="assistant_error_timeout">The answer took too long. Please try again.</string>
+    <string name="assistant_error_rate_limited">Too many questions in a short time. Wait a moment and try again.</string>
+    <string name="assistant_error_server">The assistant is unavailable right now. Please try again shortly.</string>
+    <string name="assistant_error_invalid">The message could not be sent. Please try again.</string>
 </resources>
 

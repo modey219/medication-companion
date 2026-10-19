@@ -61,6 +61,8 @@ class DataStoreSettingsRepositoryTest {
             assertEquals(AppLanguage.SYSTEM, settings.language)
             assertEquals("", settings.emergencyNumber)
             assertFalse(settings.onboardingCompleted)
+            assertFalse(settings.assistantConsentCompleted)
+            assertFalse(settings.shareMedicationsWithAssistant)
         }
 
     @Test
@@ -157,5 +159,29 @@ class DataStoreSettingsRepositoryTest {
             repository.setPharmacyNumber("  01234567  ")
 
             assertEquals("01234567", repository.observe().first().pharmacyNumber)
+        }
+
+    @Test
+    fun `the assistant consent and the sharing choice round-trip`() =
+        runTest {
+            repository.completeAssistantConsent()
+            repository.setShareMedicationsWithAssistant(true)
+
+            val settings = repository.observe().first()
+            assertTrue(settings.assistantConsentCompleted)
+            assertTrue(settings.shareMedicationsWithAssistant)
+        }
+
+    @Test
+    fun `deleting all data also asks for the assistant consent again`() =
+        runTest {
+            repository.completeAssistantConsent()
+            repository.setShareMedicationsWithAssistant(true)
+
+            repository.clear()
+
+            val settings = repository.observe().first()
+            assertFalse(settings.assistantConsentCompleted)
+            assertFalse(settings.shareMedicationsWithAssistant)
         }
 }

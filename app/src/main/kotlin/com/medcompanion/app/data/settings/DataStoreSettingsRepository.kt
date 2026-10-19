@@ -59,6 +59,8 @@ class DataStoreSettingsRepository
                                 preferences[LOW_STOCK_THRESHOLD] ?: ReminderPreferences.DEFAULT_LOW_STOCK_THRESHOLD,
                             ),
                         pharmacyNumber = preferences[PHARMACY_NUMBER].orEmpty(),
+                        assistantConsentCompleted = preferences[ASSISTANT_CONSENT_COMPLETED] == true,
+                        shareMedicationsWithAssistant = preferences[SHARE_MEDICATIONS_WITH_ASSISTANT] == true,
                     )
                 }
 
@@ -108,6 +110,18 @@ class DataStoreSettingsRepository
             }
         }
 
+        override suspend fun completeAssistantConsent() {
+            dataStore.edit { preferences ->
+                preferences[ASSISTANT_CONSENT_COMPLETED] = true
+            }
+        }
+
+        override suspend fun setShareMedicationsWithAssistant(share: Boolean) {
+            dataStore.edit { preferences ->
+                preferences[SHARE_MEDICATIONS_WITH_ASSISTANT] = share
+            }
+        }
+
         override suspend fun completeOnboarding() {
             dataStore.edit { preferences ->
                 preferences[ONBOARDING_COMPLETED] = true
@@ -131,5 +145,7 @@ class DataStoreSettingsRepository
             val REPEAT_MINUTES = longPreferencesKey("reminder_repeat_minutes")
             val LOW_STOCK_THRESHOLD = intPreferencesKey("low_stock_threshold")
             val PHARMACY_NUMBER = stringPreferencesKey("pharmacy_number")
+            val ASSISTANT_CONSENT_COMPLETED = booleanPreferencesKey("assistant_consent_completed")
+            val SHARE_MEDICATIONS_WITH_ASSISTANT = booleanPreferencesKey("share_medications_with_assistant")
         }
     }

@@ -85,6 +85,13 @@ rate-limits per install and stores no conversations. See
 [`backend/README.md`](backend/README.md) for the endpoint contract, environment
 variables, tests and deploy steps, and `docs/DECISIONS.md` D-018 for the rationale.
 
+The app side of that conversation is the Assistant tab (T10): a first-use consent
+screen, the chat itself, an urgent-symptom check that runs before anything is sent,
+and a "Report a problem" action. The base URL is a Gradle property
+(`-PassistantBaseUrl=…`), so a local `wrangler dev` or a deployed Worker needs no
+code change; the checked-in default is a placeholder and must be replaced before
+release (see `docs/DECISIONS.md` D-019).
+
 ## Privacy & Safety
 
 - All health data stays on-device (except Assistant backend)
@@ -104,7 +111,7 @@ variables, tests and deploy steps, and `docs/DECISIONS.md` D-018 for the rationa
 
 ## APK
 
-Latest debug APK: app-debug.apk (15.19 MB)
+Latest debug APK: app-debug.apk (15.20 MB)
 
 ## Links
 
@@ -116,6 +123,7 @@ Latest debug APK: app-debug.apk (15.19 MB)
 - T8a shipped: profile (allergies/conditions), first-run consent + privacy placeholder, language choice, emergency number, export/delete all data
 - T8b shipped: patient reminder preferences (grace period, snooze, repeat interval), low-stock level and pharmacy number
 - T9 shipped: assistant backend proxy (`backend/`) — one `POST /v1/chat`, provider-agnostic, rate-limited, no logging of content, 85 Vitest tests
-- T10 next: assistant chat UI, first-use consent, client-side emergency card, "Report a problem"
+- T10 shipped: assistant chat UI — first-use consent with the (off-by-default) share-medication switch, in-memory conversation, client-side emergency card, retry/offline sentences, "Report a problem"
+- T11 next: release preparation (R8/resource shrinking, signing config, Play Store listing)
 - See docs/DECISIONS.md for key architectural decisions
 - See AGENTS.md for full specifications

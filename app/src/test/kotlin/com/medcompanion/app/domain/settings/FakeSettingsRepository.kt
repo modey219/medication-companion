@@ -46,6 +46,14 @@ class FakeSettingsRepository(
         stream.value = stream.value.copy(pharmacyNumber = number.trim())
     }
 
+    override suspend fun completeAssistantConsent() {
+        stream.value = stream.value.copy(assistantConsentCompleted = true)
+    }
+
+    override suspend fun setShareMedicationsWithAssistant(share: Boolean) {
+        stream.value = stream.value.copy(shareMedicationsWithAssistant = share)
+    }
+
     override suspend fun completeOnboarding() {
         stream.value = stream.value.copy(onboardingCompleted = true)
     }
