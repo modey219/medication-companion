@@ -357,9 +357,17 @@ TODO(legal): the consent text and what leaves the device need sign-off.
 <string name="assistant_consent_intro">المساعد يشرح ما سجّلته بلغة واضحة. هو ليس طبيبًا ولا صيدليًا، ولا يشخّص، ولا يطلب تغيير أي دواء أو جرعة.</string>
 <string name="assistant_consent_sent_title">ما الذي يُرسل؟</string>
 <string name="assistant_consent_sent_body">تُرسل الرسائل التي تكتبها فقط إلى خدمة المساعد، بدون اسمك أو رقمك أو بريدك.</string>
-<string name="assistant_consent_medicine_body">لا تُرسل أسماء أدويتك ولا مواعيدها إلا إذا شغّلت الخيار التالي، وهو مُطفأ افتراضيًا.</string>
-<string name="assistant_consent_share_title">مشاركة قائمة أدويتي مع المساعد</string>
-<string name="assistant_consent_share_desc">عند تشغيله تُرسل أسماء أدويتك ومواعيدها مع سؤالك لتكون الإجابة أدق. يمكنك إطفاؤه في أي وقت.</string>
+<string name="assistant_consent_medicine_body">لا تُرسل معلوماتك الصحية إلا إذا شغّلت الخيار التالي، وهو مُطفأ افتراضيًا.</string>
+<!--
+    T13 patient context: the personalization consent, the generic-mode note and
+    the failed-context note.
+    TODO(clinical-review): the exact list of what is sent, and the wording of
+    the generic-mode and failed-context notes.
+-->
+<string name="assistant_consent_profile_title">تخصيص الإجابات بملفي الصحي</string>
+<string name="assistant_consent_profile_desc">عند تشغيله تُرسل مع سؤالك معلومات ملفك الصحي: العمر، والجنس، والحساسيات والأمراض المزمنة، والتاريخ المرضي، وأدويتك، ومواعيد آخر أسبوعين، وأعراضك الأخيرة. يمكنك إطفاؤه في أي وقت.</string>
+<string name="assistant_mode_generic">الإجابات عامة لأن ملفك الصحي غير مشترك. يمكنك تشغيل التخصيص من «الخصوصية والمشاركة».</string>
+<string name="assistant_context_failed">تعذّر تجهيز ملفك الصحي، فلم يُرسل سؤالك. أعد المحاولة.</string>
 <string name="assistant_consent_privacy_note">لا يحفظ التطبيق المحادثة عند إغلاقه، ولا تسجّل خدمة المساعد ما تكتبه.</string>
 <string name="assistant_consent_accept">أوافق وأبدأ</string>
 <string name="assistant_consent_close">إغلاق</string>

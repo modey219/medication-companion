@@ -5,7 +5,9 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.test.core.app.ApplicationProvider
+import com.medcompanion.app.core.time.FakeAppClock
 import com.medcompanion.app.domain.settings.AppLanguage
+import com.medcompanion.app.domain.settings.ConsentRecord
 import com.medcompanion.app.domain.settings.ReminderPreferences
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -16,6 +18,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -25,9 +28,9 @@ import org.robolectric.annotation.Config
 import java.io.File
 
 /**
- * The settings store (T8a, D-014): DataStore on the device, defaults when
- * nothing was set, and a [clear] that resets everything except the first-run
- * consent record.
+ * The settings store (T8a, D-014, T13): DataStore on the device, defaults when
+ * nothing was set, versioned consents, and a [clear] that resets everything
+ * except the first-run consent record.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [37])
@@ -36,6 +39,7 @@ class DataStoreSettingsRepositoryTest {
     private lateinit var file: File
     private lateinit var dataStore: DataStore<Preferences>
     private lateinit var repository: DataStoreSettingsRepository
+    private val clock = FakeAppClock()
 
     @Before
     fun setUp() {
@@ -44,7 +48,7 @@ class DataStoreSettingsRepositoryTest {
         scope = CoroutineScope(Dispatchers.IO + Job())
         dataStore =
             PreferenceDataStoreFactory.create(scope = scope, produceFile = { file })
-        repository = DataStoreSettingsRepository(dataStore)
+        repository = DataStoreSettingsRepository(dataStore, clock)
     }
 
     @After
@@ -62,7 +66,8 @@ class DataStoreSettingsRepositoryTest {
             assertEquals("", settings.emergencyNumber)
             assertFalse(settings.onboardingCompleted)
             assertFalse(settings.assistantConsentCompleted)
-            assertFalse(settings.shareMedicationsWithAssistant)
+            assertFalse(settings.assistantProfileConsent.isGranted())
+            assertFalse(settings.assistantMediaConsent.isGranted())
         }
 
     @Test
@@ -165,23 +170,59 @@ class DataStoreSettingsRepositoryTest {
     fun `the assistant consent and the sharing choice round-trip`() =
         runTest {
             repository.completeAssistantConsent()
-            repository.setShareMedicationsWithAssistant(true)
+            repository.grantAssistantProfileConsent()
 
             val settings = repository.observe().first()
             assertTrue(settings.assistantConsentCompleted)
-            assertTrue(settings.shareMedicationsWithAssistant)
+            assertTrue(settings.assistantProfileConsent.isGranted())
         }
 
     @Test
-    fun `deleting all data also asks for the assistant consent again`() =
+    fun `a granted consent carries the version the patient read and the time`() =
+        runTest {
+            repository.grantAssistantProfileConsent()
+
+            val consent = repository.observe().first().assistantProfileConsent
+            assertEquals(ConsentRecord.CURRENT_VERSION, consent.version)
+            assertEquals(clock.now(), consent.acceptedAt)
+        }
+
+    @Test
+    fun `an older consent version is no longer granted`() =
+        runTest {
+            repository.grantAssistantProfileConsent()
+
+            val stored = repository.observe().first().assistantProfileConsent
+            assertFalse(stored.isGranted(currentVersion = stored.version + 1))
+        }
+
+    @Test
+    fun `a consent can be withdrawn`() =
+        runTest {
+            repository.grantAssistantProfileConsent()
+            repository.grantAssistantMediaConsent()
+
+            repository.revokeAssistantProfileConsent()
+            repository.revokeAssistantMediaConsent()
+
+            val settings = repository.observe().first()
+            assertFalse(settings.assistantProfileConsent.isGranted())
+            assertFalse(settings.assistantMediaConsent.isGranted())
+            assertNull(settings.assistantMediaConsent.acceptedAt)
+        }
+
+    @Test
+    fun `deleting all data also asks for the assistant consents again`() =
         runTest {
             repository.completeAssistantConsent()
-            repository.setShareMedicationsWithAssistant(true)
+            repository.grantAssistantProfileConsent()
+            repository.grantAssistantMediaConsent()
 
             repository.clear()
 
             val settings = repository.observe().first()
             assertFalse(settings.assistantConsentCompleted)
-            assertFalse(settings.shareMedicationsWithAssistant)
+            assertFalse(settings.assistantProfileConsent.isGranted())
+            assertFalse(settings.assistantMediaConsent.isGranted())
         }
 }

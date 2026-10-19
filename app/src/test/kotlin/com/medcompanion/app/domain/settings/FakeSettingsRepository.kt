@@ -2,6 +2,7 @@ package com.medcompanion.app.domain.settings
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import java.time.Instant
 
 /**
  * In-memory [SettingsRepository] with the real behaviour the tests depend on:
@@ -50,9 +51,23 @@ class FakeSettingsRepository(
         stream.value = stream.value.copy(assistantConsentCompleted = true)
     }
 
-    override suspend fun setShareMedicationsWithAssistant(share: Boolean) {
-        stream.value = stream.value.copy(shareMedicationsWithAssistant = share)
+    override suspend fun grantAssistantProfileConsent() {
+        stream.value = stream.value.copy(assistantProfileConsent = granted())
     }
+
+    override suspend fun revokeAssistantProfileConsent() {
+        stream.value = stream.value.copy(assistantProfileConsent = ConsentRecord())
+    }
+
+    override suspend fun grantAssistantMediaConsent() {
+        stream.value = stream.value.copy(assistantMediaConsent = granted())
+    }
+
+    override suspend fun revokeAssistantMediaConsent() {
+        stream.value = stream.value.copy(assistantMediaConsent = ConsentRecord())
+    }
+
+    private fun granted() = ConsentRecord(version = ConsentRecord.CURRENT_VERSION, acceptedAt = ACCEPTED_AT)
 
     override suspend fun completeOnboarding() {
         stream.value = stream.value.copy(onboardingCompleted = true)
@@ -60,5 +75,9 @@ class FakeSettingsRepository(
 
     override suspend fun clear() {
         stream.value = AppSettings(onboardingCompleted = stream.value.onboardingCompleted)
+    }
+
+    private companion object {
+        val ACCEPTED_AT: Instant = Instant.parse("2026-01-01T00:00:00Z")
     }
 }

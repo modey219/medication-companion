@@ -18,16 +18,38 @@ data class AssistantExchange(
 )
 
 /**
+ * How the assistant should answer (T13, D-021): [GENERIC] with no patient data
+ * at all, or [PERSONALIZED] from the health profile the patient agreed to share.
+ * The backend requires the matching [AssistantRequest.context] for
+ * [PERSONALIZED] and rejects a personalized request that carries none.
+ */
+enum class AssistantMode(
+    val wireName: String,
+) {
+    GENERIC("generic"),
+    PERSONALIZED("personalized"),
+}
+
+/**
  * What the app sends to the assistant backend.
  *
- * [medicationContext] is only non-null when the patient turned on sharing, and
+ * [context] is only non-null in [AssistantMode.PERSONALIZED], and
  * [AssistantExchange]s are exactly what is on screen: nothing else leaves the
  * device.
  */
 data class AssistantRequest(
     val exchanges: List<AssistantExchange>,
-    val shareMedications: Boolean,
-    val medicationContext: String?,
+    val mode: AssistantMode = AssistantMode.GENERIC,
+    /** The profile context; non-null only in [AssistantMode.PERSONALIZED]. */
+    val context: PatientContext? = null,
+    /**
+     * Kept so a Worker deployed before T14 keeps working: it mirrors [mode] and
+     * the medication block that [context] already carries.
+     * TODO(eng, T14): drop `shareMedications` and `medicationContext` together
+     * with the backend's legacy window.
+     */
+    val shareMedications: Boolean = false,
+    val medicationContext: String? = null,
 )
 
 /** What the backend answered. */

@@ -1,11 +1,14 @@
 package com.medcompanion.app.feature.assistant
 
 import com.medcompanion.app.data.assistant.AssistantMedicationContextBuilder
+import com.medcompanion.app.data.assistant.PatientContextBuilder
 import com.medcompanion.app.domain.assistant.AssistantChatClient
 import com.medcompanion.app.domain.assistant.AssistantError
+import com.medcompanion.app.domain.assistant.AssistantMode
 import com.medcompanion.app.domain.assistant.AssistantReply
 import com.medcompanion.app.domain.assistant.AssistantRequest
 import com.medcompanion.app.domain.assistant.AssistantResult
+import com.medcompanion.app.domain.assistant.PatientContext
 import com.medcompanion.app.domain.settings.FakeSettingsRepository
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -23,22 +26,26 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import java.time.Instant
 
 /**
- * Assistant tab (T10). Two things must never regress: the medication list only
- * travels when the patient turned sharing on, and a failure never sends an
+ * Assistant tab (T10, T13). Three things must never regress: nothing about the
+ * patient travels unless they turned the profile consent on, a personalized
+ * question is never sent without its context, and a failure never sends an
  * urgent-symptom message to the server.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class AssistantViewModelTest {
     private val chatClient = RecordingChatClient()
-    private val contextBuilder = mockk<AssistantMedicationContextBuilder>(relaxed = true)
+    private val contextBuilder = mockk<PatientContextBuilder>(relaxed = true)
+    private val medicationContextBuilder = mockk<AssistantMedicationContextBuilder>(relaxed = true)
     private val settings = FakeSettingsRepository()
 
     @Before
     fun setUp() {
         Dispatchers.setMain(UnconfinedTestDispatcher())
-        coEvery { contextBuilder.build() } returns MEDICATION_CONTEXT
+        coEvery { contextBuilder.build() } returns SAMPLE_CONTEXT
+        coEvery { medicationContextBuilder.build() } returns MEDICATION_CONTEXT
     }
 
     @After
@@ -46,7 +53,7 @@ class AssistantViewModelTest {
         Dispatchers.resetMain()
     }
 
-    private fun viewModel() = AssistantViewModel(chatClient, settings, contextBuilder)
+    private fun viewModel() = AssistantViewModel(chatClient, settings, contextBuilder, medicationContextBuilder)
 
     @Test
     fun `the consent is shown until it is accepted`() {
@@ -89,43 +96,78 @@ class AssistantViewModelTest {
     }
 
     @Test
-    fun `the medication list is not attached while sharing is off`() {
+    fun `a question without the profile consent is generic and carries nothing`() {
         val viewModel = viewModel()
         viewModel.onInputChange("متى آخذ دوائي؟")
 
         viewModel.onSend()
 
         val request = chatClient.requests.single()
+        assertEquals(AssistantMode.GENERIC, request.mode)
+        assertNull(request.context)
         assertFalse(request.shareMedications)
         assertNull(request.medicationContext)
         coVerify(exactly = 0) { contextBuilder.build() }
     }
 
     @Test
-    fun `the medication list is attached when sharing is on`() {
-        runBlocking { settings.setShareMedicationsWithAssistant(true) }
+    fun `with the profile consent the question is personalized with the context`() {
+        runBlocking { settings.grantAssistantProfileConsent() }
         val viewModel = viewModel()
         viewModel.onInputChange("متى آخذ دوائي؟")
 
         viewModel.onSend()
 
         val request = chatClient.requests.single()
+        assertEquals(AssistantMode.PERSONALIZED, request.mode)
+        assertEquals(SAMPLE_CONTEXT, request.context)
         assertTrue(request.shareMedications)
         assertEquals(MEDICATION_CONTEXT, request.medicationContext)
     }
 
     @Test
-    fun `a failure to read the medication list still sends the question`() {
-        runBlocking { settings.setShareMedicationsWithAssistant(true) }
+    fun `a personalized question is not sent when the profile cannot be read`() {
+        runBlocking { settings.grantAssistantProfileConsent() }
         coEvery { contextBuilder.build() } throws IllegalStateException("database closed")
         val viewModel = viewModel()
         viewModel.onInputChange("متى آخذ دوائي؟")
 
         viewModel.onSend()
 
-        assertNull(chatClient.requests.single().medicationContext)
+        assertTrue(chatClient.requests.isEmpty())
         val state = viewModel.uiState.value
-        assertEquals(ANSWER, state.messages.last().text)
+        assertTrue(state.contextFailed)
+        assertTrue(state.messages.isEmpty())
+        assertEquals("متى آخذ دوائي؟", state.input)
+        assertNull(state.error)
+    }
+
+    @Test
+    fun `turning the profile consent off and on again is stored`() {
+        val viewModel = viewModel()
+
+        viewModel.onProfileConsentChanged(true)
+        assertTrue(settings.current.assistantProfileConsent.isGranted())
+
+        viewModel.onProfileConsentChanged(false)
+        assertFalse(settings.current.assistantProfileConsent.isGranted())
+    }
+
+    @Test
+    fun `a failure to read the legacy medication block still sends the question`() {
+        runBlocking { settings.grantAssistantProfileConsent() }
+        coEvery { medicationContextBuilder.build() } throws IllegalStateException("database closed")
+        val viewModel = viewModel()
+        viewModel.onInputChange("متى آخذ دوائي؟")
+
+        viewModel.onSend()
+
+        val request = chatClient.requests.single()
+        assertNull(request.medicationContext)
+        assertEquals(SAMPLE_CONTEXT, request.context)
+        val state = viewModel.uiState.value
+        val last = state.messages.last()
+        assertEquals(ANSWER, last.text)
     }
 
     @Test
@@ -257,5 +299,6 @@ class AssistantViewModelTest {
     private companion object {
         const val ANSWER = "حسب ما أدخلته، موعدك القادم الساعة الثامنة مساءً."
         const val MEDICATION_CONTEXT = "The patient's own medication list"
+        val SAMPLE_CONTEXT = PatientContext(generatedAt = Instant.parse("2026-10-20T10:00:00Z"))
     }
 }

@@ -3,7 +3,6 @@ package com.medcompanion.app.data.assistant
 import com.medcompanion.app.domain.model.Medication
 import com.medcompanion.app.domain.model.MedicationStatus
 import com.medcompanion.app.domain.model.Schedule
-import com.medcompanion.app.domain.model.ScheduleType
 import com.medcompanion.app.domain.repository.MedicationRepository
 import com.medcompanion.app.domain.repository.ScheduleRepository
 import kotlinx.coroutines.flow.first
@@ -11,9 +10,10 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Builds the medication block that is sent to the assistant **only** when the
- * patient turned on "Share my medication list with the assistant" (off by
- * default).
+ * Builds the legacy medication block that is sent to the assistant **only** while
+ * the patient granted the profile consent (off by default). The structured
+ * context from [PatientContextBuilder] is the real payload from T13 on; this
+ * block is kept alive for a Worker deployed before T14 and then removed.
  *
  * The block is data, never instructions: the backend fences it and labels it as
  * data, and the system prompt tells the model to treat anything inside it as
@@ -66,32 +66,8 @@ class AssistantMedicationContextBuilder
                 .takeIf { it.isNotEmpty() }
                 ?.let { parts.add("instructions: $it") }
             parts.add("status: ${medication.status.name}")
-            schedules.sortedBy { it.id }.forEach { parts.add("schedule: ${scheduleText(it)}") }
+            schedules.sortedBy { it.id }.forEach { parts.add("schedule: ${MedicationScheduleText.of(it)}") }
             return "- " + parts.joinToString(SEPARATOR)
-        }
-
-        private fun scheduleText(schedule: Schedule): String {
-            val amount =
-                schedule.doseAmount
-                    .trim()
-                    .takeIf { it.isNotEmpty() }
-                    ?.let { "dose $it, " }
-                    .orEmpty()
-            val food = "food ${schedule.foodRelation.name}, "
-            return when (schedule.type) {
-                ScheduleType.DAILY_TIMES ->
-                    "$amount${food}at ${schedule.times.joinToString(", ") { it.toString() }}"
-
-                ScheduleType.EVERY_N_HOURS ->
-                    "$amount${food}every ${schedule.intervalHours ?: 0} hours"
-
-                ScheduleType.WEEKDAYS ->
-                    "$amount${food}on ${
-                        schedule.weekdays.sortedBy { it.value }.joinToString(", ") { it.name }
-                    } at ${schedule.times.joinToString(", ") { it.toString() }}"
-
-                ScheduleType.AS_NEEDED -> "${amount}as needed".trimEnd(',', ' ')
-            }
         }
 
         private fun usedLength(lines: List<String>): Int = lines.sumOf { it.length + 1 }

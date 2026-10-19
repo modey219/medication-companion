@@ -71,7 +71,7 @@ internal data class AssistantActions(
     val onConsentAccepted: () -> Unit,
     val onConsentReopened: () -> Unit,
     val onConsentClosed: () -> Unit,
-    val onShareMedicationsChanged: (Boolean) -> Unit,
+    val onProfileConsentChanged: (Boolean) -> Unit,
 ) {
     constructor(viewModel: AssistantViewModel) : this(
         onInputChange = viewModel::onInputChange,
@@ -82,7 +82,7 @@ internal data class AssistantActions(
         onConsentAccepted = viewModel::onConsentAccepted,
         onConsentReopened = viewModel::onConsentReopened,
         onConsentClosed = viewModel::onConsentClosed,
-        onShareMedicationsChanged = viewModel::onShareMedicationsChanged,
+        onProfileConsentChanged = viewModel::onProfileConsentChanged,
     )
 }
 
@@ -109,8 +109,9 @@ internal fun AssistantContent(
 }
 
 /**
- * First-use consent (AGENTS.md > AI Assistant). It states exactly what is sent
- * before anything leaves the device, and the sharing switch starts off.
+ * First-use consent (AGENTS.md > AI Assistant, AGENTS.md > Privacy). It states
+ * exactly what is sent before anything leaves the device, and the personalization
+ * switch starts off.
  *
  * TODO(clinical-review): the consent wording. TODO(legal): the privacy wording
  * of what the backend does with a message.
@@ -134,7 +135,7 @@ private fun AssistantConsentContent(
         Heading(stringResource(R.string.assistant_consent_sent_title))
         BodyText(stringResource(R.string.assistant_consent_sent_body))
         BodyText(stringResource(R.string.assistant_consent_medicine_body))
-        ShareMedicationsSwitch(state = state, actions = actions)
+        ProfileConsentSwitch(state = state, actions = actions)
         BodyText(stringResource(R.string.assistant_consent_privacy_note))
         Text(
             text = stringResource(R.string.notice_not_medical_advice),
@@ -160,7 +161,7 @@ private fun AssistantConsentContent(
 }
 
 @Composable
-private fun ShareMedicationsSwitch(
+private fun ProfileConsentSwitch(
     state: AssistantUiState,
     actions: AssistantActions,
 ) {
@@ -171,14 +172,14 @@ private fun ShareMedicationsSwitch(
     ) {
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = stringResource(R.string.assistant_consent_share_title),
+                text = stringResource(R.string.assistant_consent_profile_title),
                 style = MaterialTheme.typography.bodyLarge,
             )
-            BodyText(stringResource(R.string.assistant_consent_share_desc))
+            BodyText(stringResource(R.string.assistant_consent_profile_desc))
         }
         Switch(
-            checked = state.shareMedications,
-            onCheckedChange = actions.onShareMedicationsChanged,
+            checked = state.personalizeConsent,
+            onCheckedChange = actions.onProfileConsentChanged,
         )
     }
 }
@@ -199,6 +200,13 @@ private fun AssistantChatContent(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
         )
+
+        if (state.isGeneric) {
+            InfoBanner(stringResource(R.string.assistant_mode_generic))
+        }
+        if (state.personalizeConsent && state.contextFailed) {
+            InfoBanner(text = stringResource(R.string.assistant_context_failed), isError = true)
+        }
 
         LazyColumn(
             modifier = Modifier.weight(1f).fillMaxWidth(),
@@ -376,6 +384,25 @@ private fun Heading(text: String) {
     )
 }
 
+/** A one-line note above the chat: the generic mode, or a failed context. */
+@Composable
+private fun InfoBanner(
+    text: String,
+    isError: Boolean = false,
+) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.bodySmall,
+        color =
+            if (isError) {
+                MaterialTheme.colorScheme.error
+            } else {
+                MaterialTheme.colorScheme.onSurfaceVariant
+            },
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+    )
+}
+
 @Composable
 private fun BodyText(text: String) {
     Text(
@@ -464,5 +491,5 @@ private fun previewActions() =
         onConsentAccepted = {},
         onConsentReopened = {},
         onConsentClosed = {},
-        onShareMedicationsChanged = {},
+        onProfileConsentChanged = {},
     )

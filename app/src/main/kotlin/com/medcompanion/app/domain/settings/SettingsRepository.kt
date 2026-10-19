@@ -7,9 +7,9 @@ import kotlinx.coroutines.flow.Flow
  * ranges of [ReminderPreferences], and [clear] resets the settings to their
  * defaults while keeping the first-run consent record.
  *
- * The assistant consent and the "share my medication list" switch are *not*
- * kept by [clear]: after deleting all data the patient is asked again and
- * sharing starts off, so no data leaves the device by default.
+ * The assistant consents and the first-use consent are *not* kept by [clear]:
+ * after deleting all data the patient is asked again and every sharing choice
+ * starts off, so no health data leaves the device by default.
  */
 interface SettingsRepository {
     fun observe(): Flow<AppSettings>
@@ -37,10 +37,20 @@ interface SettingsRepository {
     suspend fun completeAssistantConsent()
 
     /**
-     * Turns sharing of the medication list with the assistant on or off. It is
-     * written immediately because it takes effect on the very next message.
+     * Records the patient's agreement to personalize the assistant's answers
+     * with their health profile, stamped with the version they read and the
+     * time they gave it (T13).
      */
-    suspend fun setShareMedicationsWithAssistant(share: Boolean)
+    suspend fun grantAssistantProfileConsent()
+
+    /** Withdraws that agreement; no health profile is sent from then on. */
+    suspend fun revokeAssistantProfileConsent()
+
+    /** Records the patient's agreement to send a photo or a short video (T16). */
+    suspend fun grantAssistantMediaConsent()
+
+    /** Withdraws the media agreement. */
+    suspend fun revokeAssistantMediaConsent()
 
     /** Must only be called after the first-run consent was confirmed. */
     suspend fun completeOnboarding()

@@ -215,7 +215,24 @@ English mirrors of every row above: `values-en/strings.xml` (same
 
 ---
 
+## T13 — Patient context and the two consents (2026-10-20)
+
+| Item | Location | Why flagged | Status |
+| --- | --- | --- | --- |
+| Profile-consent wording: `assistant_consent_profile_title` / `_desc` | `values/strings.xml`, `values-en/strings.xml` (`TODO(clinical-review)`), rendered by `feature/assistant/AssistantScreen.kt` (`ProfileConsentSwitch`) | The switch hands the assistant the patient's own profile; the copy must say exactly what is sent and must not read as a medical promise | Open |
+| Updated medicine-block consent body: `assistant_consent_medicine_body` | `values/strings.xml`, `values-en/strings.xml` | Still the sentence that justifies sending medication names and instruction text; must remain exact after the consent was split in two | Open |
+| Generic-mode banner: `assistant_mode_generic` | `values/strings.xml`, `values-en/strings.xml` (`TODO(clinical-review)`), `AssistantScreen.kt` | Tells the patient the answer is *not* personalized; must not imply answers without the profile are less safe | Open |
+| Failed-context sentence: `assistant_context_failed` | `values/strings.xml`, `values-en/strings.xml` (`TODO(clinical-review)`), `AssistantScreen.kt`, `AssistantViewModel.kt` (`contextFailed`) | Shown when the profile could not be read and **nothing was sent**; must be calm and must not invite the patient to send anyway | Open |
+| Context contents and caps: allergies/conditions (20), history (20), active medications (30), symptoms (10, 14 days), adherence (14 days), stopped medications (30 days) | `data/assistant/PatientContextBuilder.kt`, `docs/DECISIONS.md` D-023 point 4 | The exact minimum data set the assistant may see; a clinician must confirm nothing safety-relevant is missing and nothing identifying is included | Open |
+| All-or-nothing personalization: a personalized question is not sent when the context cannot be read | `feature/assistant/AssistantViewModel.kt` (`onSend`, D-023 point 3) | This is the rule that stops the assistant answering generically while the patient believes it has the profile | Open |
+| Section status travels with the context (`NOT_ASKED` / `NONE_CONFIRMED` / `LISTED`) | `domain/assistant/PatientContext.kt`, `data/assistant/PatientContextBuilder.kt`, `AssistantPayloads.kt` | The wire carries "we never asked"; the model must never read it as "there is nothing there" (AGENTS.md > Medical Safety Rules) | Open |
+| Two versioned consents replace the single sharing flag (profile and media, each with version + timestamp) | `domain/settings/ConsentRecord.kt`, `AppSettings.kt`, `data/settings/DataStoreSettingsRepository.kt`, `docs/DECISIONS.md` D-023 point 1 | Re-consent on a version bump is a privacy decision; confirm it is proportionate for both consents | Open |
+| Legacy migration: a patient who had the old sharing flag on is **not** silently made to share the full profile (the flag is dropped) | `data/settings/DataStoreSettingsRepository.kt`, D-023 points 1–2 | Defaulting a broader consent to off is the safe choice; confirm it is the right one for existing installs | Open |
+| Compat: T13 keeps sending the legacy `shareMedications`/`medicationContext` until the Worker reads `mode`/`context` (T14) | `domain/assistant/AssistantChat.kt`, `data/assistant/AssistantPayloads.kt` (`TODO(eng, T14)`) | During the overlap the deployed Worker still receives patient data in the old field; confirm it is acceptable until T14 is deployed | Open |
+
+---
+
 ## Not yet written (future tasks — keep this list growing)
 
-- Nothing pending: every screen and string up to and including T12 is recorded
+- Nothing pending: every screen and string up to and including T13 is recorded
   above. New tasks add their rows here before release.
