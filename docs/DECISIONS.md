@@ -4,6 +4,48 @@ Short entries. Newest first. Format: ID, date, decision, why, status.
 
 ---
 
+## D-018 — Assistant backend: one Cloudflare Worker, provider-agnostic (T9)
+
+Decision: the Assistant tab calls a single small proxy in `backend/`, deployed as a
+Cloudflare Worker (TypeScript). The Android app never holds an LLM API key.
+
+1. **Stack**: Cloudflare Workers + TypeScript, bundled with Wrangler. It is the
+   smallest viable option: nothing to patch, a free tier that covers v1 volume,
+   platform-managed secrets, and `vitest` tests that need no device or emulator.
+2. **Provider-agnostic**: one `POST /v1/chat` endpoint. `LLM_PROVIDER`,
+   `LLM_MODEL`, `LLM_API_KEY` and `LLM_BASE_URL` choose the provider. v1 ships an
+   OpenAI-compatible adapter plus a deterministic `mock` (the default in tests and
+   local development), so adding another provider means one new adapter and no
+   change to the route.
+2. **Safety prompt loaded from a file**: Appendix A of AGENTS.md is kept verbatim
+   in `backend/prompts/system-prompt.txt` so the medical reviewer can diff it. The
+   server also re-runs the urgent-symptom check on the last user message and
+   short-circuits to a calm emergency reply without calling the model; the app runs
+   the same check before sending (T6, T10), so this is defence in depth.
+4. **Abuse and cost protection**: 10 requests/minute and 50/day per install, plus a
+   global ceiling of 2000/day, counted in Workers KV (with an in-memory fallback
+   when no KV binding is configured). The app sends an opaque random
+   `X-Install-Id`. Play Integrity verification is implemented but **off by
+   default** (`PLAY_INTEGRITY_MODE=off`); when set to `enforce` the proxy decodes
+   the token through the Play Integrity API and checks the package name and a
+   request hash bound to the install id, which blunts replay across installs.
+5. **No content, no identifiers in logs**: only metadata is logged (event, a short
+   SHA-256 tag of the install id, status, counts, duration, provider, model).
+   Conversations are never stored, and message text is never logged.
+6. **Secrets only on the server**: `LLM_API_KEY` and the Play Integrity service
+   account are Worker secrets (`wrangler secret put`). `backend/.env.example`
+   contains placeholders only and `.env` is git-ignored.
+
+Why: AGENTS.md asks for the smallest viable backend that holds the key, applies the
+safety prompt, rate-limits per install and stores nothing, and for the abuse plan to
+be justified. A single Worker with a KV counter meets that without a database or a
+container to operate.
+
+Status: shipped in T9 with 85 backend tests; Play Integrity verification is present
+but disabled until the Google Cloud project and the app-side token (T10) exist.
+
+---
+
 ## D-017 — Patient-editable reminder and stock preferences (T8b)
 
 Decision: the patient can change five values, all stored in the same DataStore as

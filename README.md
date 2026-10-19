@@ -23,7 +23,8 @@ Medication Companion is an Android app that helps patients take their medication
 - **DI**: Hilt
 - **Data**: Room (local), DataStore (preferences)
 - **Reminders**: AlarmManager exact alarms
-- **Testing**: JUnit, MockK, Turbine, Room tests, Robolectric (JVM), Compose UI tests
+- **Assistant backend**: Cloudflare Worker + TypeScript (`backend/`, provider-agnostic)
+- **Testing**: JUnit, MockK, Turbine, Room tests, Robolectric (JVM), Compose UI tests; Vitest for the backend
 - **Lint**: ktlint, Android Lint
 
 ## Requirements
@@ -67,6 +68,23 @@ app/src/main/kotlin/com/medcompanion/app/
 └── ...
 ```
 
+The assistant proxy lives in a separate Node project:
+
+```
+backend/
+├── prompts/system-prompt.txt   # safety prompt (Appendix A), needs clinical review
+├── src/                        # Worker: routes, validation, limits, safety, LLM adapters
+└── tests/                      # Vitest
+```
+
+## Assistant backend
+
+The Assistant tab never holds an LLM API key. It calls one endpoint on a small
+Cloudflare Worker that holds the key, applies the safety system prompt,
+rate-limits per install and stores no conversations. See
+[`backend/README.md`](backend/README.md) for the endpoint contract, environment
+variables, tests and deploy steps, and `docs/DECISIONS.md` D-018 for the rationale.
+
 ## Privacy & Safety
 
 - All health data stays on-device (except Assistant backend)
@@ -96,7 +114,8 @@ Latest debug APK: app-debug.apk (15.19 MB)
 
 - T1–T7 shipped and verified (foundation, data layer, medications, today, reminders, symptoms, history + PDF export)
 - T8a shipped: profile (allergies/conditions), first-run consent + privacy placeholder, language choice, emergency number, export/delete all data
-- T8b in progress: patient reminder preferences (grace period, snooze, repeat interval), low-stock level and pharmacy number
-- T9/T10 next: the AI assistant (backend proxy, consent, emergency keyword check)
+- T8b shipped: patient reminder preferences (grace period, snooze, repeat interval), low-stock level and pharmacy number
+- T9 shipped: assistant backend proxy (`backend/`) — one `POST /v1/chat`, provider-agnostic, rate-limited, no logging of content, 85 Vitest tests
+- T10 next: assistant chat UI, first-use consent, client-side emergency card, "Report a problem"
 - See docs/DECISIONS.md for key architectural decisions
 - See AGENTS.md for full specifications

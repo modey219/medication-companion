@@ -151,6 +151,24 @@ English mirrors of every row above: `values-en/strings.xml` (same
 
 ---
 
+## T9 — Assistant backend (2026-10-19)
+
+| Item | Location | Why flagged | Status |
+| --- | --- | --- | --- |
+| Assistant system prompt (Appendix A): every rule and every quoted phrase | `backend/prompts/system-prompt.txt` (`TODO(clinical-review, T9)` in `backend/src/safety/systemPrompt.ts`) | The single most important safety artifact of the assistant; the reviewer owns this file and must confirm each "never do" rule | Open |
+| Urgent-symptom keyword list (Arabic and English) and the categories it covers | `backend/src/safety/emergency.ts` (chest pain, breathing, allergic reaction, fainting, stroke, bleeding, overdose, self-harm) | A missed phrase means the assistant answers a possible emergency instead of stopping; a false positive means an unnecessary alarm. Both need clinical sign-off | Open |
+| Server-side emergency reply wording (Arabic and English) | `backend/src/safety/emergency.ts` `emergencyReply` (`TODO(clinical-review, T9)`) | The whole reply in an emergency; must be short, calm, non-diagnostic, and must not ask questions | Open |
+| Emergency number placeholder (`112`, from `EMERGENCY_NUMBER`) | `backend/.env.example`, `backend/src/config.ts` | Must be replaced with the real local emergency number before release | Open |
+| Behaviour: the server answers an urgent symptom itself and never calls the model | `backend/src/app.ts` (`handleChat`) | Confirm that stopping the model entirely is the desired behaviour for every listed symptom | Open |
+| Patient-facing error and rate-limit copy returned by the backend | `backend/src/http.ts`, `backend/src/app.ts` (e.g. "Too many requests. Please try again later.") | Shown when the assistant is unavailable or limited; must not read as medical guidance or blame the patient | Open |
+| Rate-limit values as a patient experience decision (10/minute, 50/day per install) | `backend/src/config.ts`, `docs/DECISIONS.md` D-018 | Decides how often an elderly or anxious patient may ask; a product/clinical judgement, not only a cost guard | Open |
+| Decision: the model receives the medication list only when the patient turns sharing on, and it is passed as fenced data, never as instructions | `backend/src/safety/systemPrompt.ts`, `backend/src/validation.ts`, `docs/DECISIONS.md` D-018 | The privacy and prompt-injection boundary; the reviewer should confirm the wording that labels it as data | Open |
+
+English and Arabic are both present in the prompt file and the emergency reply; the
+reviewer must confirm both.
+
+---
+
 ## T1 — Standing notices (2026-10-17)
 
 | Item | Location | Why flagged | Status |
@@ -161,5 +179,5 @@ English mirrors of every row above: `values-en/strings.xml` (same
 
 ## Not yet written (future tasks — keep this list growing)
 
-- T9/T10: assistant disclaimer, first-use consent text, system prompt rules
-  (Appendix A in AGENTS.md).
+- T10: assistant first-use consent text, the one-line disclaimer, the client-side
+  emergency card wording, and the "Report a problem" template.

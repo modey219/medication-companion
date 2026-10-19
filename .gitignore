@@ -4,6 +4,12 @@
 build/
 !gradle/wrapper/gradle-wrapper.jar
 
+# Assistant backend (Node / Cloudflare Workers)
+node_modules/
+backend/dist/
+backend/.wrangler/
+coverage/
+
 # Android
 *.aab
 *.ap_
@@ -31,6 +37,7 @@ keystore.properties
 .env.*
 backend/.env
 backend/.env.*
+!backend/.env.example
 
 # Python (legacy scripts in this repo are intentionally ignored)
 __pycache__/
