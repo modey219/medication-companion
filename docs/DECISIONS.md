@@ -4,6 +4,38 @@ Short entries. Newest first. Format: ID, date, decision, why, status.
 
 ---
 
+## D-012 — Symptoms log (T6)
+
+Date: 2026-10-19
+Status: Accepted
+
+Decisions:
+1. The quick log is name + severity (1 to 5) + optional note; the recorded
+   time is `clock.now()` at the moment of saving and is shown on every entry.
+   Backdating a symptom is deferred (the History tab owns the timeline).
+2. Severity starts **unchosen** on purpose (`Int?`, save disabled until the
+   patient picks a level): the app never assumes how bad a symptom is.
+3. Severity labels are words next to the number ("3 - متوسط"), so the screen
+   never depends on color alone and reads correctly with TalkBack and at 2.0x
+   font scale (five radio rows instead of a chip row that would overflow).
+4. Severity levels are described by intensity only. Nothing in the screen says
+   what the symptom means, what to do, or whether to stop a medication.
+5. A local keyword check (`core/emergency/EmergencySymptoms`) runs on the typed
+   name in Arabic and English and shows the emergency card (contact emergency
+   services immediately) as soon as a term matches. It is matched after
+   normalizing case, spaces and Arabic diacritics/letter variants.
+6. The emergency card is **not** triggered by severity 5 alone: the app does
+   not triage, and "showing the emergency card to anyone who picks 5" would be
+   an invented rule. Severity 5 is simply logged.
+7. `emergency_number` is a placeholder (empty, `TODO(clinical-review)`); the
+   call button only appears once the team fills it in. Coming from the phone
+   it opens the dialer (`ACTION_DIAL`), it never places the call itself.
+8. Deleting an entry is allowed (typo or wrong entry) and uses plain, matter of
+   fact copy: the log is the patient's, and the app never judges a dose or a
+   symptom as failed.
+
+---
+
 ## D-011 — Repeat dose reminders until the patient acts (Phase 1)
 
 Date: 2026-10-19

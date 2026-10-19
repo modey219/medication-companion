@@ -189,4 +189,35 @@
     <string name="reminders_setup_oem_oppo">Oppo: Settings &gt; Battery &gt; Background power consumption &gt; Medication Companion &gt; allow background.</string>
     <string name="reminders_setup_oem_vivo">Vivo: Settings &gt; Battery &gt; Background power consumption &gt; Medication Companion &gt; allow background.</string>
     <string name="today_reminders_banner">Reminders are not fully enabled. Tap to set up.</string>
+
+    <!--
+      T6 symptom log.
+      TODO(clinical-review): the severity wording, the emergency card text, the
+      urgent-term list in EmergencySymptoms and the local emergency number.
+    -->
+    <string name="action_delete">Delete</string>
+    <string name="action_dismiss">Dismiss</string>
+    <string name="symptoms_log_title">Log a symptom</string>
+    <string name="symptom_name_label">Symptom name</string>
+    <string name="symptom_name_hint">For example: headache</string>
+    <string name="symptom_severity_label">How strong is it?</string>
+    <string name="symptom_severity_option">%1$d - %2$s</string>
+    <string name="symptom_severity_1">Very mild</string>
+    <string name="symptom_severity_2">Mild</string>
+    <string name="symptom_severity_3">Moderate</string>
+    <string name="symptom_severity_4">Severe</string>
+    <string name="symptom_severity_5">Very severe</string>
+    <string name="symptom_severity_required">Choose how strong the symptom is, from 1 to 5.</string>
+    <string name="symptom_note_label">Note (optional)</string>
+    <string name="symptom_time_hint">The time is recorded when you save.</string>
+    <string name="symptoms_recent_title">Recent symptoms</string>
+    <string name="symptoms_empty">You have not logged any symptom yet.</string>
+    <string name="symptoms_error_save">We could not save the symptom. Please try again.</string>
+    <string name="symptoms_error_delete">We could not delete the symptom. Please try again.</string>
+    <string name="emergency_title">These symptoms may be an emergency</string>
+    <string name="emergency_body">If you have chest pain, difficulty breathing, fainting, signs of a stroke or heavy bleeding, contact emergency services right away. Do not wait, and do not rely on this app.</string>
+    <string name="emergency_number_hint">Emergency number: %1$s</string>
+    <string name="emergency_call">Call emergency services</string>
+    <!-- TODO(clinical-review): fill in the local emergency number. -->
+    <string name="emergency_number"></string>
 </resources>

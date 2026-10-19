@@ -196,4 +196,35 @@
     <string name="reminders_setup_oem_oppo">أوبو: الإعدادات &gt; البطارية &gt; استهلاك الطاقة في الخلفية &gt; رفيق الدواء &gt; السماح بالعمل في الخلفية.</string>
     <string name="reminders_setup_oem_vivo">فيفو: الإعدادات &gt; البطارية &gt; استهلاك الطاقة في الخلفية &gt; رفيق الدواء &gt; السماح بالنشاط في الخلفية.</string>
     <string name="today_reminders_banner">التذكيرات غير مفعّلة بالكامل. اضغط للإعداد.</string>
+
+    <!--
+      T6 symptom log.
+      TODO(clinical-review): the severity wording, the emergency card text, the
+      urgent-term list in EmergencySymptoms and the local emergency number.
+    -->
+    <string name="action_delete">حذف</string>
+    <string name="action_dismiss">إخفاء</string>
+    <string name="symptoms_log_title">تسجيل عرض جديد</string>
+    <string name="symptom_name_label">اسم العرض</string>
+    <string name="symptom_name_hint">مثال: صداع</string>
+    <string name="symptom_severity_label">شدة العرض</string>
+    <string name="symptom_severity_option">%1$d - %2$s</string>
+    <string name="symptom_severity_1">خفيف جدًا</string>
+    <string name="symptom_severity_2">خفيف</string>
+    <string name="symptom_severity_3">متوسط</string>
+    <string name="symptom_severity_4">شديد</string>
+    <string name="symptom_severity_5">شديد جدًا</string>
+    <string name="symptom_severity_required">اختر شدة العرض من 1 إلى 5.</string>
+    <string name="symptom_note_label">ملاحظة (اختياري)</string>
+    <string name="symptom_time_hint">سيُسجَّل وقت الحفظ مع العرض.</string>
+    <string name="symptoms_recent_title">آخر الأعراض</string>
+    <string name="symptoms_empty">لم تسجّل أي عرض بعد.</string>
+    <string name="symptoms_error_save">لم نتمكن من حفظ العرض. حاول مرة أخرى.</string>
+    <string name="symptoms_error_delete">لم نتمكن من حذف العرض. حاول مرة أخرى.</string>
+    <string name="emergency_title">هذه الأعراض قد تكون طارئة</string>
+    <string name="emergency_body">إذا كنت تعاني من ألم في الصدر، أو ضيق في التنفس، أو إغماء، أو أعراض جلطة، أو نزيف شديد، فاتصل بخدمات الطوارئ فورًا. لا تنتظر ولا تعتمد على هذا التطبيق.</string>
+    <string name="emergency_number_hint">رقم الطوارئ: %1$s</string>
+    <string name="emergency_call">الاتصال بالطوارئ</string>
+    <!-- TODO(clinical-review): fill in the local emergency number. -->
+    <string name="emergency_number"></string>
 </resources>

@@ -83,6 +83,19 @@ English mirrors of every row above: `values-en/strings.xml` (same
 
 ---
 
+## T6 — Symptoms log (2026-10-19)
+
+| Item | Location | Why flagged | Status |
+| --- | --- | --- | --- |
+| Severity labels 1 to 5 (`symptom_severity_1` .. `symptom_severity_5`) and `symptom_severity_required` | `values/strings.xml`, `feature/symptoms/SymptomLabels.kt` | The words used for intensity must be clear to elderly patients and must not imply a diagnosis or a decision | Open |
+| Log copy: `symptoms_log_title`, `symptom_name_hint`, `symptom_time_hint`, `symptoms_recent_title`, `symptoms_empty`, `symptoms_error_save`, `symptoms_error_delete`, `action_delete` | `values/strings.xml`, `feature/symptoms/SymptomsScreen.kt` | Tone must stay calm and non-judgemental; "delete" must read as correcting a mistake, never as hiding a symptom | Open |
+| Emergency card: `emergency_title`, `emergency_body` | `values/strings.xml`, `feature/symptoms/SymptomsScreen.kt` | Urges contacting emergency services immediately; wording and the listed red flags need clinical sign-off | Open |
+| Urgent-term list (Arabic + English) and the diacritic/letter-variant normalisation | `core/emergency/EmergencySymptoms.kt` | Must not miss a serious term and must not fire on ordinary symptoms; confirm that "نزيف" alone is acceptable and whether more terms are needed | Open |
+| `emergency_number` value (currently an empty placeholder) with `emergency_number_hint` / `emergency_call` | `values/strings.xml`, `feature/symptoms/SymptomsScreen.kt` | Needs the local emergency number for the target country; the call button stays hidden until then (TODO(clinical-review), TODO(legal)) | Open |
+| Decision: severity 5 does **not** trigger the emergency card on its own (no triage) | `docs/DECISIONS.md` D-012 point 6 | Confirm that logging severity 5 without emergency wording is acceptable, or specify a reviewed message | Open |
+
+---
+
 ## T1 — Standing notices (2026-10-17)
 
 | Item | Location | Why flagged | Status |
@@ -93,8 +106,6 @@ English mirrors of every row above: `values-en/strings.xml` (same
 
 ## Not yet written (future tasks — keep this list growing)
 
-- T6: severity scale (1–5) labels and any guidance text; urgent-symptom
-  emergency message and the local emergency number.
 - T7: history/adherence summary labels (never shaming language).
 - T9/T10: assistant disclaimer, first-use consent text, system prompt rules
   (Appendix A in AGENTS.md).
