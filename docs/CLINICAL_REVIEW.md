@@ -96,6 +96,24 @@ English mirrors of every row above: `values-en/strings.xml` (same
 
 ---
 
+## T7 — History timeline, adherence summary and PDF export (2026-10-19)
+
+| Item | Location | Why flagged | Status |
+| --- | --- | --- | --- |
+| Adherence wording: `history_summary_title`, `history_summary_taken`, `history_summary_missed`, `history_summary_skipped`, `history_summary_pending`, `history_summary_percent`, `history_summary_none` | `values/strings.xml`, `feature/history/HistoryScreen.kt`, `data/export/HistoryPdfExporter.kt` | The summary is the most sensitive text in the app: it must never read as a grade or a judgement about missed doses, and "not recorded yet" must not imply the patient failed | Open |
+| Period labels `history_period_7_days` / `history_period_30_days` ("last week" / "last month" covering 7 / 30 days) | `values/strings.xml`, `feature/history/HistoryLabels.kt` | The labels avoid digits on purpose; confirm the wording is not misleading about the actual window | Open |
+| Timeline labels: `history_entries_title`, `history_entry_dose`, `history_entry_symptom`, `history_entry_medication_started`, `history_empty` | `values/strings.xml`, `feature/history/HistoryScreen.kt` | Neutral event names only; confirm nothing implies cause or effect between a dose and a symptom | Open |
+| Export copy: `history_export`, `history_export_disclaimer`, `history_share_title`, `history_error_export` | `values/strings.xml`, `feature/history/HistoryScreen.kt` | The disclaimer must be true and clear (the file stays on the device until the patient picks an app) | Open |
+| PDF content: `history_pdf_title`, `history_pdf_generated`, `history_pdf_period`, `history_pdf_doses_title`, `history_pdf_symptoms_title`, `history_pdf_medications_title`, `history_pdf_note`, `history_pdf_unknown_medication`, `history_pdf_footer` | `values/strings.xml`, `data/export/HistoryPdfExporter.kt` | The footer is the safety notice a doctor or pharmacist reads; it must state plainly that this is patient-entered data and not a diagnosis or a substitute for professional advice | Open |
+| Decision: the PDF footer and the summary do not interpret the data, and a dose with an unknown medication is listed as "unknown medication" | `docs/DECISIONS.md` D-013 points 3, 4, 9; `data/export/HistoryPdfExporter.kt` | Confirm no interpretation is expected from the export, and that the fallback wording is acceptable | Open |
+| Decision: the percentage is taken/acted and stays empty until a dose was acted on | `docs/DECISIONS.md` D-013 point 4; `domain/history/HistoryReport.kt` | Confirm that an incomplete-but-honest number is preferable to any extrapolation | Open |
+| Medication status labels added for the export: `medication_status_active` / `_completed` / `_stopped` | `values/strings.xml`, `feature/medications/MedicationLabels.kt` | Terminology in Arabic for a medication's state; must not imply the patient should start or stop anything | Open |
+
+English mirrors of every row above: `values-en/strings.xml` (same
+`TODO(clinical-review)` comments).
+
+---
+
 ## T1 — Standing notices (2026-10-17)
 
 | Item | Location | Why flagged | Status |
@@ -106,6 +124,5 @@ English mirrors of every row above: `values-en/strings.xml` (same
 
 ## Not yet written (future tasks — keep this list growing)
 
-- T7: history/adherence summary labels (never shaming language).
 - T9/T10: assistant disclaimer, first-use consent text, system prompt rules
   (Appendix A in AGENTS.md).

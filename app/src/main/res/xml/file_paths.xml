@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Shared files for the History tab export (T7). Only the exports folder in
+    cacheDir is exposed, and only through a content Uri handed to the app the
+    patient picks in the share sheet. Nothing is uploaded.
+-->
+<paths>
+    <cache-path
+        name="exports"
+        path="exports/" />
+</paths>

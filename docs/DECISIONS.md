@@ -4,6 +4,56 @@ Short entries. Newest first. Format: ID, date, decision, why, status.
 
 ---
 
+## D-013 — History timeline, adherence summary and PDF export (T7)
+
+Date: 2026-10-19
+Status: Accepted
+
+Decisions:
+1. The window is "today plus the previous days, starting at local midnight",
+   read from `AppClock`: 7 or 30 days, and `HistoryPeriod` is the only place
+   the day counts live.
+2. The Arabic period labels avoid digits (`آخر أسبوع` / `آخر شهر`) because a
+   literal digit in a resource would force a digit system on the patient;
+   English says "Last week" / "Last month" (AGENTS.md > Localization and UX:
+   follow the device digit style, do not force one).
+3. The timeline merges doses, symptoms and medications that started in the
+   window, newest first, grouped by local day. A dose whose medication is no
+   longer known is left out of the timeline (there is nothing to name) but
+   still counts in the summary, so the export never prints a nameless line.
+4. The summary counts taken, missed, skipped and "not recorded yet" (PENDING
+   and SNOOZED). The percentage is taken/acted and is `null` until something
+   was acted on: no percentage out of nothing. Every line is a count with
+   neutral wording; the summary is a record, never a grade.
+5. The PDF uses the platform `android.graphics.pdf.PdfDocument` (A4, 595x842)
+   with `StaticLayout` and an RTL/LTR text direction, so Arabic is shaped and
+   wrapped correctly and long reports paginate. No new dependency, no server,
+   no key.
+6. The timeline and the export are built from the same snapshot, so the file
+   and the screen can never disagree.
+7. The file is written to `cacheDir/exports` and offered through a
+   `FileProvider` Uri (`${applicationId}.fileprovider`) to the single app the
+   patient picks in the share sheet; nothing is uploaded and the app keeps no
+   other copy. The line under the button says the file stays on the device
+   until an app is chosen.
+8. Export failures (file write, or no app able to take the file) show one
+   plain retry message, never a crash, and never leave a stale share Uri
+   behind.
+9. `HistoryEntry`/`HistoryUiState` are feature-local; the exporter lives in
+   `data/export` and reuses the existing label helpers
+   (`DoseStatus.labelRes`, `severityLabelRes`, and `MedicationStatus.labelRes`
+   added here) so no user-visible string is duplicated.
+
+Notes:
+- The medicine names and symptoms in the file come from what the patient
+  entered; the app adds no interpretation
+  (`TODO(clinical-review)`: the summary wording, the export disclaimer and
+  the PDF footer, listed in `docs/CLINICAL_REVIEW.md`).
+- `TODO(eng, T8)`: the period lengths become configurable with the other
+  reminder settings.
+
+---
+
 ## D-012 — Symptoms log (T6)
 
 Date: 2026-10-19

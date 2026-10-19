@@ -6,6 +6,7 @@ import com.medcompanion.app.domain.model.DoseStatus
 import com.medcompanion.app.domain.model.FoodRelation
 import com.medcompanion.app.domain.model.MedicationForm
 import com.medcompanion.app.domain.model.MedicationSource
+import com.medcompanion.app.domain.model.MedicationStatus
 import com.medcompanion.app.domain.model.ScheduleType
 import java.time.DayOfWeek
 
@@ -68,4 +69,12 @@ fun DoseStatus.labelRes(): Int =
         DoseStatus.MISSED -> R.string.dose_missed
         DoseStatus.SKIPPED -> R.string.dose_skipped
         DoseStatus.SNOOZED -> R.string.dose_snoozed
+    }
+
+@StringRes
+fun MedicationStatus.labelRes(): Int =
+    when (this) {
+        MedicationStatus.ACTIVE -> R.string.medication_status_active
+        MedicationStatus.COMPLETED -> R.string.medication_status_completed
+        MedicationStatus.STOPPED -> R.string.medication_status_stopped
     }
