@@ -4,6 +4,45 @@ Short entries. Newest first. Format: ID, date, decision, why, status.
 
 ---
 
+## D-021 — Personalized guidance, profile review and media (T12–T18)
+
+Decision: the assistant may personalize its answers from the patient’s own
+profile and look at photos or a short video reduced to frames, under the new
+“Medical Safety Rules” in AGENTS.md. Allowed: possible explanations with
+explicit uncertainty, an urgency level, safe self-care steps that involve no
+medicines, cautions drawn from the profile, and questions for a clinician. Still
+forbidden: prescribing, recommending a specific medicine, telling the patient to
+start, stop, skip or change a medicine or dose, giving dose amounts, saying
+anything is safe to combine, treating a test result or an image as a diagnosis,
+and identifying people in images.
+
+1. **Review before answer, enforced in code and not only in the prompt**: the
+   client cannot send until the patient context is built, and `POST /v1/chat`
+   needs a valid context or `mode="generic"` (HTTP 400 otherwise). The reply
+   starts with `contextReview` and `dataGaps`, so the patient sees what was
+   considered and what is missing. A section is `NOT_ASKED` until the patient
+   either lists items or confirms “none”, and absence of data is never treated
+   as evidence of absence.
+2. **Two consents replace the single “share my medication list” toggle**:
+   (a) personalize with my health profile, (b) send photos or videos for
+   analysis. Both are versioned, timestamped, revocable and off by default.
+   They are separate because media is the most sensitive thing the app can send.
+3. **A deterministic layer stays around the model**: the emergency keyword check
+   is unchanged, a normalized allergy-versus-medicine-name match pre-flags the
+   question, and a post-filter rejects dose amounts, start/stop instructions,
+   “you have <disease>” claims and “safe to combine” statements. A rejected
+   reply is regenerated once with a corrective instruction, then replaced by a
+   safe fallback. Violations are counted without any content.
+4. **Media is processed on the device before it leaves**: re-encoded as JPEG
+   (which strips EXIF and GPS), longest side 1600 px, under 1 MB, at most four
+   photos or one video reduced to eight evenly spaced frames, held in memory on
+   the server only, never logged or persisted. The provider must not retain or
+   train on the data; that is an environment-level requirement.
+5. **Status**: T12–T18 are planned and this entry records the rule change they
+   depend on. The emergency number is still the 112 fallback, so every string
+   that uses it carries TODO(clinical-review), and the deployed Worker is still
+   pending, so T14 and T17 can only be verified end to end after it is finished.
+
 ## D-020 — Backend identity and the CI typecheck fix (T9/T10 follow-up)
 
 Decision: the Worker, its npm package and the Cloudflare project all use the
