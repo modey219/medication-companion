@@ -4,6 +4,89 @@ Short entries. Newest first. Format: ID, date, decision, why, status.
 
 ---
 
+## D-014 — Patient settings and "delete all my data" (T8a)
+
+Date: 2026-10-19
+Status: Accepted
+
+Decision:
+1. Patient settings live in a **DataStore (Preferences)** named `settings`
+   behind `domain/settings/SettingsRepository`, exposed as an immutable
+   `AppSettings(language, emergencyNumber, onboardingCompleted)`. Room stays the
+   store for everything the patient records; settings are not health entries.
+2. `DataMaintenance.deleteAllData()` is the single "delete all my data" path. It
+   (a) reads every dose id and cancels its alarm and notification, (b) calls
+   `clearAllTables()` on the database, (c) clears the settings **except the
+   first-run consent record** (a record of consent is not a health entry), and
+   (d) resets the app language to the device language.
+3. Order matters: the reminders are cancelled *before* the rows disappear,
+   because once a dose row is gone nothing knows which alarms belonged to it.
+4. "Export my data" collects everything through one `FullDataCollector`, so the
+   JSON and the PDF can never disagree, and writes it to `cacheDir/exports/`
+   (shared through this app's FileProvider). The JSON uses ISO-8601 instants and
+   stable enum names on purpose: the file is read by machines and by someone
+   moving their data elsewhere, so it must not depend on the phone's locale or
+   digit system.
+5. The emergency number lives in the settings (Profile tab) and falls back to
+   the built-in `R.string.emergency_number` placeholder when it is empty.
+
+Why: preferences are small, need no schema migration and are read on startup;
+keeping them out of Room also means "delete all my data" cannot forget a table.
+The consent record surviving the wipe is deliberate: the patient consented once,
+and wiping data must not silently re-ask or look like a fresh install.
+
+---
+
+## D-015 — Choosing the app language with AppCompat per-app locales (T8a)
+
+Date: 2026-10-19
+Status: Accepted
+
+Decision: the language is chosen with AppCompat's per-app locales
+(`AppCompatDelegate.setApplicationLocales`) through
+`core/locale/AppCompatLanguageApplier`, and `MainActivity` extends
+`androidx.appcompat.app.AppCompatActivity`. The two app themes
+(`values/themes.xml`, `values-night/themes.xml`) inherit from
+`Theme.AppCompat.*` instead of `android:Theme.Material.*`. The `SYSTEM` choice
+is applied as an **empty** locale list, which means "follow the device".
+
+Why: Android 13+ has per-app languages in the framework, but the app must also
+work on API 26 to 32, where there is no framework equivalent. AppCompat backports
+the same behaviour to every supported version and remembers the choice itself,
+so nothing has to be re-applied on each start. The settings repository still
+keeps the choice as the app's own record (and that is what the JSON export
+writes), and "delete all my data" resets both the record and the applied locale
+to the device language.
+
+Consequences: a new dependency (`androidx.appcompat` 1.8.0) and the theme parent
+change; the activity is recreated when the language changes, which is intended.
+The ViewModels persist the language **before** applying it, because applying it
+recreates the activity and cancels their scope.
+
+---
+
+## D-016 — No database encryption in v1 (T8a)
+
+Date: 2026-10-19
+Status: Accepted
+
+Decision: the Room database is **not** encrypted in v1 (no SQLCipher). What
+protects the data instead: `allowBackup="false"` with data-extraction rules (no
+cloud backup), all health data staying on the device, no analytics or
+crash-reporting SDK, and no medication or symptom names in any log. Adding
+SQLCipher later is an additive change (open the database with a key held in the
+Android Keystore); it changes neither the schema nor the domain layer.
+
+Why: AGENTS.md asks to *evaluate* encryption, not to ship it. SQLCipher would add
+a native dependency, a passphrase path on every I/O and a real risk of data loss
+when the key is lost, for a protection that only matters if the device is
+unlocked and rooted or the files are extracted with developer access. v1 keeps
+the smaller, reviewable surface and records the trade-off here. Revisit for v2
+together with the "should the app ask for a device passcode or biometrics"
+question.
+
+---
+
 ## D-013 — History timeline, adherence summary and PDF export (T7)
 
 Date: 2026-10-19

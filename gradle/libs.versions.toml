@@ -19,6 +19,7 @@ minSdk = "26"
 composeBom = "2026.09.00"
 coreKtx = "1.19.1"
 coreSplashscreen = "1.2.0"
+appcompat = "1.8.0"
 activityCompose = "1.13.0"
 lifecycle = "2.11.0"
 navigationCompose = "2.10.2"
@@ -42,6 +43,9 @@ robolectric = "4.17"
 # Core
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-core-splashscreen = { group = "androidx.core", name = "core-splashscreen", version.ref = "coreSplashscreen" }
+# Per-app locales (D-015): AppCompatDelegate.setApplicationLocales needs the
+# AppCompat delegate, so MainActivity is an AppCompatActivity.
+androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
 
 # Lifecycle
 androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycle" }

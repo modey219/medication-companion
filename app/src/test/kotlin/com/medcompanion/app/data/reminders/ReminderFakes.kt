@@ -55,6 +55,8 @@ class FakeDoseEventRepository : DoseEventRepository {
 
     override suspend fun getById(id: Long): DoseEvent? = events.firstOrNull { it.id == id }
 
+    override fun observeAll(): Flow<List<DoseEvent>> = stream
+
     override suspend fun getBetween(
         start: Instant,
         end: Instant,

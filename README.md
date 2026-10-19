@@ -69,11 +69,16 @@ app/src/main/kotlin/com/medcompanion/app/
 
 ## Privacy & Safety
 
+## Privacy & Safety
+
 - All health data stays on-device (except Assistant backend)
+- Automatic cloud backup is disabled (`allowBackup="false"` + extraction rules); the patient can export instead
+- Profile offers "Export my data" (JSON and PDF) and "Delete all my data"
+- The database is not encrypted in v1 (see docs/DECISIONS.md D-016)
 - No analytics, ads, or tracking
 - Strong focus on medical safety: never diagnoses, never recommends changes
 - Emergency keyword detection
-- Arabic-first with full RTL support
+- Arabic-first with full RTL support, with an in-app language choice (system / Arabic / English)
 
 ## Git
 
@@ -83,7 +88,7 @@ app/src/main/kotlin/com/medcompanion/app/
 
 ## APK
 
-Latest debug APK: app-debug.apk (12.16 MB)
+Latest debug APK: app-debug.apk (14.42 MB)
 
 ## Links
 
@@ -91,7 +96,8 @@ Latest debug APK: app-debug.apk (12.16 MB)
 
 ## Notes
 
-- T1–T2 complete and verified
-- T3 in progress
+- T1–T7 shipped and verified (foundation, data layer, medications, today, reminders, symptoms, history + PDF export)
+- T8a in progress: profile (allergies/conditions), first-run consent + privacy placeholder, language choice, emergency number, export/delete all data
+- T8b next: reminder preferences (grace period, snooze, repeat interval, low-stock, pharmacy number)
 - See docs/DECISIONS.md for key architectural decisions
 - See AGENTS.md for full specifications

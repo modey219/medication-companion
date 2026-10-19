@@ -18,6 +18,9 @@ class DoseEventRepositoryImpl
     constructor(
         private val doseEventDao: DoseEventDao,
     ) : DoseEventRepository {
+        override fun observeAll(): Flow<List<DoseEvent>> =
+            doseEventDao.observeAll().map { entities -> entities.map { it.toDomain() } }
+
         override fun observeBetween(
             start: Instant,
             end: Instant,

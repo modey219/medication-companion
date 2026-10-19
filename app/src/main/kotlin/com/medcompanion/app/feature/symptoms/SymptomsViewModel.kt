@@ -6,6 +6,7 @@ import com.medcompanion.app.core.emergency.EmergencySymptoms
 import com.medcompanion.app.core.time.AppClock
 import com.medcompanion.app.domain.model.SymptomLog
 import com.medcompanion.app.domain.repository.SymptomRepository
+import com.medcompanion.app.domain.settings.SettingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,6 +32,7 @@ class SymptomsViewModel
     @Inject
     constructor(
         private val symptomRepository: SymptomRepository,
+        private val settingsRepository: SettingsRepository,
         private val clock: AppClock,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(SymptomsUiState())
@@ -38,13 +40,13 @@ class SymptomsViewModel
 
         init {
             viewModelScope.launch {
-                symptomRepository.observeAll().collect { logs ->
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            entries = logs.map { log -> log.toEntry() },
-                        )
-                    }
+                symptomRepository.observeAll().collect { entries ->
+                    _uiState.update { it.copy(isLoading = false, entries = entries.map { entry -> entry.toEntry() }) }
+                }
+            }
+            viewModelScope.launch {
+                settingsRepository.observe().collect { settings ->
+                    _uiState.update { it.copy(emergencyNumber = settings.emergencyNumber) }
                 }
             }
         }

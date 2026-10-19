@@ -122,6 +122,13 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.core.splashscreen)
 
+    // Per-app locales (D-015): the AppCompat delegate applies the chosen
+    // language so everything outside Compose (notifications, dialogs) follows it.
+    implementation(libs.androidx.appcompat)
+
+    // Settings storage (D-014), T8.
+    implementation(libs.androidx.datastore.preferences)
+
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)

@@ -114,6 +114,24 @@ English mirrors of every row above: `values-en/strings.xml` (same
 
 ---
 
+## T8a — Profile, first-run consent and my data (2026-10-19)
+
+| Item | Location | Why flagged | Status |
+| --- | --- | --- | --- |
+| First-run consent text: `onboarding_title`, `onboarding_intro`, `onboarding_point_1`..`3`, `onboarding_accept` | `values/strings.xml`, `feature/onboarding/OnboardingScreen.kt` | The consent must state exactly what the app does with the patient's data, in plain language, before anything is recorded; "not a medical device" must be unmistakable | Open |
+| Privacy policy placeholder: `privacy_title`, `privacy_placeholder` | `values/strings.xml`, `feature/onboarding/PrivacyPolicyScreen.kt` | Placeholder only (`TODO(legal)`): the reviewed policy must replace it before release | Open |
+| Emergency number: `profile_emergency_title`, `profile_emergency_desc`, `profile_emergency_label`, `profile_emergency_saved` | `values/strings.xml`, `feature/profile/ProfileScreen.kt` | The number shown in an emergency is a medical-safety value; it also feeds the Symptoms emergency card | Open |
+| Allergy and condition wording: `profile_allergy_title`, `profile_condition_title`, `profile_add_allergy`, `profile_add_condition`, `profile_entry_label_allergy`, `profile_entry_label_condition`, `profile_entry_note`, `profile_empty_list` | `values/strings.xml`, `feature/profile/ProfileScreen.kt` | These fields hold the patient's own clinical facts; the prompts must not suggest a diagnosis or that the app validates their accuracy | Open |
+| Delete-all wording: `profile_delete_all`, `profile_delete_confirm_title`, `profile_delete_confirm_body`, `profile_delete_confirmed` | `values/strings.xml`, `feature/profile/ProfileScreen.kt` | The confirmation must be unambiguous that everything is erased and reminders are cancelled, and must not read as a scare tactic | Open |
+| Export wording: `profile_export_json`, `profile_export_pdf`, `profile_export_note`, `profile_export_share_title`, `data_pdf_title`, `data_pdf_counts`, `data_pdf_medications_title`, `data_pdf_every_hours` | `values/strings.xml`, `data/export/DataPdfContent.kt`, `data/export/DataJsonExporter.kt` | The exported document is read by a clinician; the wording and the "every N hours" phrasing must be accurate | Open |
+| Decision: the export lists what the patient entered and never interprets it; the safety footer is the same as the History export | `docs/DECISIONS.md` D-014 point 4; `data/export/DataPdfContent.kt` | Confirm no interpretation is expected, and that reusing the History footer (including its "not a substitute for professional advice" line) is right for the my-data document | Open |
+| Decision: the app language may be changed by the patient (`language_system`, `language_arabic`, `language_english`) | `docs/DECISIONS.md` D-015; `ui/components/LanguageSelector.kt` | The Arabic option is labelled in Arabic and the English one in English, so neither relies on translation; confirm this is not confusing for the elderly target user | Open |
+
+English mirrors of every row above: `values-en/strings.xml` (same
+`TODO(clinical-review)` comments).
+
+---
+
 ## T1 — Standing notices (2026-10-17)
 
 | Item | Location | Why flagged | Status |

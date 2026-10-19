@@ -13,6 +13,7 @@ data class SymptomsUiState(
     val form: SymptomFormState = SymptomFormState(),
     val isSaving: Boolean = false,
     val showEmergencyWarning: Boolean = false,
+    val emergencyNumber: String = "",
     val error: SymptomsError? = null,
 ) {
     val isEmpty: Boolean

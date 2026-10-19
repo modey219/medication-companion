@@ -3,6 +3,7 @@ package com.medcompanion.app.feature.symptoms
 import com.medcompanion.app.core.time.FakeAppClock
 import com.medcompanion.app.domain.model.SymptomLog
 import com.medcompanion.app.domain.repository.SymptomRepository
+import com.medcompanion.app.domain.settings.FakeSettingsRepository
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -27,6 +28,7 @@ import java.time.Instant
 class SymptomsViewModelTest {
     private val clock = FakeAppClock() // fixed at 2026-10-17T12:00:00Z, UTC
     private val repository: SymptomRepository = mockk(relaxed = true)
+    private val settings = FakeSettingsRepository()
     private val stored = MutableStateFlow<List<SymptomLog>>(emptyList())
     private val saved = slot<SymptomLog>()
 
@@ -42,7 +44,7 @@ class SymptomsViewModelTest {
         Dispatchers.resetMain()
     }
 
-    private fun viewModel() = SymptomsViewModel(repository, clock)
+    private fun viewModel() = SymptomsViewModel(repository, settings, clock)
 
     @Test
     fun `saving stores the trimmed name, the severity, the note and the clock time`() {

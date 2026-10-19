@@ -28,6 +28,14 @@ interface DoseEventDao {
     @Query("SELECT * FROM dose_events WHERE id = :id")
     suspend fun getById(id: Long): DoseEventEntity?
 
+    /** Every event ever generated, oldest first; used by the data export (T8a). */
+    @Query("SELECT * FROM dose_events ORDER BY scheduledAt")
+    fun observeAll(): Flow<List<DoseEventEntity>>
+
+    /** Ids of every event, so their alarms and notifications can be cancelled. */
+    @Query("SELECT id FROM dose_events")
+    suspend fun getAllIds(): List<Long>
+
     @Query(
         "SELECT * FROM dose_events WHERE scheduledAt >= :start AND scheduledAt < :end " +
             "ORDER BY scheduledAt",

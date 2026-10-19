@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- The visual theme lives in Compose (ui/theme). This platform theme only
-         removes the action bar and sets the window background before Compose loads. -->
-    <style name="Theme.MedCompanion" parent="@android:style/Theme.Material.Light.NoActionBar">
+         removes the action bar and sets the window background before Compose loads.
+         It descends from AppCompat because MainActivity is an AppCompatActivity
+         (per-app locales, D-015). -->
+    <style name="Theme.MedCompanion" parent="Theme.AppCompat.Light.NoActionBar">
         <item name="android:windowBackground">@color/window_background</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>

@@ -264,4 +264,59 @@ footer. The wording stays neutral and never grades a missed dose.
 <string name="medication_status_active">جارٍ</string>
 <string name="medication_status_completed">مكتمل</string>
 <string name="medication_status_stopped">متوقّف</string>
+
+<!--
+T8a profile, first-run consent, language, data export and deletion.
+TODO(clinical-review): the emergency number field (it stays empty until the
+team fills it in), the consent wording and the privacy policy text.
+TODO(legal): the privacy policy is a placeholder.
+-->
+<string name="onboarding_title">أهلًا بك في رفيق الدواء</string>
+<string name="onboarding_intro">تطبيق يساعدك على تنظيم أدويتك وتذكّرك بها وحفظ سجلها. هو رفيق لك، وليس جهازًا طبيًا.</string>
+<string name="onboarding_point_1">يبقى كل ما تُدخله من بيانات صحية على جهازك، ولا يُرسل إلى أي جهة في هذا الإصدار.</string>
+<string name="onboarding_point_2">التذكيرات تعمل على جهازك، وتحتاج السماح بالإشعارات والمنبّهات الدقيقة.</string>
+<string name="onboarding_point_3">يمكنك تصدير بياناتك أو حذفها في أي وقت من صفحة الملف الشخصي.</string>
+<string name="onboarding_language_title">لغة التطبيق</string>
+<string name="onboarding_privacy_link">قراءة سياسة الخصوصية</string>
+<string name="onboarding_accept">أوافق وأبدأ</string>
+<string name="privacy_title">سياسة الخصوصية</string>
+<!-- TODO(legal): replace with the reviewed privacy policy. -->
+<string name="privacy_placeholder">مسوّدة للمراجعة القانونية. في هذا الإصدار تبقى بياناتك الصحية على جهازك، ولا تُرسل إلى أي جهة، ولا يحتوي التطبيق على إعلانات أو أدوات تتبّع. يمكنك حذف كل بياناتك من صفحة الملف الشخصي.</string>
+<string name="profile_allergy_title">الحساسية</string>
+<string name="profile_condition_title">الأمراض المزمنة</string>
+<string name="profile_empty_list">لم تُضِف شيئًا بعد.</string>
+<string name="profile_add_allergy">إضافة حساسية</string>
+<string name="profile_add_condition">إضافة مرض مزمن</string>
+<string name="profile_entry_label_allergy">ما الذي لديك حساسية منه؟</string>
+<string name="profile_entry_label_condition">ما اسم الحالة؟</string>
+<string name="profile_entry_note">ملاحظة (اختياري)</string>
+<string name="profile_entry_note_hint">مثال: حسب تشخيص الطبيب</string>
+<string name="profile_language_title">لغة التطبيق</string>
+<string name="profile_language_desc">يُطبَّق على نصوص التطبيق والإشعارات.</string>
+<string name="language_system">لغة الجهاز</string>
+<string name="language_arabic">العربية</string>
+<string name="language_english">English</string>
+<string name="profile_emergency_title">رقم الطوارئ</string>
+<string name="profile_emergency_desc">يظهر هذا الرقم عند ظهور أعراض طارئة. اتركه كما وضعه المشرف إن لم تكن متأكدًا.</string>
+<string name="profile_emergency_label">رقم الطوارئ المحلي</string>
+<string name="profile_emergency_saved">تم الحفظ</string>
+<string name="profile_data_title">بياناتي</string>
+<string name="profile_export_json">تصدير بياناتي (ملف JSON)</string>
+<string name="profile_export_pdf">تصدير بياناتي (ملف PDF)</string>
+<string name="profile_export_note">يبقى الملف على جهازك حتى تختار تطبيقًا لمشاركته معه.</string>
+<string name="profile_export_share_title">مشاركة بياناتي</string>
+<string name="profile_error_export">تعذّر إنشاء الملف. حاول مرة أخرى.</string>
+<string name="profile_delete_all">حذف كل بياناتي</string>
+<string name="profile_delete_confirm_title">حذف كل البيانات؟</string>
+<string name="profile_delete_confirm_body">سيُحذف كل ما سجّلته: الأدوية والمواعيد والجرعات والأعراض والحساسية والأمراض المزمنة، وستُلغى التذكيرات. لا يمكن التراجع عن هذا الإجراء.</string>
+<string name="profile_delete_confirmed">حُذفت كل البيانات.</string>
+<string name="profile_error_delete">تعذّر حذف البيانات. حاول مرة أخرى.</string>
+<string name="profile_info_title">معلومات</string>
+<string name="profile_privacy_link">سياسة الخصوصية</string>
+<string name="profile_reminders_link">إعداد التذكيرات</string>
+<string name="profile_version">الإصدار %1$s</string>
+<string name="data_pdf_title">بياناتي</string>
+<string name="data_pdf_counts">عدد الأدوية: %1$d، وعدد الأعراض المسجّلة: %2$d</string>
+<string name="data_pdf_medications_title">الأدوية ومواعيدها</string>
+<string name="data_pdf_every_hours">كل %1$d ساعة</string>
 </resources>

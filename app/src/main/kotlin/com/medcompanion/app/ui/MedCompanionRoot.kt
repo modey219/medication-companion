@@ -30,6 +30,7 @@ import com.medcompanion.app.feature.assistant.AssistantScreen
 import com.medcompanion.app.feature.history.HistoryScreen
 import com.medcompanion.app.feature.medications.MedicationsScreen
 import com.medcompanion.app.feature.medications.edit.MedicationEditScreen
+import com.medcompanion.app.feature.onboarding.PrivacyPolicyContent
 import com.medcompanion.app.feature.profile.ProfileScreen
 import com.medcompanion.app.feature.reminders.ReminderSetupScreen
 import com.medcompanion.app.feature.symptoms.SymptomsScreen
@@ -37,6 +38,7 @@ import com.medcompanion.app.feature.today.TodayScreen
 import com.medcompanion.app.ui.navigation.ARG_MEDICATION_ID
 import com.medcompanion.app.ui.navigation.MEDICATION_ADD_ROUTE
 import com.medcompanion.app.ui.navigation.MEDICATION_EDIT_ROUTE
+import com.medcompanion.app.ui.navigation.PRIVACY_ROUTE
 import com.medcompanion.app.ui.navigation.PROFILE_ROUTE
 import com.medcompanion.app.ui.navigation.REMINDERS_SETUP_ROUTE
 import com.medcompanion.app.ui.navigation.TopLevelDestination
@@ -57,8 +59,9 @@ fun MedCompanionRoot(nudgeReminderSetup: Boolean = false) {
     val currentTab = topLevelDestinationFromRoute(currentRoute)
     val isProfile = currentRoute == PROFILE_ROUTE
     val isReminderSetup = currentRoute == REMINDERS_SETUP_ROUTE
+    val isPrivacy = currentRoute == PRIVACY_ROUTE
     val isMedicationEdit = isMedicationEditRoute(currentRoute)
-    val showBack = isProfile || isMedicationEdit || isReminderSetup
+    val showBack = isProfile || isMedicationEdit || isReminderSetup || isPrivacy
 
     LaunchedEffect(nudgeReminderSetup) {
         if (nudgeReminderSetup) navController.navigate(REMINDERS_SETUP_ROUTE)
@@ -73,6 +76,7 @@ fun MedCompanionRoot(nudgeReminderSetup: Boolean = false) {
                             stringResource(
                                 when {
                                     isProfile -> R.string.profile_title
+                                    isPrivacy -> R.string.privacy_title
                                     isReminderSetup -> R.string.reminders_setup_title
                                     currentRoute == MEDICATION_ADD_ROUTE -> R.string.medication_add_title
                                     isMedicationEdit -> R.string.medication_edit_title
@@ -85,7 +89,7 @@ fun MedCompanionRoot(nudgeReminderSetup: Boolean = false) {
                     if (showBack) {
                         IconButton(onClick = { navController.navigateUp() }) {
                             Icon(
-                                painter = painterResource(R.drawable.ic_profile),
+                                painter = painterResource(R.drawable.ic_arrow_back),
                                 contentDescription = stringResource(R.string.action_back),
                             )
                         }
@@ -156,7 +160,13 @@ fun MedCompanionRoot(nudgeReminderSetup: Boolean = false) {
             composable(TopLevelDestination.SYMPTOMS.route) { SymptomsScreen() }
             composable(TopLevelDestination.HISTORY.route) { HistoryScreen() }
             composable(TopLevelDestination.ASSISTANT.route) { AssistantScreen() }
-            composable(PROFILE_ROUTE) { ProfileScreen() }
+            composable(PROFILE_ROUTE) {
+                ProfileScreen(
+                    onOpenPrivacy = { navController.navigate(PRIVACY_ROUTE) },
+                    onOpenReminderSetup = { navController.navigate(REMINDERS_SETUP_ROUTE) },
+                )
+            }
+            composable(PRIVACY_ROUTE) { PrivacyPolicyContent() }
             composable(REMINDERS_SETUP_ROUTE) { ReminderSetupScreen() }
             composable(MEDICATION_ADD_ROUTE) {
                 MedicationEditScreen(onSaved = { navController.popBackStack() })

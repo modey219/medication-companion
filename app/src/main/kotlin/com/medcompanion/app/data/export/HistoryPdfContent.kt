@@ -7,55 +7,31 @@ import com.medcompanion.app.domain.history.HistoryReport
 import com.medcompanion.app.domain.history.MedicationRecord
 import com.medcompanion.app.domain.history.SymptomRecord
 import com.medcompanion.app.feature.medications.labelRes
-import com.medcompanion.app.feature.symptoms.severityLabelRes
 import java.time.Instant
-import java.util.Date
-
-/** One paragraph of the exported document. */
-sealed interface PdfBlock {
-    val text: String
-
-    data class Title(
-        override val text: String,
-    ) : PdfBlock
-
-    data class Heading(
-        override val text: String,
-    ) : PdfBlock
-
-    data class Body(
-        override val text: String,
-    ) : PdfBlock
-
-    data class Footer(
-        override val text: String,
-    ) : PdfBlock
-}
 
 /**
- * Builds the text of the exported document, in order, with no dependency on
- * the PDF library, so the wording can be unit tested on its own.
- *
- * It only formats what the patient recorded: no interpretation, no advice
- * (TODO(clinical-review): the wording of the summary, the disclaimer and the
- * footer, listed in `docs/CLINICAL_REVIEW.md`).
+ * The History report as a list of [PdfBlock]s (T7). Dates, amounts and status
+ * words come from [DocumentLines]; the wording of the summary and the footer
+ * is TODO(clinical-review) (docs/CLINICAL_REVIEW.md).
  */
 internal class HistoryPdfContent(
     private val context: Context,
 ) {
+    private val lines = DocumentLines(context)
+
     fun blocks(
         report: HistoryReport,
         generatedAt: Instant,
     ): List<PdfBlock> =
         buildList {
             add(PdfBlock.Title(context.getString(R.string.history_pdf_title)))
-            add(PdfBlock.Body(context.getString(R.string.history_pdf_generated, formatDateTime(generatedAt))))
+            add(PdfBlock.Body(context.getString(R.string.history_pdf_generated, lines.dateTime(generatedAt))))
             add(
                 PdfBlock.Body(
                     context.getString(
                         R.string.history_pdf_period,
-                        formatDate(report.periodStart),
-                        formatDate(report.periodEnd),
+                        lines.date(report.periodStart),
+                        lines.date(report.periodEnd),
                     ),
                 ),
             )
@@ -69,15 +45,15 @@ internal class HistoryPdfContent(
 
             addSection(
                 heading = context.getString(R.string.history_pdf_doses_title),
-                lines = report.doses.map { doseLine(it) },
+                entries = report.doses.map { doseLine(it) },
             )
             addSection(
                 heading = context.getString(R.string.history_pdf_symptoms_title),
-                lines = report.symptoms.map { symptomLine(it) },
+                entries = report.symptoms.map { symptomLine(it) },
             )
             addSection(
                 heading = context.getString(R.string.history_pdf_medications_title),
-                lines = report.medications.map { medicationLine(it) },
+                entries = report.medications.map { medicationLine(it) },
             )
 
             add(PdfBlock.Footer(context.getString(R.string.history_pdf_footer)))
@@ -90,63 +66,37 @@ internal class HistoryPdfContent(
 
     private fun MutableList<PdfBlock>.addSection(
         heading: String,
-        lines: List<String>,
+        entries: List<String>,
     ) {
         add(PdfBlock.Heading(heading))
-        if (lines.isEmpty()) {
+        if (entries.isEmpty()) {
             add(PdfBlock.Body(context.getString(R.string.history_pdf_none)))
         } else {
-            lines.forEach { line -> add(PdfBlock.Body(line)) }
+            entries.forEach { line -> add(PdfBlock.Body(line)) }
         }
     }
 
     private fun doseLine(record: DoseRecord): String =
-        join(
-            formatDateTime(record.scheduledAt),
-            medicationWithAmount(record),
-            context.getString(record.status.labelRes()),
+        lines.doseLine(
+            scheduledAt = record.scheduledAt,
+            medicationName = record.medicationName,
+            doseAmount = record.doseAmount,
+            statusWord = context.getString(record.status.labelRes()),
         )
 
-    private fun medicationWithAmount(record: DoseRecord): String {
-        val name = record.medicationName.ifBlank { context.getString(R.string.history_pdf_unknown_medication) }
-        return if (record.doseAmount.isBlank()) name else "$name (${record.doseAmount})"
-    }
-
-    private fun symptomLine(record: SymptomRecord): String {
-        val severity = context.getString(severityLabelRes(record.severity))
-        val head = join(formatDateTime(record.loggedAt), record.name, severity)
-        return record.note?.takeIf { it.isNotBlank() }?.let { note ->
-            "$head\n${context.getString(R.string.history_pdf_note, note)}"
-        } ?: head
-    }
+    private fun symptomLine(record: SymptomRecord): String =
+        lines.symptomLine(
+            loggedAt = record.loggedAt,
+            name = record.name,
+            severity = record.severity,
+            note = record.note,
+        )
 
     private fun medicationLine(record: MedicationRecord): String =
-        join(
+        lines.join(
             record.name,
             record.strength.takeIf { it.isNotBlank() },
             context.getString(record.status.labelRes()),
-            formatDate(record.startDate),
+            lines.date(record.startDate),
         )
-
-    private fun join(vararg parts: String?): String = parts.filterNotNull().joinToString(SEPARATOR)
-
-    private fun formatDateTime(instant: Instant): String {
-        val date = Date.from(instant)
-        return "${dateFormat().format(date)} ${timeFormat().format(date)}"
-    }
-
-    private fun formatDate(instant: Instant): String = dateFormat().format(Date.from(instant))
-
-    private fun dateFormat() =
-        android.text.format.DateFormat
-            .getDateFormat(context)
-
-    private fun timeFormat() =
-        android.text.format.DateFormat
-            .getTimeFormat(context)
-
-    private companion object {
-        /** Joins the parts of one line; a dash is not a localized word. */
-        const val SEPARATOR = " \u2014 "
-    }
 }

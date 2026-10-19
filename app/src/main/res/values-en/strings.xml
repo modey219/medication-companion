@@ -254,7 +254,63 @@
     <string name="history_pdf_note">Note: %1$s</string>
     <string name="history_pdf_unknown_medication">Unknown medication</string>
     <string name="history_pdf_footer">This is a record entered by the patient in Medication Companion. It is not a diagnosis and not a substitute for advice from a doctor or pharmacist.</string>
-    <string name="medication_status_active">Active</string>
-    <string name="medication_status_completed">Completed</string>
-    <string name="medication_status_stopped">Stopped</string>
+<string name="medication_status_active">Active</string>
+<string name="medication_status_completed">Completed</string>
+<string name="medication_status_stopped">Stopped</string>
+
+<!--
+T8a profile, first-run consent, language, data export and deletion.
+TODO(clinical-review): the emergency number field (it stays empty until the
+team fills it in), the consent wording and the privacy policy text.
+TODO(legal): the privacy policy is a placeholder.
+-->
+<string name="onboarding_title">Welcome to Medication Companion</string>
+<string name="onboarding_intro">An app that helps you organise your medication, reminds you, and keeps a clear record. It is a companion, not a medical device.</string>
+<string name="onboarding_point_1">Everything you enter stays on your phone and is not sent anywhere in this version.</string>
+<string name="onboarding_point_2">Reminders run on your device and need permission for notifications and exact alarms.</string>
+<string name="onboarding_point_3">You can export or delete your data at any time from the Profile page.</string>
+<string name="onboarding_language_title">App language</string>
+<string name="onboarding_privacy_link">Read the privacy policy</string>
+<string name="onboarding_accept">I agree and start</string>
+<string name="privacy_title">Privacy policy</string>
+<!-- TODO(legal): replace with the reviewed privacy policy. -->
+<string name="privacy_placeholder">Draft for legal review. In this version your health data stays on your device and is not sent anywhere; the app has no ads and no tracking tools. You can delete all your data from the Profile page.</string>
+<string name="profile_allergy_title">Allergies</string>
+<string name="profile_condition_title">Chronic conditions</string>
+<string name="profile_empty_list">You have not added anything yet.</string>
+<string name="profile_add_allergy">Add an allergy</string>
+<string name="profile_add_condition">Add a chronic condition</string>
+<string name="profile_entry_label_allergy">What are you allergic to?</string>
+<string name="profile_entry_label_condition">What is the condition called?</string>
+<string name="profile_entry_note">Note (optional)</string>
+<string name="profile_entry_note_hint">For example: as diagnosed by the doctor</string>
+<string name="profile_language_title">App language</string>
+<string name="profile_language_desc">Applies to the app text and its notifications.</string>
+<string name="language_system">Device language</string>
+<string name="language_arabic">العربية</string>
+<string name="language_english">English</string>
+<string name="profile_emergency_title">Emergency number</string>
+<string name="profile_emergency_desc">This number is shown when urgent symptoms are reported. Leave it as the team set it unless you are sure.</string>
+<string name="profile_emergency_label">Local emergency number</string>
+<string name="profile_emergency_saved">Saved</string>
+<string name="profile_data_title">My data</string>
+<string name="profile_export_json">Export my data (JSON file)</string>
+<string name="profile_export_pdf">Export my data (PDF file)</string>
+<string name="profile_export_note">The file stays on your device until you pick an app to share it with.</string>
+<string name="profile_export_share_title">Share my data</string>
+<string name="profile_error_export">Could not create the file. Please try again.</string>
+<string name="profile_delete_all">Delete all my data</string>
+<string name="profile_delete_confirm_title">Delete all data?</string>
+<string name="profile_delete_confirm_body">Everything you recorded is deleted: medications, schedules, doses, symptoms, allergies and chronic conditions, and the reminders are cancelled. This cannot be undone.</string>
+<string name="profile_delete_confirmed">All data was deleted.</string>
+<string name="profile_error_delete">Could not delete the data. Please try again.</string>
+<string name="profile_info_title">Information</string>
+<string name="profile_privacy_link">Privacy policy</string>
+<string name="profile_reminders_link">Reminder setup</string>
+<string name="profile_version">Version %1$s</string>
+<string name="data_pdf_title">My data</string>
+<string name="data_pdf_counts">Medications: %1$d, recorded symptoms: %2$d</string>
+<string name="data_pdf_medications_title">Medications and schedules</string>
+<string name="data_pdf_every_hours">Every %1$d hours</string>
 </resources>
+

@@ -7,6 +7,9 @@ import java.time.Instant
 
 /** Read and write access to scheduled doses. */
 interface DoseEventRepository {
+    /** Every recorded dose, oldest first; used by the data export (T8a). */
+    fun observeAll(): Flow<List<DoseEvent>>
+
     fun observeBetween(
         start: Instant,
         end: Instant,

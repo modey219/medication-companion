@@ -92,7 +92,7 @@ internal fun SymptomsContent(
             )
         }
         if (state.showEmergencyWarning) {
-            item(key = "emergency") { EmergencyCard() }
+            item(key = "emergency") { EmergencyCard(number = state.emergencyNumber.trim()) }
         }
         state.error?.let { error ->
             item(key = "error") {
@@ -202,13 +202,15 @@ private fun SeverityRow(
 /**
  * Shown while the typed name matches the urgent list. It urges contacting
  * emergency services, and the call button only appears once the local
- * emergency number is filled in (TODO(clinical-review): it is still a
- * placeholder).
+ * emergency number is set (in the Profile tab, or the built-in default from
+ * the resources). TODO(clinical-review): the number itself is still a
+ * placeholder.
  */
 @Composable
-private fun EmergencyCard() {
+private fun EmergencyCard(number: String) {
     val context = LocalContext.current
-    val number = stringResource(R.string.emergency_number).trim()
+    val defaultNumber = stringResource(R.string.emergency_number).trim()
+    val localNumber = number.ifBlank { defaultNumber }
     Card(
         colors =
             CardDefaults.cardColors(
@@ -225,13 +227,13 @@ private fun EmergencyCard() {
                 text = stringResource(R.string.emergency_body),
                 style = MaterialTheme.typography.bodyLarge,
             )
-            if (number.isNotEmpty()) {
+            if (localNumber.isNotEmpty()) {
                 Text(
-                    text = stringResource(R.string.emergency_number_hint, number),
+                    text = stringResource(R.string.emergency_number_hint, localNumber),
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 OutlinedButton(
-                    onClick = { dialEmergency(context, number) },
+                    onClick = { dialEmergency(context, localNumber) },
                     modifier = Modifier.heightIn(min = 48.dp),
                 ) {
                     Text(stringResource(R.string.emergency_call))
