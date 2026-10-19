@@ -6,8 +6,9 @@ never holds an LLM API key; it calls this one endpoint instead.
 - **Stack**: Cloudflare Workers + TypeScript (bundled with Wrangler).
 - **Endpoint**: `POST /v1/chat` (plus `GET /health`).
 - **Safety**: applies the Appendix A system prompt from
-  [`prompts/system-prompt.txt`](prompts/system-prompt.txt) and short-circuits
-  urgent symptoms itself, without calling the model.
+  [`prompts/system-prompt.txt`](prompts/system-prompt.txt), short-circuits
+  urgent symptoms itself without calling the model, and runs a **review pass**
+  before every answer (see below).
 - **Privacy**: stores no conversations, logs no message content and no identifiers.
 - **Abuse protection**: per-install and global rate limits, plus optional Play
   Integrity verification (off by default).
@@ -33,40 +34,75 @@ Request body:
 ```json
 {
   "messages": [
-    { "role": "user", "content": "هل يمكنني أخذ الدواء مع الطعام؟" }
+    { "role": "user", "content": "?? ?????? ??? ?????? ?? ???????" }
   ],
-  "shareMedications": false,
-  "medicationContext": "optional, only accepted when shareMedications is true"
+  "mode": "personalized",
+  "context": {
+    "ageYears": 62,
+    "allergies": [{ "label": "??????", "severity": 3 }],
+    "sections": { "allergies": "LISTED", "conditions": "NOT_ASKED" }
+  }
 }
 ```
 
-- `messages`: 1–20 entries, each `user` or `assistant`. A `system` role is
+- `messages`: 1-20 entries, each `user` or `assistant`. A `system` role is
   rejected so a client can never overwrite the safety prompt.
-  Each message ≤ 2000 characters.
-- `shareMedications`: default `false`. **Off by default**; when off, the app sends
-  nothing about the patient's medication.
-- `medicationContext`: optional, ≤ 4000 chars, only accepted when sharing is on.
-  It is fenced and labelled as data before being added to the system prompt.
+  Each message � 2000 characters.
+- `mode`: `generic` (default) or `personalized`. **`generic` sends nothing about
+  the patient.** Unknown values are rejected.
+- `context`: the structured patient profile, required in `personalized` mode and
+  rejected in `generic` mode. Every field is optional except the arrays, which
+  default to `[]`; every field is strictly typed and capped (40 allergies or
+  conditions, 40 history entries, 60 medicines with 20 schedules each, 20
+  symptoms), and the whole object is capped by `MAX_CONTEXT_CHARS`. Unknown keys
+  are ignored. `sections` carries `NOT_ASKED` / `NONE_CONFIRMED` / `LISTED` so
+  the model can tell "never asked" from "the patient has none".
+- **Legacy shape** (an app built before T13): no `mode`, but
+  `shareMedications` (default `false`) and `medicationContext` (� 4000 chars,
+  only accepted when sharing is on). It is treated as `generic`; once `mode` is
+  present the two legacy fields are ignored so the overlap is safe.
+
+### Two passes: review, then answer (T14)
+
+1. **Review** (`prompts/review-prompt.txt`, `LLM_MAX_REVIEW_TOKENS`): the model
+   returns JSON only - `urgency` (`EMERGENCY` / `URGENT_TODAY` /
+   `SEE_DOCTOR_SOON` / `SELF_CARE`), `forbiddenRequest`, and short
+   `considered` / `gaps` / `questions` phrases. Bullets that are too long or
+   that contain an instruction are dropped. A review that cannot be parsed
+   fails closed with `502 llm_invalid_review`; no answer is attempted.
+2. **Gates**: `EMERGENCY` returns the emergency card and skips the answer pass;
+   `forbiddenRequest` returns a calm decline and skips it too.
+3. **Answer** (`prompts/answer-prompt.txt`): the model answers with the fenced
+   profile and the review attached. A last-line guard checks the answer for
+   leaked prompt markers, affirmative medicine or dose instructions and
+   "safe to combine" claims (negation-aware). A blocked answer is replaced by a
+   calm fallback and logged as `chat.answer_blocked` - no content is logged.
 
 Response `200`:
 
 ```json
-{ "reply": "…", "emergency": false }
+{
+  "reply": "...",
+  "emergency": false,
+  "urgency": "SEE_DOCTOR_SOON",
+  "review": { "considered": ["..."], "gaps": [], "questions": ["..."] }
+}
 ```
 
-When the server detects an urgent symptom it returns the calm emergency message
-instead, with `"emergency": true` and a `kind` such as `"chest_pain"`, and it does
-**not** call the model.
+The T13 app ignores `urgency` and `review`; the T15 app reads them.
+When the server detects an urgent symptom by keyword, or the review returns
+`EMERGENCY`, it returns the calm emergency message with `"emergency": true`, and
+it does **not** call the answer pass.
 
 Structured errors (`{"error":{"code":"...","message":"..."}}`):
 
 | Status | Code (examples) | Meaning |
 | --- | --- | --- |
-| 400 | `invalid_install_id`, `invalid_json`, `invalid_messages`, `invalid_role`, `message_too_long`, `medication_context_not_allowed` | Bad request; the message is patient-safe and never echoes content |
+| 400 | `invalid_install_id`, `invalid_json`, `invalid_messages`, `invalid_role`, `message_too_long`, `invalid_mode`, `context_required`, `context_not_allowed`, `invalid_context`, `context_too_large`, `invalid_share_flag`, `medication_context_not_allowed`, `medication_context_too_long` | Bad request; the message is patient-safe and never echoes content |
 | 401 | `integrity_failed` | Play Integrity enforcement rejected the request |
 | 413 | `payload_too_large` | Body over the configured limit |
 | 429 | `rate_limited` | Includes a `Retry-After` header |
-| 502 | `llm_http_error`, `llm_unreachable`, `llm_empty_response` | Upstream model problem |
+| 502 | `llm_http_error`, `llm_unreachable`, `llm_empty_response`, `llm_invalid_review` | Upstream model problem (the review pass fails closed) |
 | 504 | `llm_timeout` | Upstream model exceeded the timeout |
 | 500 | `internal_error` | Unexpected failure |
 
@@ -88,11 +124,13 @@ All values are environment variables. Copy `.env.example` to `.env` for
 | `LLM_API_KEY` | *secret* | Provider key; **never committed** |
 | `LLM_BASE_URL` | `https://api.openai.com/v1` | Base URL for the OpenAI-compatible adapter |
 | `LLM_MAX_OUTPUT_TOKENS` | `512` | Upper bound on the reply length |
+| `LLM_MAX_REVIEW_TOKENS` | `400` | Upper bound on the review JSON |
 | `REQUEST_TIMEOUT_MS` | `20000` | Upstream timeout |
 | `MAX_REQUEST_BYTES` | `65536` | Body size limit |
 | `MAX_MESSAGE_CHARS` | `2000` | Per-message limit |
 | `MAX_MESSAGES` | `20` | Conversation length limit |
-| `MAX_MEDICATION_CONTEXT_CHARS` | `4000` | Medication-context limit |
+| `MAX_MEDICATION_CONTEXT_CHARS` | `4000` | Medication-context limit (legacy shape) |
+| `MAX_CONTEXT_CHARS` | `12000` | Limit on the serialized structured context; `0` disables personalized mode |
 | `RATE_LIMIT_PER_MINUTE` | `10` | Per install, per minute |
 | `RATE_LIMIT_PER_DAY` | `50` | Per install, per day |
 | `RATE_LIMIT_GLOBAL_PER_DAY` | `2000` | Across all installs, per day |

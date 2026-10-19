@@ -3,13 +3,84 @@ import { HttpError } from "./http";
 
 export type ChatRole = "user" | "assistant";
 
+/** How the app asked the assistant to answer (T13, D-023). */
+export type AssistantMode = "generic" | "personalized";
+
+export const ASSISTANT_MODES: readonly AssistantMode[] = ["generic", "personalized"];
+
+export type ProfileSectionStatus = "NOT_ASKED" | "NONE_CONFIRMED" | "LISTED";
+
+const SECTION_STATUSES: readonly ProfileSectionStatus[] = ["NOT_ASKED", "NONE_CONFIRMED", "LISTED"];
+
+const PROFILE_SECTIONS = ["allergies", "conditions", "history", "medications"] as const;
+
 export interface ChatMessage {
   role: ChatRole;
   content: string;
 }
 
+/** An allergy or a chronic condition the patient entered. */
+export interface ContextEntry {
+  label: string;
+  severity?: number;
+  reaction?: string;
+  sinceYear?: number;
+}
+
+/** A past illness, surgery, hospital stay or family history entry. */
+export interface ContextHistory {
+  type: string;
+  label: string;
+  year?: number;
+}
+
+/** One of the patient's own medicines, with the schedules they entered. */
+export interface ContextMedication {
+  name: string;
+  strength: string;
+  status: string;
+  schedules: string[];
+  stopReason?: string;
+}
+
+export interface ContextSymptom {
+  name: string;
+  severity: number;
+  loggedAt: string;
+}
+
+export interface ContextAdherence {
+  taken: number;
+  missed: number;
+  recorded: number;
+}
+
+/**
+ * The structured profile the app may send in personalized mode (T13). Every
+ * field is patient-entered data and is rendered to the model as fenced data,
+ * never as instructions.
+ */
+export interface PatientContext {
+  generatedAt?: string;
+  ageYears?: number;
+  sex?: string;
+  pregnantOrBreastfeeding?: boolean;
+  weightKg?: number;
+  allergies: ContextEntry[];
+  conditions: ContextEntry[];
+  medicalHistory: ContextHistory[];
+  medications: ContextMedication[];
+  stoppedLast30Days: ContextMedication[];
+  adherenceLast14Days?: ContextAdherence;
+  recentSymptoms: ContextSymptom[];
+  sections: Partial<Record<(typeof PROFILE_SECTIONS)[number], ProfileSectionStatus>>;
+}
+
 export interface ChatRequest {
   messages: ChatMessage[];
+  mode: AssistantMode;
+  context: PatientContext | undefined;
+  /** Legacy fields, accepted only when the request has no `mode` (D-024). */
   shareMedications: boolean;
   medicationContext: string | undefined;
 }
@@ -88,6 +159,25 @@ export function parseChatRequest(raw: unknown, config: Config): ChatRequest {
     return { role, content };
   });
 
+  const mode = parseMode(raw.mode);
+  if (mode === "personalized") {
+    const context = parsePatientContext(raw.context, config);
+    if (!context) {
+      throw new HttpError(400, "context_required", "A personalized request needs the patient context.");
+    }
+    // The legacy fields are ignored once `mode` is present (the app sends both
+    // while the old Worker is still deployed, D-023 point 2).
+    return { messages, mode, context, shareMedications: false, medicationContext: undefined };
+  }
+  if (mode === "generic") {
+    if (raw.context !== undefined && raw.context !== null) {
+      throw new HttpError(400, "context_not_allowed", "The patient context is only accepted when it is personalized.");
+    }
+    return { messages, mode, context: undefined, shareMedications: false, medicationContext: undefined };
+  }
+
+  // Legacy request from an app built before T13: no `mode`, only the sharing
+  // flag and the free-text medication block. Treated as generic mode.
   const rawShare = raw.shareMedications;
   if (rawShare !== undefined && typeof rawShare !== "boolean") {
     throw new HttpError(400, "invalid_share_flag", "shareMedications must be true or false.");
@@ -118,5 +208,266 @@ export function parseChatRequest(raw: unknown, config: Config): ChatRequest {
     medicationContext = trimmed.length > 0 ? trimmed : undefined;
   }
 
-  return { messages, shareMedications, medicationContext };
+  return { messages, mode: "generic", context: undefined, shareMedications, medicationContext };
+}
+
+function parseMode(value: unknown): AssistantMode | undefined {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+  if (typeof value !== "string" || !(ASSISTANT_MODES as readonly string[]).includes(value)) {
+    throw new HttpError(400, "invalid_mode", "mode must be generic or personalized.");
+  }
+  return value as AssistantMode;
+}
+
+const MAX_ENTRY_LABEL = 200;
+const MAX_REACTION = 200;
+const MAX_MEDICATION_NAME = 200;
+const MAX_STRENGTH = 100;
+const MAX_SCHEDULE = 200;
+const MAX_STOP_REASON = 300;
+const MAX_TIMESTAMP = 64;
+const MAX_ENTRIES = 40;
+const MAX_HISTORY_ENTRIES = 40;
+const MAX_MEDICATIONS = 60;
+const MAX_SYMPTOMS = 20;
+const MAX_SCHEDULES = 20;
+const MIN_YEAR = 1900;
+const MAX_YEAR = 2100;
+
+/**
+ * Validate the structured context. Unknown keys are ignored (forward
+ * compatibility), known keys are strictly typed and capped, and anything
+ * malformed is rejected rather than guessed: a personalized answer must never
+ * be built from half-read data.
+ */
+function parsePatientContext(raw: unknown, config: Config): PatientContext | undefined {
+  if (raw === undefined || raw === null) {
+    return undefined;
+  }
+  if (!isRecord(raw)) {
+    throw new HttpError(400, "invalid_context", "context must be an object.");
+  }
+  if (JSON.stringify(raw).length > config.maxContextChars) {
+    throw new HttpError(400, "context_too_large", "context is too large.");
+  }
+
+  const context: PatientContext = {
+    allergies: readEntries(raw.allergies, "allergies"),
+    conditions: readEntries(raw.conditions, "conditions"),
+    medicalHistory: readHistory(raw.medicalHistory),
+    medications: readMedications(raw.medications, "medications"),
+    stoppedLast30Days: readMedications(raw.stoppedLast30Days, "stoppedLast30Days"),
+    recentSymptoms: readSymptoms(raw.recentSymptoms),
+    sections: readSections(raw.sections),
+  };
+
+  const generatedAt = readOptionalString(raw.generatedAt, "generatedAt", MAX_TIMESTAMP);
+  if (generatedAt !== undefined) {
+    context.generatedAt = generatedAt;
+  }
+  const ageYears = readOptionalInt(raw.ageYears, "ageYears", 0, 130);
+  if (ageYears !== undefined) {
+    context.ageYears = ageYears;
+  }
+  const sex = readOptionalString(raw.sex, "sex", 40);
+  if (sex !== undefined) {
+    context.sex = sex;
+  }
+  const pregnant = readOptionalBoolean(raw.pregnantOrBreastfeeding, "pregnantOrBreastfeeding");
+  if (pregnant !== undefined) {
+    context.pregnantOrBreastfeeding = pregnant;
+  }
+  const weightKg = readOptionalNumber(raw.weightKg, "weightKg", 1, 500);
+  if (weightKg !== undefined) {
+    context.weightKg = weightKg;
+  }
+  const adherence = readAdherence(raw.adherenceLast14Days);
+  if (adherence !== undefined) {
+    context.adherenceLast14Days = adherence;
+  }
+  return context;
+}
+
+function readEntries(value: unknown, field: string): ContextEntry[] {
+  return readArray(value, field, MAX_ENTRIES).map((entry, index) => {
+    if (!isRecord(entry)) {
+      throw new HttpError(400, "invalid_context", `${field}[${index}] is not an object.`);
+    }
+    const parsed: ContextEntry = { label: readRequiredString(entry.label, `${field}[${index}].label`, MAX_ENTRY_LABEL) };
+    const severity = readOptionalInt(entry.severity, `${field}[${index}].severity`, 1, 3);
+    if (severity !== undefined) {
+      parsed.severity = severity;
+    }
+    const reaction = readOptionalString(entry.reaction, `${field}[${index}].reaction`, MAX_REACTION);
+    if (reaction !== undefined) {
+      parsed.reaction = reaction;
+    }
+    const sinceYear = readOptionalInt(entry.sinceYear, `${field}[${index}].sinceYear`, MIN_YEAR, MAX_YEAR);
+    if (sinceYear !== undefined) {
+      parsed.sinceYear = sinceYear;
+    }
+    return parsed;
+  });
+}
+
+function readHistory(value: unknown): ContextHistory[] {
+  const field = "medicalHistory";
+  return readArray(value, field, MAX_HISTORY_ENTRIES).map((entry, index) => {
+    if (!isRecord(entry)) {
+      throw new HttpError(400, "invalid_context", `${field}[${index}] is not an object.`);
+    }
+    const parsed: ContextHistory = {
+      type: readRequiredString(entry.type, `${field}[${index}].type`, 40),
+      label: readRequiredString(entry.label, `${field}[${index}].label`, MAX_ENTRY_LABEL),
+    };
+    const year = readOptionalInt(entry.year, `${field}[${index}].year`, MIN_YEAR, MAX_YEAR);
+    if (year !== undefined) {
+      parsed.year = year;
+    }
+    return parsed;
+  });
+}
+
+function readMedications(value: unknown, field: string): ContextMedication[] {
+  return readArray(value, field, MAX_MEDICATIONS).map((entry, index) => {
+    if (!isRecord(entry)) {
+      throw new HttpError(400, "invalid_context", `${field}[${index}] is not an object.`);
+    }
+    const parsed: ContextMedication = {
+      name: readRequiredString(entry.name, `${field}[${index}].name`, MAX_MEDICATION_NAME),
+      strength: readOptionalString(entry.strength, `${field}[${index}].strength`, MAX_STRENGTH) ?? "",
+      status: readOptionalString(entry.status, `${field}[${index}].status`, 40) ?? "UNKNOWN",
+      schedules: readArray(entry.schedules, `${field}[${index}].schedules`, MAX_SCHEDULES).map((schedule, scheduleIndex) =>
+        readRequiredString(schedule, `${field}[${index}].schedules[${scheduleIndex}]`, MAX_SCHEDULE),
+      ),
+    };
+    const stopReason = readOptionalString(entry.stopReason, `${field}[${index}].stopReason`, MAX_STOP_REASON);
+    if (stopReason !== undefined) {
+      parsed.stopReason = stopReason;
+    }
+    return parsed;
+  });
+}
+
+function readSymptoms(value: unknown): ContextSymptom[] {
+  const field = "recentSymptoms";
+  return readArray(value, field, MAX_SYMPTOMS).map((entry, index) => {
+    if (!isRecord(entry)) {
+      throw new HttpError(400, "invalid_context", `${field}[${index}] is not an object.`);
+    }
+    const severity = readOptionalInt(entry.severity, `${field}[${index}].severity`, 1, 5);
+    return {
+      name: readRequiredString(entry.name, `${field}[${index}].name`, MAX_ENTRY_LABEL),
+      severity: severity ?? 0,
+      loggedAt: readOptionalString(entry.loggedAt, `${field}[${index}].loggedAt`, MAX_TIMESTAMP) ?? "",
+    };
+  });
+}
+
+function readAdherence(value: unknown): ContextAdherence | undefined {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+  if (!isRecord(value)) {
+    throw new HttpError(400, "invalid_context", "adherenceLast14Days must be an object.");
+  }
+  return {
+    taken: readOptionalInt(value.taken, "adherenceLast14Days.taken", 0, 10_000) ?? 0,
+    missed: readOptionalInt(value.missed, "adherenceLast14Days.missed", 0, 10_000) ?? 0,
+    recorded: readOptionalInt(value.recorded, "adherenceLast14Days.recorded", 0, 10_000) ?? 0,
+  };
+}
+
+function readSections(value: unknown): PatientContext["sections"] {
+  if (value === undefined || value === null) {
+    return {};
+  }
+  if (!isRecord(value)) {
+    throw new HttpError(400, "invalid_context", "sections must be an object.");
+  }
+  const sections: PatientContext["sections"] = {};
+  for (const section of PROFILE_SECTIONS) {
+    const rawStatus = value[section];
+    if (rawStatus === undefined) {
+      continue;
+    }
+    if (typeof rawStatus !== "string" || !(SECTION_STATUSES as readonly string[]).includes(rawStatus)) {
+      throw new HttpError(400, "invalid_context", `sections.${section} is not a known status.`);
+    }
+    sections[section] = rawStatus as ProfileSectionStatus;
+  }
+  return sections;
+}
+
+function readArray(value: unknown, field: string, max: number): unknown[] {
+  if (value === undefined || value === null) {
+    return [];
+  }
+  if (!Array.isArray(value)) {
+    throw new HttpError(400, "invalid_context", `${field} must be an array.`);
+  }
+  if (value.length > max) {
+    throw new HttpError(400, "invalid_context", `${field} has more than ${max} entries.`);
+  }
+  return value;
+}
+
+function readRequiredString(value: unknown, field: string, max: number): string {
+  if (typeof value !== "string" || value.trim().length === 0) {
+    throw new HttpError(400, "invalid_context", `${field} must be a non-empty string.`);
+  }
+  const trimmed = value.trim();
+  if (trimmed.length > max) {
+    throw new HttpError(400, "invalid_context", `${field} is longer than ${max} characters.`);
+  }
+  return trimmed;
+}
+
+function readOptionalString(value: unknown, field: string, max: number): string | undefined {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+  if (typeof value !== "string") {
+    throw new HttpError(400, "invalid_context", `${field} must be a string.`);
+  }
+  const trimmed = value.trim();
+  if (trimmed.length === 0) {
+    return undefined;
+  }
+  if (trimmed.length > max) {
+    throw new HttpError(400, "invalid_context", `${field} is longer than ${max} characters.`);
+  }
+  return trimmed;
+}
+
+function readOptionalBoolean(value: unknown, field: string): boolean | undefined {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+  if (typeof value !== "boolean") {
+    throw new HttpError(400, "invalid_context", `${field} must be true or false.`);
+  }
+  return value;
+}
+
+function readOptionalInt(value: unknown, field: string, min: number, max: number): number | undefined {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+  if (typeof value !== "number" || !Number.isInteger(value) || value < min || value > max) {
+    throw new HttpError(400, "invalid_context", `${field} must be a whole number between ${min} and ${max}.`);
+  }
+  return value;
+}
+
+function readOptionalNumber(value: unknown, field: string, min: number, max: number): number | undefined {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+  if (typeof value !== "number" || !Number.isFinite(value) || value < min || value > max) {
+    throw new HttpError(400, "invalid_context", `${field} must be a number between ${min} and ${max}.`);
+  }
+  return value;
 }

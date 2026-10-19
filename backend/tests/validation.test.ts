@@ -117,6 +117,129 @@ describe("parseChatRequest", () => {
   });
 });
 
+describe("assistant mode and patient context", () => {
+  const base = { messages: [{ role: "user", content: "hi" }] };
+
+  it("accepts a personalized request with a valid context", () => {
+    const chat = parseChatRequest(
+      {
+        ...base,
+        mode: "personalized",
+        context: { allergies: [{ label: "بنسلين", severity: 2 }], sections: { allergies: "LISTED" } },
+      },
+      testConfig(),
+    );
+    expect(chat.mode).toBe("personalized");
+    expect(chat.context?.allergies).toEqual([{ label: "بنسلين", severity: 2 }]);
+  });
+
+  it("requires a context in personalized mode", () => {
+    expectHttpError(() => parseChatRequest({ ...base, mode: "personalized" }, testConfig()), "context_required");
+  });
+
+  it("rejects a context in generic mode", () => {
+    expectHttpError(
+      () => parseChatRequest({ ...base, mode: "generic", context: { allergies: [] } }, testConfig()),
+      "context_not_allowed",
+    );
+  });
+
+  it("rejects an unknown mode", () => {
+    expectHttpError(() => parseChatRequest({ ...base, mode: "private" }, testConfig()), "invalid_mode");
+  });
+
+  it("rejects a context that is not an object", () => {
+    expectHttpError(
+      () => parseChatRequest({ ...base, mode: "personalized", context: "everything" }, testConfig()),
+      "invalid_context",
+    );
+  });
+
+  it("rejects a context larger than the configured limit", () => {
+    const config = testConfig({ MAX_CONTEXT_CHARS: "10" });
+    expectHttpError(
+      () => parseChatRequest({ ...base, mode: "personalized", context: { allergies: [] } }, config),
+      "context_too_large",
+    );
+  });
+
+  it("rejects an allergy without a label", () => {
+    expectHttpError(
+      () => parseChatRequest({ ...base, mode: "personalized", context: { allergies: [{ severity: 2 }] } }, testConfig()),
+      "invalid_context",
+    );
+  });
+
+  it("rejects a severity outside the 1 to 3 scale", () => {
+    expectHttpError(
+      () =>
+        parseChatRequest(
+          { ...base, mode: "personalized", context: { allergies: [{ label: "بنسلين", severity: 4 }] } },
+          testConfig(),
+        ),
+      "invalid_context",
+    );
+  });
+
+  it("rejects more allergies than the cap", () => {
+    const allergies = Array.from({ length: 41 }, (_, index) => ({ label: `allergy ${index}` }));
+    expectHttpError(
+      () => parseChatRequest({ ...base, mode: "personalized", context: { allergies } }, testConfig()),
+      "invalid_context",
+    );
+  });
+
+  it("rejects an unknown section status", () => {
+    expectHttpError(
+      () =>
+        parseChatRequest(
+          { ...base, mode: "personalized", context: { sections: { allergies: "MAYBE" } } },
+          testConfig(),
+        ),
+      "invalid_context",
+    );
+  });
+
+  it("ignores an unknown context key", () => {
+    const chat = parseChatRequest(
+      { ...base, mode: "personalized", context: { allergies: [], mood: "tired" } },
+      testConfig(),
+    );
+    expect(chat.context).not.toHaveProperty("mood");
+  });
+
+  it("fills the empty arrays so the renderer never sees undefined", () => {
+    const chat = parseChatRequest({ ...base, mode: "personalized", context: {} }, testConfig());
+    expect(chat.context).toMatchObject({
+      allergies: [],
+      conditions: [],
+      medicalHistory: [],
+      medications: [],
+      stoppedLast30Days: [],
+      recentSymptoms: [],
+      sections: {},
+    });
+  });
+
+  it("ignores the legacy block once a mode is present", () => {
+    const chat = parseChatRequest(
+      { ...base, mode: "generic", shareMedications: true, medicationContext: "Aspirin 100 mg" },
+      testConfig(),
+    );
+    expect(chat.shareMedications).toBe(false);
+    expect(chat.medicationContext).toBeUndefined();
+  });
+
+  it("keeps the legacy block when no mode is present", () => {
+    const chat = parseChatRequest(
+      { ...base, shareMedications: true, medicationContext: "Aspirin 100 mg" },
+      testConfig(),
+    );
+    expect(chat.mode).toBe("generic");
+    expect(chat.medicationContext).toBe("Aspirin 100 mg");
+  });
+});
+
 describe("readJsonBody", () => {
   it("parses a JSON body", async () => {
     const request = new Request("https://example.com", { method: "POST", body: JSON.stringify({ ok: true }) });

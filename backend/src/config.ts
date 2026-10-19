@@ -15,8 +15,10 @@ export const DEFAULT_MAX_REQUEST_BYTES = 64 * 1024;
 export const DEFAULT_MAX_MESSAGE_CHARS = 2000;
 export const DEFAULT_MAX_MESSAGES = 20;
 export const DEFAULT_MAX_MEDICATION_CONTEXT_CHARS = 4000;
+export const DEFAULT_MAX_CONTEXT_CHARS = 12_000;
 export const DEFAULT_TIMEOUT_MS = 20_000;
 export const DEFAULT_MAX_OUTPUT_TOKENS = 512;
+export const DEFAULT_MAX_REVIEW_TOKENS = 400;
 
 /**
  * Placeholder used when no emergency number is configured.
@@ -44,6 +46,8 @@ export interface Config {
   maxMessageChars: number;
   maxMessages: number;
   maxMedicationContextChars: number;
+  maxContextChars: number;
+  maxReviewTokens: number;
   limits: {
     perMinute: number;
     perDay: number;
@@ -91,6 +95,8 @@ export function loadConfig(env: Env): Config {
       0,
       40_000,
     ),
+    maxContextChars: readInt(env.MAX_CONTEXT_CHARS, DEFAULT_MAX_CONTEXT_CHARS, 0, 40_000),
+    maxReviewTokens: readInt(env.LLM_MAX_REVIEW_TOKENS, DEFAULT_MAX_REVIEW_TOKENS, 64, 2048),
     limits: {
       perMinute: readInt(env.RATE_LIMIT_PER_MINUTE, DEFAULT_LIMITS.perMinute, 1, 10_000),
       perDay: readInt(env.RATE_LIMIT_PER_DAY, DEFAULT_LIMITS.perDay, 1, 100_000),

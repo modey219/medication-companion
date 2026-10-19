@@ -4,6 +4,60 @@ Short entries. Newest first. Format: ID, date, decision, why, status.
 
 ---
 
+## D-024 — Review, then answer, on the backend (T14)
+
+Decision: every chat request now goes through two model passes — a strict JSON
+**review** and, only if the review allows it, an **answer** — and the server, not
+the model, owns the gates between them.
+
+1. **Why two passes**: T13 started sending the patient's own profile, so the
+   backend must decide *before* it writes anything whether the request is safe
+   and how urgent it is. Asking a second pass for a strict JSON object gives a
+   structured, testable decision (`urgency`, `forbiddenRequest`) that cannot be
+   smuggled into prose, and it lets the server stop before paying for an answer
+   it would only throw away. The system prompt still carries the rules; the
+   review is a second, narrower reader of the same rules.
+2. **Fail closed**: a review that is not a JSON object with a known `urgency`
+   and a boolean `forbiddenRequest` is never guessed at. The request returns
+   `502 llm_invalid_review` and no answer is attempted. A malformed safety
+   decision is treated as a safety failure, not as "probably fine".
+3. **Gate order** (cheapest and most certain first): local emergency keyword
+   check → review → `urgency === EMERGENCY` returns the emergency card →
+   `forbiddenRequest === true` returns the calm decline → answer → answer
+   guard. When a gate fires, the answer pass is skipped entirely, so a refusal
+   can never be softened by a second model.
+4. **The server owns the schema**: the model fills in fields, the server
+   validates them. Bullets are capped (5 considered, 5 gaps, 3 questions),
+   trimmed, and dropped when they are too long or when `isUnsafeText` says they
+   contain an instruction. The review's free text never reaches the patient
+   unfiltered, and `usesProfile` never reaches the prompt.
+5. **The answer guard is a net, not a proof**: `guardAnswer` flags leaked prompt
+   markers, affirmative medicine/dose instructions and "safe to combine" claims,
+   with negation handling so "do not stop your medicine without asking" passes.
+   It is deliberately small and heuristic; a blocked answer is replaced by
+   `safeBlockedReply()` at HTTP 200 (the request succeeded, the content did not)
+   and logged as `chat.answer_blocked` with the reason only.
+6. **The profile is rendered on the server, from typed fields**: the raw JSON
+   the app sent is never pasted into a prompt. `renderPatientContext` builds
+   short lines, flattens every value to one line (so a value cannot forge a
+   section), writes `NOT_ASKED` / `NONE_CONFIRMED` explicitly, says "unknown"
+   for sections the request omitted, and caps the whole block at
+   `MAX_CONTEXT_CHARS` with an explicit truncation marker.
+7. **Wire compatibility is one-way and additive**: `mode` present means the
+   structured `context` is authoritative and the legacy `shareMedications` /
+   `medicationContext` fields are ignored (T13 sends both, so rejecting them
+   would break installed APKs). `mode` absent is the legacy shape and is read
+   as `generic`. `generic` **with** a context is a 400. The response grows
+   `urgency` and `review`; T13's parser ignores unknown keys, so no Android
+   change ships with T14.
+8. **Prompt files are the clinical artifact**: `prompts/system-prompt.txt` gains
+   the "what you may do" / profile / urgency sections, and
+   `prompts/review-prompt.txt` and `prompts/answer-prompt.txt` are new. All three
+   are owned by the clinical reviewer (TODO(clinical-review, T14)); changing a
+   pattern in `answerGuard.ts` is equally a clinical change.
+
+---
+
 ## D-023 — The patient context and two consents (T13)
 
 Decision: the assistant has two explicit consents and, when the profile consent
