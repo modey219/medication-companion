@@ -13,6 +13,13 @@ object ReminderDefaults {
     /** Minutes without any action after the scheduled time before a dose becomes MISSED. */
     const val GRACE_PERIOD_MINUTES: Long = 60
 
+    /**
+     * Minutes between repeated dose reminders while the dose is still unacted
+     * inside its grace period. Repeats stop as soon as the patient acts or the
+     * grace period ends (TODO(eng, T8): make configurable with the grace period).
+     */
+    const val REPEAT_INTERVAL_MINUTES: Long = 5
+
     /** How many days of dose events are generated ahead of time. */
     const val GENERATION_WINDOW_DAYS: Long = 7
 }

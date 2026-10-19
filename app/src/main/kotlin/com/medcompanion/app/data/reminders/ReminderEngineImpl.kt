@@ -137,12 +137,23 @@ class ReminderEngineImpl
             medicationRepository.update(medication.copy(remainingDoses = remaining - 1))
         }
 
+        /**
+         * A reminder that fired while the dose is still unacted is repeated
+         * every [ReminderDefaults.REPEAT_INTERVAL_MINUTES] until the patient
+         * acts or the grace period ends; the repeat is a fresh alarm for the
+         * same dose, so acting on the notification cancels it like any other.
+         */
         override suspend fun onReminderFired(doseId: Long): DoseReminderPayload? {
+            val now = clock.now()
             val dose = doseEventRepository.getById(doseId) ?: return null
             if (dose.status != DoseStatus.PENDING && dose.status != DoseStatus.SNOOZED) return null
             val graceAt = dose.scheduledAt.plusSeconds(GRACE_SECONDS)
-            if (graceAt >= clock.now()) {
+            if (graceAt >= now) {
                 alarmScheduler.scheduleGrace(doseId, graceAt)
+                val repeatAt = now.plusSeconds(REPEAT_SECONDS)
+                if (repeatAt <= graceAt) {
+                    alarmScheduler.scheduleReminder(doseId, repeatAt)
+                }
             }
             return payloadFor(dose)
         }
@@ -211,5 +222,6 @@ class ReminderEngineImpl
         private companion object {
             const val GRACE_SECONDS = ReminderDefaults.GRACE_PERIOD_MINUTES * 60
             const val SNOOZE_SECONDS = SnoozeDefaults.DEFAULT_SNOOZE_MINUTES * 60
+            const val REPEAT_SECONDS = ReminderDefaults.REPEAT_INTERVAL_MINUTES * 60
         }
     }

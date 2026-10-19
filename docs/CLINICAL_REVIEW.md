@@ -79,6 +79,7 @@ English mirrors of every row above: `values-en/strings.xml` (same
 | `meds_remaining` / `meds_low_stock` ("المخزون منخفض — يُفضل طلب إعادة التعبئة") | `values/strings.xml` | The low-stock hint borders on advice to refill; must not read as advice to keep taking or to change treatment | Open |
 | `action_refill_order` / `refill_message` (WhatsApp prefill) | `values/strings.xml`, `feature/medications/MedicationsScreen.kt` | Opens WhatsApp with a prefilled refill request to the patient's chosen contact; must stay a request for availability/price, never a prescription or a recommendation | Open |
 | Low-stock threshold constant (3 doses) and the rule that taking a dose decrements the tracked quantity | `feature/medications/MedicationsViewModel.kt`, `data/reminders/ReminderEngineImpl.kt` (both marked `TODO(eng) T8`/`TODO(clinical-review)` at the call site) | Patient-facing default; confirm it is sensible and that the decrement never implies the dose must be taken | Open |
+| Repeat reminder cadence (every 5 minutes while unacted, within the 60 minute grace period) | `core/reminder/ReminderDefaults.kt` (`REPEAT_INTERVAL_MINUTES`), `data/reminders/ReminderEngineImpl.kt` | Reminder frequency for the target users; confirm it is helpful rather than distressing, and that repeats stop at the grace boundary | Open |
 
 ---
 

@@ -4,6 +4,33 @@ Short entries. Newest first. Format: ID, date, decision, why, status.
 
 ---
 
+## D-011 — Repeat dose reminders until the patient acts (Phase 1)
+
+Date: 2026-10-19
+Status: Accepted
+
+Decision: while a dose is still PENDING or SNOOZED and inside its grace
+period, the reminder is re-armed every
+`ReminderDefaults.REPEAT_INTERVAL_MINUTES` (5 minutes) by
+`ReminderEngineImpl.onReminderFired`. The repeat is just another reminder
+alarm for the same dose, so Taken/Snooze/Skip from the notification cancels
+it through the existing single cancel path, and no repeat is scheduled once
+`scheduledAt + grace` has passed.
+
+Why: one notification is easy to miss, especially for the target users;
+repeating only inside the grace window avoids nagging after the dose is
+MISSED and never adds a second follow-up (the grace alarm still sends at most
+one gentle follow-up).
+
+Notes:
+- The cadence is fixed for v1; TODO(eng) T8 makes it configurable next to the
+  grace period and snooze.
+- A refresh (app start, reboot, timezone or clock change) re-arms reminders
+  for unacted doses, which also restarts the repeat chain after a reboot.
+- The cadence is listed for review in docs/CLINICAL_REVIEW.md.
+
+---
+
 ## D-010 — Stock, expiry dates and refill request (Phase 1, F2)
 
 Date: 2026-10-19

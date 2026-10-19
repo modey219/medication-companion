@@ -372,6 +372,76 @@ class ReminderEngineTest {
         }
 
     @Test
+    fun `an unacted dose is reminded again inside its grace window`() =
+        runTest {
+            medications.put(medication(id = 1))
+            schedules.put(schedule(medicationId = 1, times = listOf(LocalTime.of(20, 0))))
+            val engine = engine()
+            engine.refresh()
+            val dose = doses.events.single { it.scheduledAt == Instant.parse("2026-10-17T20:00:00Z") }
+            clock.setNow(Instant.parse("2026-10-17T20:00:00Z"))
+            alarms.clear()
+
+            engine.onReminderFired(dose.id)
+
+            assertEquals(Instant.parse("2026-10-17T20:05:00Z"), alarms.reminders[dose.id])
+            assertEquals(Instant.parse("2026-10-17T21:00:00Z"), alarms.graces[dose.id])
+        }
+
+    @Test
+    fun `a repeat is not scheduled when it would fall after the grace period`() =
+        runTest {
+            medications.put(medication(id = 1))
+            schedules.put(schedule(medicationId = 1, times = listOf(LocalTime.of(20, 0))))
+            val engine = engine()
+            engine.refresh()
+            val dose = doses.events.single { it.scheduledAt == Instant.parse("2026-10-17T20:00:00Z") }
+            // 20:56 + 5 min = 21:01, past the 21:00 grace end.
+            clock.setNow(Instant.parse("2026-10-17T20:56:00Z"))
+            alarms.clear()
+
+            engine.onReminderFired(dose.id)
+
+            assertFalse(alarms.reminders.containsKey(dose.id))
+            assertEquals(Instant.parse("2026-10-17T21:00:00Z"), alarms.graces[dose.id])
+        }
+
+    @Test
+    fun `a reminder that fires entirely after the grace period does not repeat`() =
+        runTest {
+            medications.put(medication(id = 1))
+            schedules.put(schedule(medicationId = 1, times = listOf(LocalTime.of(20, 0))))
+            val engine = engine()
+            engine.refresh()
+            val dose = doses.events.single { it.scheduledAt == Instant.parse("2026-10-17T20:00:00Z") }
+            clock.setNow(Instant.parse("2026-10-17T21:30:00Z"))
+            alarms.clear()
+
+            engine.onReminderFired(dose.id)
+
+            assertFalse(alarms.reminders.containsKey(dose.id))
+            assertFalse(alarms.graces.containsKey(dose.id))
+        }
+
+    @Test
+    fun `acting on the dose cancels the pending repeat`() =
+        runTest {
+            medications.put(medication(id = 1))
+            schedules.put(schedule(medicationId = 1, times = listOf(LocalTime.of(20, 0))))
+            val engine = engine()
+            engine.refresh()
+            val dose = doses.events.single { it.scheduledAt == Instant.parse("2026-10-17T20:00:00Z") }
+            clock.setNow(Instant.parse("2026-10-17T20:00:00Z"))
+            engine.onReminderFired(dose.id)
+            assertTrue(alarms.reminders.containsKey(dose.id))
+
+            engine.performAction(dose.id, DoseStatus.TAKEN)
+
+            assertFalse(alarms.reminders.containsKey(dose.id))
+            assertFalse(alarms.graces.containsKey(dose.id))
+        }
+
+    @Test
     fun `snoozing reschedules a reminder ten minutes later and keeps the grace alarm`() =
         runTest {
             medications.put(medication(id = 1))
