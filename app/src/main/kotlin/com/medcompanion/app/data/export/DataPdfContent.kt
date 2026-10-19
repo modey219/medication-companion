@@ -4,10 +4,14 @@ import android.content.Context
 import com.medcompanion.app.R
 import com.medcompanion.app.domain.export.FullData
 import com.medcompanion.app.domain.export.MedicationWithSchedules
+import com.medcompanion.app.domain.model.MedicalHistoryEntry
+import com.medcompanion.app.domain.model.PatientBasics
 import com.medcompanion.app.domain.model.ProfileEntry
 import com.medcompanion.app.domain.model.ProfileEntryType
 import com.medcompanion.app.domain.model.Schedule
 import com.medcompanion.app.feature.medications.labelRes
+import com.medcompanion.app.feature.profile.labelRes
+import com.medcompanion.app.feature.profile.severityLabelRes
 import java.time.LocalTime
 
 /**
@@ -26,6 +30,14 @@ internal class DataPdfContent(
             add(PdfBlock.Body(context.getString(R.string.history_pdf_generated, lines.dateTime(data.generatedAt))))
             add(PdfBlock.Body(context.getString(R.string.data_pdf_counts, data.medications.size, data.symptoms.size)))
 
+            add(PdfBlock.Heading(context.getString(R.string.data_pdf_basics_title)))
+            val basicsLines = data.patientBasics?.let { basicsLines(it) }.orEmpty()
+            if (basicsLines.isEmpty()) {
+                add(PdfBlock.Body(context.getString(R.string.data_pdf_basics_empty)))
+            } else {
+                basicsLines.forEach { add(PdfBlock.Body(it)) }
+            }
+
             addSection(
                 heading = context.getString(R.string.profile_allergy_title),
                 entries = data.profileEntries.ofType(ProfileEntryType.ALLERGY).map { profileLine(it) },
@@ -33,6 +45,10 @@ internal class DataPdfContent(
             addSection(
                 heading = context.getString(R.string.profile_condition_title),
                 entries = data.profileEntries.ofType(ProfileEntryType.CONDITION).map { profileLine(it) },
+            )
+            addSection(
+                heading = context.getString(R.string.data_pdf_history_title),
+                entries = data.medicalHistory.map { historyLine(it) },
             )
 
             addSection(
@@ -84,8 +100,33 @@ internal class DataPdfContent(
 
     private fun List<ProfileEntry>.ofType(type: ProfileEntryType): List<ProfileEntry> = filter { it.type == type }
 
+    /** Basic facts, one per line; the caller shows "not entered" when empty. */
+    private fun basicsLines(basics: PatientBasics): List<String> =
+        listOfNotNull(
+            basics.birthYear?.let { context.getString(R.string.data_pdf_birth_year, it) },
+            basics.sex?.let { context.getString(it.labelRes()) },
+            basics.pregnantOrBreastfeeding?.takeIf { it }?.let {
+                context.getString(R.string.data_pdf_pregnant_breastfeeding)
+            },
+            basics.weightKg?.let { context.getString(R.string.data_pdf_weight, it) },
+        )
+
     private fun profileLine(entry: ProfileEntry): String =
-        lines.join(entry.label, entry.note?.takeIf { it.isNotBlank() })
+        lines.join(
+            entry.label,
+            entry.severity?.let { context.getString(severityLabelRes(it)) },
+            entry.reaction?.takeIf { it.isNotBlank() },
+            entry.sinceYear?.let { context.getString(R.string.data_pdf_since_year, it) },
+            entry.note?.takeIf { it.isNotBlank() },
+        )
+
+    private fun historyLine(entry: MedicalHistoryEntry): String =
+        lines.join(
+            context.getString(entry.type.labelRes()),
+            entry.label,
+            entry.year?.let { context.getString(R.string.data_pdf_in_year, it) },
+            entry.note?.takeIf { it.isNotBlank() },
+        )
 
     private fun medicationLines(item: MedicationWithSchedules): List<String> {
         val medication = item.medication

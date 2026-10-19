@@ -308,7 +308,7 @@ TODO(legal): the privacy policy is a placeholder.
 <string name="profile_error_export">تعذّر إنشاء الملف. حاول مرة أخرى.</string>
 <string name="profile_delete_all">حذف كل بياناتي</string>
 <string name="profile_delete_confirm_title">حذف كل البيانات؟</string>
-<string name="profile_delete_confirm_body">سيُحذف كل ما سجّلته: الأدوية والمواعيد والجرعات والأعراض والحساسية والأمراض المزمنة، وستُلغى التذكيرات. لا يمكن التراجع عن هذا الإجراء.</string>
+<string name="profile_delete_confirm_body">سيُحذف كل ما سجّلته: الأدوية والمواعيد والجرعات والأعراض والحساسية والأمراض المزمنة والمعلومات الأساسية والتاريخ المرضي، وستُلغى التذكيرات. لا يمكن التراجع عن هذا الإجراء.</string>
 <string name="profile_delete_confirmed">حُذفت كل البيانات.</string>
 <string name="profile_error_delete">تعذّر حذف البيانات. حاول مرة أخرى.</string>
 <string name="profile_info_title">معلومات</string>
@@ -380,4 +380,81 @@ TODO(legal): the consent text and what leaves the device need sign-off.
 <string name="assistant_error_rate_limited">أسئلة كثيرة في وقت قصير. انتظر قليلًا ثم أعد المحاولة.</string>
 <string name="assistant_error_server">تعذّر الوصول إلى المساعد الآن. أعد المحاولة بعد قليل.</string>
 <string name="assistant_error_invalid">تعذّر إرسال الرسالة. حاول مرة أخرى.</string>
+
+<!--
+T12 health profile: basic facts, medical history, section states and the extra
+allergy/condition fields.
+TODO(clinical-review): every string below reaches the patient or the exported
+document. Confirm the severity scale, the sex and history wording, and that the
+section sentences never read as a medical judgement.
+-->
+<string name="profile_basics_title">المعلومات الأساسية</string>
+<string name="profile_basics_desc">تساعد هذه المعلومات المساعد على فهم حالتك، وتبقى على جهازك.</string>
+<string name="profile_basics_summary_empty">لم تُدخل بعد</string>
+<string name="profile_basics_open">فتح المعلومات الأساسية</string>
+<string name="profile_basics_birth_year">سنة الميلاد</string>
+<string name="profile_basics_birth_year_hint">مثال: 1960</string>
+<string name="profile_basics_birth_year_error">أدخل سنة ميلاد صحيحة.</string>
+<string name="profile_basics_birth_year_value">سنة الميلاد: %1$d</string>
+<string name="profile_basics_age_value">العمر: %1$d سنة</string>
+<string name="profile_basics_sex">الجنس</string>
+<string name="profile_sex_female">أنثى</string>
+<string name="profile_sex_male">ذكر</string>
+<string name="profile_sex_other">آخر</string>
+<string name="profile_basics_pregnancy">حامل أو مرضعة؟</string>
+<string name="profile_basics_pregnancy_desc">يُسأل عنه للنساء في سن الإنجاب، ويمكن تركه بلا إجابة.</string>
+<string name="profile_basics_pregnancy_yes">نعم</string>
+<string name="profile_basics_pregnancy_no">لا</string>
+<string name="profile_basics_pregnancy_unset">لم يُحدَّد</string>
+<string name="profile_basics_weight">الوزن (كغ)</string>
+<string name="profile_basics_weight_error">أدخل وزنًا بالكيلوغرام بين %1$d و %2$d.</string>
+<string name="profile_basics_weight_value">الوزن: %1$d كغ</string>
+<string name="profile_basics_not_set">غير محدَّد</string>
+<string name="profile_basics_saved">حُفظت المعلومات الأساسية.</string>
+<string name="profile_medications_title">الأدوية</string>
+<string name="profile_section_not_asked">لم تُسأل بعد عن هذا القسم.</string>
+<string name="profile_section_none_confirmed">أكّدت أنه لا يوجد شيء لديك.</string>
+<string name="profile_section_listed">مسجَّل.</string>
+<string name="profile_section_hint">التأكيد يجعل المعلومة واضحة للمساعد بدل أن تكون غير معروفة.</string>
+<string name="profile_section_confirm_none">لا يوجد لديّ شيء</string>
+<string name="profile_section_clear_confirmation">إلغاء التأكيد</string>
+<string name="profile_section_confirmed">تم التأكيد.</string>
+<string name="profile_section_confirmation_cleared">أُلغي التأكيد.</string>
+<string name="profile_entry_severity">الشدة (اختياري)</string>
+<string name="profile_entry_severity_unset">غير محدَّدة</string>
+<string name="profile_severity_mild">خفيفة</string>
+<string name="profile_severity_moderate">متوسطة</string>
+<string name="profile_severity_severe">شديدة</string>
+<string name="profile_entry_reaction">ما الذي حدث؟ (اختياري)</string>
+<string name="profile_entry_reaction_hint">مثال: طفح جلدي</string>
+<string name="profile_entry_since_year">منذ سنة (اختياري)</string>
+<string name="profile_entry_since_year_value">منذ %1$d</string>
+<string name="profile_entry_since_year_hint">مثال: 2015</string>
+<string name="profile_entry_year_error">أدخل سنة صحيحة.</string>
+<string name="profile_history_title">التاريخ المرضي</string>
+<string name="profile_history_desc">أمراض سابقة، عمليات، تنويم في المستشفى، أو تاريخ مرضي في العائلة.</string>
+<string name="profile_history_open">فتح التاريخ المرضي</string>
+<string name="profile_history_empty">لم تُضِف شيئًا بعد.</string>
+<string name="profile_history_add">إضافة عنصر</string>
+<string name="profile_history_edit">تعديل عنصر</string>
+<string name="profile_history_year_value">سنة %1$d</string>
+<string name="profile_history_count">%1$d عنصر</string>
+<string name="profile_history_label_field">ما الذي حدث؟</string>
+<string name="profile_history_type_field">النوع</string>
+<string name="profile_history_type_past_illness">مرض سابق</string>
+<string name="profile_history_type_surgery">عملية جراحية</string>
+<string name="profile_history_type_hospitalization">تنويم في المستشفى</string>
+<string name="profile_history_type_family">تاريخ مرضي في العائلة</string>
+<string name="profile_history_type_other">أخرى</string>
+<string name="profile_history_year">السنة (اختياري)</string>
+<string name="profile_history_year_hint">مثال: 2019</string>
+<string name="profile_history_saved">حُفظ عنصر التاريخ المرضي.</string>
+<string name="data_pdf_basics_title">المعلومات الأساسية</string>
+<string name="data_pdf_basics_empty">لم تُدخل المعلومات الأساسية.</string>
+<string name="data_pdf_birth_year">سنة الميلاد: %1$d</string>
+<string name="data_pdf_weight">الوزن: %1$d كغ</string>
+<string name="data_pdf_pregnant_breastfeeding">حامل أو مرضعة</string>
+<string name="data_pdf_history_title">التاريخ المرضي</string>
+<string name="data_pdf_since_year">منذ %1$d</string>
+<string name="data_pdf_in_year">سنة %1$d</string>
 </resources>

@@ -192,7 +192,30 @@ reviewer must confirm both.
 
 ---
 
+## T12 — Health profile (basic facts, medical history, section state) (2026-10-19)
+
+| Item | Location | Why flagged | Status |
+| --- | --- | --- | --- |
+| Basic-facts wording: `profile_basics_title`, `profile_basics_desc`, `profile_basics_open`, `profile_basics_summary_empty`, `profile_basics_not_set`, `profile_basics_saved` | `values/strings.xml:388-396`, `feature/profile/ProfileScreen.kt`, `feature/profile/basics/ProfileBasicsScreen.kt` | These fields hold the patient's own clinical facts; the prompts must not suggest a diagnosis or that the app validates their accuracy | Open |
+| Birth-year wording and rule: `profile_basics_birth_year`, `_hint` ("مثال: 1960"), `_error`, `_birth_year_value`, `profile_basics_age_value` ("العمر: %1$d سنة"), range 1900–current year | `values/strings.xml:398-403`, `domain/model/ProfileYears.kt`, `domain/model/PatientBasics.kt`, `feature/profile/basics/ProfileBasicsViewModel.kt` | The birth *year* is enough to compute an age for the assistant; a clinician must confirm the accepted range and that showing the computed age is helpful and not misleading | Open |
+| Sex wording: `profile_basics_sex`, `profile_sex_female` / `_male` / `_other` | `values/strings.xml:405-408`, `domain/model/Enums.kt` (`Sex`) | Sex can be clinically relevant to the assistant's cautions; the Arabic terms and the "other" option need sign-off | Open |
+| Pregnancy/breastfeeding wording: `profile_basics_pregnancy`, `_desc`, `_yes` / `_no` / `_unset` | `values/strings.xml:409-413` | A safety-relevant fact; the copy must make clear it is optional and only asked where relevant, and must not read as advice | Open |
+| Weight wording and rule: `profile_basics_weight`, `_error` ("أدخل وزنًا بالكيلوغرام بين %1$d و %2$d"), `_weight_value`, range 20–400 kg | `values/strings.xml:415-417`, `domain/model/PatientBasics.kt` (`WEIGHT_KG_RANGE`), `feature/profile/basics/ProfileBasicsUiState.kt` | Used only as context for the assistant; a clinician must confirm the accepted range and that the app never derives a dose from it | Open |
+| Severity scale: `profile_entry_severity`, `_severity_unset`, `profile_severity_mild` / `_moderate` / `_severe`, values 1 mild to 3 severe | `values/strings.xml:423-427`, `domain/model/ProfileEntry.kt` (`SEVERITY_RANGE`), `feature/profile/ProfileLabels.kt` (`severityLabelRes`) | A new 1-to-3 severity scale for allergies and conditions; the words and the scale need clinical sign-off (and must stay distinct from the 1-to-5 symptom scale) | Open |
+| Reaction wording: `profile_entry_reaction`, `_reaction_hint` ("مثال: طفح جلدي") | `values/strings.xml:428-429`, `feature/profile/ProfileScreen.kt` | Free text describing what happened; the example must not read as medical guidance | Open |
+| Since-year wording: `profile_entry_since_year`, `_since_year_value` ("منذ %1$d"), `_since_year_hint`, `profile_entry_year_error`, and the same for history (`profile_history_year`, `_hint`, `_year_value`, `data_pdf_since_year`, `data_pdf_in_year`) | `values/strings.xml:430-433, 445, 448, 461-464`, `domain/model/ProfileYears.kt` | Dates the patient remembers; wording must not imply the app validates when a condition started | Open |
+| Section-state wording: `profile_section_not_asked`, `_none_confirmed`, `_listed`, `_hint`, `_confirm_none`, `_clear_confirmation`, `_confirmed`, `_confirmation_cleared` | `values/strings.xml:418-422`, `domain/model/ProfileSectionState.kt` | This is the "absence of data is not evidence of absence" rule in plain language; a clinician must confirm the patient understands "not asked" is not "nothing there" | Open |
+| Medical-history wording: `profile_history_title`, `_desc`, `_open`, `_empty`, `_add`, `_edit`, `_count`, `_label_field`, `_type_field`, `_saved`, `profile_history_type_past_illness` / `_surgery` / `_hospitalization` / `_family` / `_other` | `values/strings.xml:434-452`, `feature/profile/history/MedicalHistoryScreen.kt`, `domain/model/Enums.kt` (`MedicalHistoryType`) | The history categories and their Arabic names; family history in particular must be labelled so it is not read as the patient's own diagnosis | Open |
+| Derived section state: only the patient's own "none" is stored, `LISTED` and the medications section are derived, and entries always win over an earlier "none" | `domain/model/ProfileSectionState.kt`, `data/repository/ProfileRepositoryImpl.kt` (`observeSections`), `docs/DECISIONS.md` D-022 points 4 | Confirm that a derived state (never a stored guess) is the right rule for what the assistant is told | Open |
+| Export grows with the profile: JSON `schemaVersion` 2 (`basics`, `medicalHistory`, `profileSections`; entries gain `severity`/`reaction`/`sinceYear`) and the PDF basic-facts + medical-history sections | `data/export/DataJsonExporter.kt`, `data/export/DataPdfContent.kt`, `values/strings.xml:452-464` (`data_pdf_basics_*`, `data_pdf_history_*`) | The exported document is read by a clinician; the new sections and their wording must be accurate and must not read as interpretation | Open |
+| Decision: the birth year (never a full date of birth) and the sex/weight are collected because the assistant context needs them, and nothing is inferred from missing data | `docs/DECISIONS.md` D-022 points 1, 4 | Privacy/clinical balance of the minimum data set; a clinician should confirm nothing else is needed and nothing collected is unnecessary | Open |
+
+English mirrors of every row above: `values-en/strings.xml` (same
+`TODO(clinical-review)` comments).
+
+---
+
 ## Not yet written (future tasks — keep this list growing)
 
-- Nothing pending: every screen and string up to and including T10 is recorded
+- Nothing pending: every screen and string up to and including T12 is recorded
   above. New tasks add their rows here before release.

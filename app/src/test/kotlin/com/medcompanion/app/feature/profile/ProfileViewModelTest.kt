@@ -4,8 +4,15 @@ import com.medcompanion.app.core.locale.LanguageApplier
 import com.medcompanion.app.data.export.DataJsonExporter
 import com.medcompanion.app.data.export.DataPdfExporter
 import com.medcompanion.app.domain.maintenance.DataMaintenance
+import com.medcompanion.app.domain.model.MedicalHistoryEntry
+import com.medcompanion.app.domain.model.MedicalHistoryType
+import com.medcompanion.app.domain.model.PatientBasics
 import com.medcompanion.app.domain.model.ProfileEntry
 import com.medcompanion.app.domain.model.ProfileEntryType
+import com.medcompanion.app.domain.model.ProfileSection
+import com.medcompanion.app.domain.model.ProfileSectionState
+import com.medcompanion.app.domain.model.ProfileSectionStatus
+import com.medcompanion.app.domain.model.Sex
 import com.medcompanion.app.domain.repository.ProfileRepository
 import com.medcompanion.app.domain.settings.AppLanguage
 import com.medcompanion.app.domain.settings.AppSettings
@@ -42,6 +49,9 @@ class ProfileViewModelTest {
     private val applied = mutableListOf<AppLanguage>()
     private val profileRepository: ProfileRepository = mockk(relaxed = true)
     private val stored = MutableStateFlow<List<ProfileEntry>>(emptyList())
+    private val basics = MutableStateFlow<PatientBasics?>(null)
+    private val history = MutableStateFlow<List<MedicalHistoryEntry>>(emptyList())
+    private val sections = MutableStateFlow<Map<ProfileSection, ProfileSectionState>>(emptyMap())
     private val jsonExporter: DataJsonExporter = mockk(relaxed = true)
     private val pdfExporter: DataPdfExporter = mockk(relaxed = true)
     private val maintenance: DataMaintenance = mockk(relaxed = true)
@@ -51,6 +61,9 @@ class ProfileViewModelTest {
     fun setUp() {
         Dispatchers.setMain(UnconfinedTestDispatcher())
         every { profileRepository.observeAll() } returns stored
+        every { profileRepository.observeBasics() } returns basics
+        every { profileRepository.observeHistory() } returns history
+        every { profileRepository.observeSections() } returns sections
         coEvery { profileRepository.add(capture(added)) } returns 1L
     }
 
@@ -248,5 +261,99 @@ class ProfileViewModelTest {
         assertEquals("01234567", settings.current.pharmacyNumber)
         assertEquals(ProfileMessage.PHARMACY_NUMBER_SAVED, viewModel.uiState.value.message)
         assertFalse(viewModel.uiState.value.isPharmacyNumberDirty)
+    }
+
+    @Test
+    fun `the section states come from the repository and an unknown one is not asked`() {
+        sections.value =
+            mapOf(
+                ProfileSection.ALLERGIES to
+                    ProfileSectionState(ProfileSection.ALLERGIES, ProfileSectionStatus.LISTED),
+                ProfileSection.CONDITIONS to
+                    ProfileSectionState(ProfileSection.CONDITIONS, ProfileSectionStatus.NONE_CONFIRMED),
+            )
+
+        val state = viewModel().uiState.value
+
+        assertEquals(
+            ProfileSectionStatus.LISTED,
+            state.sectionState(ProfileSection.ALLERGIES).status,
+        )
+        assertEquals(
+            ProfileSectionStatus.NONE_CONFIRMED,
+            state.sectionState(ProfileSection.CONDITIONS).status,
+        )
+        assertEquals(
+            ProfileSectionStatus.NOT_ASKED,
+            state.sectionState(ProfileSection.HISTORY).status,
+        )
+    }
+
+    @Test
+    fun `the basic facts and the history are shown`() {
+        basics.value = PatientBasics(birthYear = 1958, sex = Sex.FEMALE)
+        history.value = listOf(MedicalHistoryEntry(type = MedicalHistoryType.SURGERY, label = "الزائدة"))
+
+        val state = viewModel().uiState.value
+
+        assertTrue(state.hasBasics)
+        assertEquals(1958, state.basics?.birthYear)
+        assertEquals(1, state.history.size)
+    }
+
+    @Test
+    fun `confirming a section empty calls the repository`() {
+        val viewModel = viewModel()
+
+        viewModel.onConfirmSectionEmpty(ProfileSection.CONDITIONS)
+
+        coVerify(exactly = 1) { profileRepository.confirmSectionEmpty(ProfileSection.CONDITIONS) }
+        assertEquals(ProfileMessage.SECTION_CONFIRMED, viewModel.uiState.value.message)
+    }
+
+    @Test
+    fun `clearing a confirmation calls the repository`() {
+        val viewModel = viewModel()
+
+        viewModel.onClearSectionConfirmation(ProfileSection.CONDITIONS)
+
+        coVerify(exactly = 1) { profileRepository.clearSectionConfirmation(ProfileSection.CONDITIONS) }
+        assertEquals(ProfileMessage.SECTION_CONFIRMATION_CLEARED, viewModel.uiState.value.message)
+    }
+
+    @Test
+    fun `an allergy keeps the severity, the reaction and the year`() {
+        val viewModel = viewModel()
+
+        viewModel.onAddEntry(ProfileEntryType.ALLERGY)
+        viewModel.onEntryLabelChanged("البنسلين")
+        viewModel.onEntrySeverityChanged(3)
+        viewModel.onEntryReactionChanged("  طفح جلدي  ")
+        viewModel.onEntrySinceYearChanged("2010")
+        viewModel.onEntrySave()
+
+        assertEquals(3, added.captured.severity)
+        assertEquals("طفح جلدي", added.captured.reaction)
+        assertEquals(2010, added.captured.sinceYear)
+    }
+
+    @Test
+    fun `an impossible year is not saved`() {
+        val viewModel = viewModel()
+
+        viewModel.onAddEntry(ProfileEntryType.ALLERGY)
+        viewModel.onEntryLabelChanged("البنسلين")
+        viewModel.onEntrySinceYearChanged("1800")
+
+        assertFalse(
+            viewModel.uiState.value.entryDialog
+                ?.isSinceYearValid ?: true,
+        )
+        assertFalse(
+            viewModel.uiState.value.entryDialog
+                ?.canSave ?: true,
+        )
+        viewModel.onEntrySave()
+        coVerify(exactly = 0) { profileRepository.add(any()) }
     }
 }

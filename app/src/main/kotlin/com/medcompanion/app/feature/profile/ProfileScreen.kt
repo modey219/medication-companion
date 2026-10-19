@@ -12,7 +12,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -43,10 +45,15 @@ import androidx.core.net.toUri
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.medcompanion.app.R
+import com.medcompanion.app.domain.model.PatientBasics
 import com.medcompanion.app.domain.model.ProfileEntry
 import com.medcompanion.app.domain.model.ProfileEntryType
+import com.medcompanion.app.domain.model.ProfileSection
+import com.medcompanion.app.domain.model.ProfileSectionStatus
 import com.medcompanion.app.domain.settings.AppLanguage
 import com.medcompanion.app.domain.settings.ReminderPreferences
+import com.medcompanion.app.ui.components.Choice
+import com.medcompanion.app.ui.components.ChoiceSelector
 import com.medcompanion.app.ui.components.LanguageSelector
 import com.medcompanion.app.ui.components.ValueStepperRow
 import com.medcompanion.app.ui.preview.ScreenPreviews
@@ -63,6 +70,8 @@ import com.medcompanion.app.ui.theme.MedCompanionTheme
 fun ProfileScreen(
     onOpenPrivacy: () -> Unit = {},
     onOpenReminderSetup: () -> Unit = {},
+    onOpenBasics: () -> Unit = {},
+    onOpenHistory: () -> Unit = {},
     viewModel: ProfileViewModel = hiltViewModel(),
     modifier: Modifier = Modifier,
 ) {
@@ -89,7 +98,7 @@ fun ProfileScreen(
 
     ProfileContent(
         state = state,
-        actions = ProfileActions(viewModel),
+        actions = ProfileActions(viewModel, onOpenBasics, onOpenHistory),
         snackbarHostState = snackbarHostState,
         onOpenPrivacy = onOpenPrivacy,
         onOpenReminderSetup = onOpenReminderSetup,
@@ -110,15 +119,28 @@ internal data class ProfileActions(
     val onDeleteAllRequested: () -> Unit,
     val onDeleteAllDismissed: () -> Unit,
     val onDeleteAllConfirmed: () -> Unit,
+    val onOpenBasics: () -> Unit,
+    val onOpenHistory: () -> Unit,
     val onAddEntry: (ProfileEntryType) -> Unit,
     val onEditEntry: (ProfileEntry) -> Unit,
     val onEntryLabelChanged: (String) -> Unit,
+    val onEntrySeverityChanged: (Int?) -> Unit,
+    val onEntryReactionChanged: (String) -> Unit,
+    val onEntrySinceYearChanged: (String) -> Unit,
     val onEntryNoteChanged: (String) -> Unit,
     val onEntryDialogDismissed: () -> Unit,
     val onEntrySave: () -> Unit,
     val onEntryDelete: (ProfileEntry) -> Unit,
+    val onConfirmSectionEmpty: (ProfileSection) -> Unit,
+    val onClearSectionConfirmation: (ProfileSection) -> Unit,
 ) {
-    constructor(viewModel: ProfileViewModel) : this(
+    constructor(viewModel: ProfileViewModel) : this(viewModel, {}, {})
+
+    constructor(
+        viewModel: ProfileViewModel,
+        onOpenBasics: () -> Unit,
+        onOpenHistory: () -> Unit,
+    ) : this(
         onLanguageSelected = viewModel::onLanguageSelected,
         onEmergencyNumberChange = viewModel::onEmergencyNumberChange,
         onEmergencyNumberSave = viewModel::onEmergencyNumberSave,
@@ -130,13 +152,20 @@ internal data class ProfileActions(
         onDeleteAllRequested = viewModel::onDeleteAllRequested,
         onDeleteAllDismissed = viewModel::onDeleteAllDismissed,
         onDeleteAllConfirmed = viewModel::onDeleteAllConfirmed,
+        onOpenBasics = onOpenBasics,
+        onOpenHistory = onOpenHistory,
         onAddEntry = viewModel::onAddEntry,
         onEditEntry = viewModel::onEditEntry,
         onEntryLabelChanged = viewModel::onEntryLabelChanged,
+        onEntrySeverityChanged = viewModel::onEntrySeverityChanged,
+        onEntryReactionChanged = viewModel::onEntryReactionChanged,
+        onEntrySinceYearChanged = viewModel::onEntrySinceYearChanged,
         onEntryNoteChanged = viewModel::onEntryNoteChanged,
         onEntryDialogDismissed = viewModel::onEntryDialogDismissed,
         onEntrySave = viewModel::onEntrySave,
         onEntryDelete = viewModel::onEntryDelete,
+        onConfirmSectionEmpty = viewModel::onConfirmSectionEmpty,
+        onClearSectionConfirmation = viewModel::onClearSectionConfirmation,
     )
 }
 
@@ -185,11 +214,17 @@ internal fun ProfileContent(
             contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
+            item(key = "basics") {
+                BasicsCard(state = state, actions = actions)
+            }
+            item(key = "history") {
+                HistoryCard(state = state, actions = actions)
+            }
             item(key = "allergies") {
-                EntryListCard(ProfileEntryType.ALLERGY, state.allergies, actions)
+                EntryListCard(ProfileEntryType.ALLERGY, state, actions)
             }
             item(key = "conditions") {
-                EntryListCard(ProfileEntryType.CONDITION, state.conditions, actions)
+                EntryListCard(ProfileEntryType.CONDITION, state, actions)
             }
             item(key = "language") {
                 LanguageCard(language = state.language, onLanguageSelected = actions.onLanguageSelected)
@@ -225,9 +260,8 @@ internal fun ProfileContent(
 }
 
 @Composable
-private fun EntryListCard(
-    type: ProfileEntryType,
-    entries: List<ProfileEntry>,
+private fun BasicsCard(
+    state: ProfileUiState,
     actions: ProfileActions,
 ) {
     Card(modifier = Modifier.fillMaxWidth()) {
@@ -235,18 +269,111 @@ private fun EntryListCard(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
+            SectionHeading(stringResource(R.string.profile_basics_title))
+            BodyText(stringResource(R.string.profile_basics_desc))
+            val parts = basicsSummaryParts(state.basics)
+            if (parts.isEmpty()) {
+                BodyText(stringResource(R.string.profile_basics_summary_empty))
+            } else {
+                parts.forEach { BodyText(it) }
+            }
+            TextButton(
+                onClick = actions.onOpenBasics,
+                modifier = Modifier.heightIn(min = 48.dp),
+            ) {
+                Text(stringResource(R.string.profile_basics_open))
+            }
+        }
+    }
+}
+
+/** The basic facts as short lines; empty when nothing was entered. */
+@Composable
+private fun basicsSummaryParts(basics: PatientBasics?): List<String> {
+    if (basics == null) return emptyList()
+    return buildList {
+        basics.birthYear?.let { add(stringResource(R.string.profile_basics_birth_year_value, it)) }
+        basics.sex?.let { add(stringResource(it.labelRes())) }
+        basics.weightKg?.let { add(stringResource(R.string.profile_basics_weight_value, it)) }
+    }
+}
+
+@Composable
+private fun HistoryCard(
+    state: ProfileUiState,
+    actions: ProfileActions,
+) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            SectionHeading(stringResource(R.string.profile_history_title))
+            BodyText(stringResource(R.string.profile_history_desc))
+            BodyText(
+                if (state.history.isEmpty()) {
+                    stringResource(R.string.profile_history_empty)
+                } else {
+                    stringResource(R.string.profile_history_count, state.history.size)
+                },
+            )
+            TextButton(
+                onClick = actions.onOpenHistory,
+                modifier = Modifier.heightIn(min = 48.dp),
+            ) {
+                Text(stringResource(R.string.profile_history_open))
+            }
+        }
+    }
+}
+
+@Composable
+private fun EntryListCard(
+    type: ProfileEntryType,
+    state: ProfileUiState,
+    actions: ProfileActions,
+) {
+    val entries = if (type == ProfileEntryType.ALLERGY) state.allergies else state.conditions
+    val sectionState = state.sectionState(type.section())
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
             SectionHeading(stringResource(type.sectionTitleRes()))
+            BodyText(stringResource(sectionState.status.descriptionRes()))
+            if (sectionState.status == ProfileSectionStatus.NOT_ASKED) {
+                BodyText(stringResource(R.string.profile_section_hint))
+            }
             if (entries.isEmpty()) {
                 BodyText(stringResource(R.string.profile_empty_list))
             }
             entries.forEach { entry ->
                 EntryRow(entry = entry, actions = actions)
             }
-            TextButton(
-                onClick = { actions.onAddEntry(type) },
-                modifier = Modifier.heightIn(min = 48.dp),
-            ) {
-                Text(stringResource(type.addLabelRes()))
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                TextButton(
+                    onClick = { actions.onAddEntry(type) },
+                    modifier = Modifier.heightIn(min = 48.dp),
+                ) {
+                    Text(stringResource(type.addLabelRes()))
+                }
+                if (sectionState.status == ProfileSectionStatus.NOT_ASKED) {
+                    TextButton(
+                        onClick = { actions.onConfirmSectionEmpty(type.section()) },
+                        modifier = Modifier.heightIn(min = 48.dp),
+                    ) {
+                        Text(stringResource(R.string.profile_section_confirm_none))
+                    }
+                }
+                if (sectionState.status == ProfileSectionStatus.NONE_CONFIRMED) {
+                    TextButton(
+                        onClick = { actions.onClearSectionConfirmation(type.section()) },
+                        modifier = Modifier.heightIn(min = 48.dp),
+                    ) {
+                        Text(stringResource(R.string.profile_section_clear_confirmation))
+                    }
+                }
             }
         }
     }
@@ -259,6 +386,15 @@ private fun EntryRow(
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
         Text(text = entry.label, style = MaterialTheme.typography.bodyLarge)
+        entry.severity?.let { severity ->
+            BodyText(stringResource(severityLabelRes(severity)))
+        }
+        entry.reaction?.takeIf { it.isNotBlank() }?.let { reaction ->
+            BodyText(reaction)
+        }
+        entry.sinceYear?.let { year ->
+            BodyText(stringResource(R.string.profile_entry_since_year_value, year))
+        }
         entry.note?.let { note ->
             BodyText(note)
         }
@@ -477,6 +613,13 @@ private fun EntryDialog(
     dialog: EntryDialogState,
     actions: ProfileActions,
 ) {
+    val severityChoices: List<Choice<Int>> =
+        listOf(
+            Choice(value = null, labelRes = R.string.profile_entry_severity_unset),
+            Choice(value = ProfileEntry.MIN_SEVERITY, labelRes = R.string.profile_severity_mild),
+            Choice(value = ProfileEntry.MIN_SEVERITY + 1, labelRes = R.string.profile_severity_moderate),
+            Choice(value = ProfileEntry.MAX_SEVERITY, labelRes = R.string.profile_severity_severe),
+        )
     AlertDialog(
         onDismissRequest = actions.onEntryDialogDismissed,
         title = {
@@ -487,11 +630,42 @@ private fun EntryDialog(
             )
         },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
                 OutlinedTextField(
                     value = dialog.label,
                     onValueChange = actions.onEntryLabelChanged,
                     label = { Text(stringResource(dialog.type.fieldLabelRes())) },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                BodyText(stringResource(R.string.profile_entry_severity))
+                ChoiceSelector(
+                    choices = severityChoices,
+                    selected = dialog.severity,
+                    onSelect = actions.onEntrySeverityChanged,
+                )
+                OutlinedTextField(
+                    value = dialog.reaction,
+                    onValueChange = actions.onEntryReactionChanged,
+                    label = { Text(stringResource(R.string.profile_entry_reaction)) },
+                    placeholder = { Text(stringResource(R.string.profile_entry_reaction_hint)) },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                OutlinedTextField(
+                    value = dialog.sinceYear,
+                    onValueChange = actions.onEntrySinceYearChanged,
+                    label = { Text(stringResource(R.string.profile_entry_since_year)) },
+                    placeholder = { Text(stringResource(R.string.profile_entry_since_year_hint)) },
+                    isError = !dialog.isSinceYearValid,
+                    supportingText = {
+                        if (!dialog.isSinceYearValid) {
+                            BodyText(stringResource(R.string.profile_entry_year_error))
+                        }
+                    },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth(),
                 )
                 OutlinedTextField(
@@ -590,13 +764,20 @@ private fun ProfilePreview() {
                     onDeleteAllRequested = {},
                     onDeleteAllDismissed = {},
                     onDeleteAllConfirmed = {},
+                    onOpenBasics = {},
+                    onOpenHistory = {},
                     onAddEntry = {},
                     onEditEntry = {},
                     onEntryLabelChanged = {},
+                    onEntrySeverityChanged = {},
+                    onEntryReactionChanged = {},
+                    onEntrySinceYearChanged = {},
                     onEntryNoteChanged = {},
                     onEntryDialogDismissed = {},
                     onEntrySave = {},
                     onEntryDelete = {},
+                    onConfirmSectionEmpty = {},
+                    onClearSectionConfirmation = {},
                 ),
             snackbarHostState = remember { SnackbarHostState() },
             onOpenPrivacy = {},

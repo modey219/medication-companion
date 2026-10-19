@@ -4,6 +4,42 @@ Short entries. Newest first. Format: ID, date, decision, why, status.
 
 ---
 
+## D-022 — The health profile data model (T12)
+
+Decision: the profile grows from allergies and conditions into a small, complete
+health profile stored in Room v3: basic facts, medical history, and a derived
+"how complete is this section" state. Only what the assistant context needs is
+collected, and nothing is ever inferred from missing data.
+
+1. **Basic facts, minimal by design**: `patient_basics` is a single row
+   (`id = 1`) with the birth *year* (never a full date of birth), the sex,
+   an optional pregnancy/breastfeeding flag, and the weight. The birth year is
+   enough to compute an age for the assistant, and storing a full date of birth
+   would be more identifying for no gain.
+2. **Medical history as its own table**: `medical_history_entries` holds past
+   illnesses, surgeries, hospitalizations and family history, each with an
+   optional year and note. They are separate from `profile_entries` because they
+   are read as a list (a timeline), not as one allergy-versus-condition pair.
+3. **Detail fields on allergies and conditions**: `profile_entries` gains three
+   nullable columns — `severity` (1 mild to 3 severe), `reaction` (what
+   happened, in the patient's words) and `sinceYear`. They are nullable so every
+   row written before v3 keeps working untouched.
+4. **A section is "not asked" until the patient answers**: `profile_section_states`
+   stores *only* the patient's own `NONE_CONFIRMED` confirmation, with the time
+   it was given. `LISTED` is derived from the rows that exist, and the
+   medications section is derived from the medication table, so neither is
+   persisted. `ProfileSectionState.resolve` lets entries always win over an
+   earlier "none", and an empty list with `NOT_ASKED` means "we never asked" —
+   never "there is nothing there" (AGENTS.md > Medical Safety Rules). This is
+   what the T13 context builder and the T15 "data gaps" card read.
+5. **Export grows with it**: the JSON export moves to `schemaVersion` 2 and adds
+   `basics`, `medicalHistory` and `profileSections`; profile entries gain
+   `severity`, `reaction` and `sinceYear`; the PDF summary adds a basic-facts
+   section and a medical-history section. The migration 2 -> 3 is covered by
+   tests that run the real exported Room schemas.
+6. **TODO(clinical-review)**: the birth-year and weight ranges, the 1 to 3
+   severity scale and its labels, and every new Arabic wording.
+
 ## D-021 — Personalized guidance, profile review and media (T12–T18)
 
 Decision: the assistant may personalize its answers from the patient’s own

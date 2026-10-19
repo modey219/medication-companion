@@ -33,10 +33,14 @@ class FullDataCollector
         suspend fun collect(): FullData {
             val medications = medicationRepository.observeAll().first()
             val schedules = scheduleRepository.observeAll().first()
+            val sections = profileRepository.observeSections().first()
             return FullData(
                 generatedAt = clock.now(),
                 settings = settingsRepository.observe().first(),
+                patientBasics = profileRepository.observeBasics().first(),
                 profileEntries = profileRepository.observeAll().first(),
+                medicalHistory = profileRepository.observeHistory().first(),
+                sectionStates = sections.values.toList(),
                 medications =
                     medications.map { medication ->
                         MedicationWithSchedules(

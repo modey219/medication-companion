@@ -301,7 +301,7 @@ TODO(legal): the privacy policy is a placeholder.
 <string name="profile_error_export">Could not create the file. Please try again.</string>
 <string name="profile_delete_all">Delete all my data</string>
 <string name="profile_delete_confirm_title">Delete all data?</string>
-<string name="profile_delete_confirm_body">Everything you recorded is deleted: medications, schedules, doses, symptoms, allergies and chronic conditions, and the reminders are cancelled. This cannot be undone.</string>
+    <string name="profile_delete_confirm_body">Everything you recorded is deleted: medications, schedules, doses, symptoms, allergies, chronic conditions, basic information and medical history, and the reminders are cancelled. This cannot be undone.</string>
 <string name="profile_delete_confirmed">All data was deleted.</string>
 <string name="profile_error_delete">Could not delete the data. Please try again.</string>
 <string name="profile_info_title">Information</string>
@@ -373,5 +373,82 @@ TODO(legal): the privacy policy is a placeholder.
     <string name="assistant_error_rate_limited">Too many questions in a short time. Wait a moment and try again.</string>
     <string name="assistant_error_server">The assistant is unavailable right now. Please try again shortly.</string>
     <string name="assistant_error_invalid">The message could not be sent. Please try again.</string>
+
+    <!--
+    T12 health profile: basic facts, medical history, section states and the
+    extra allergy/condition fields.
+    TODO(clinical-review): every string below reaches the patient or the
+    exported document. Confirm the severity scale, the sex and history wording,
+    and that the section sentences never read as a medical judgement.
+    -->
+    <string name="profile_basics_title">Basic information</string>
+    <string name="profile_basics_desc">This information helps the assistant understand your situation, and it stays on your device.</string>
+    <string name="profile_basics_summary_empty">Not entered yet</string>
+    <string name="profile_basics_open">Open basic information</string>
+    <string name="profile_basics_birth_year">Year of birth</string>
+    <string name="profile_basics_birth_year_hint">For example: 1960</string>
+    <string name="profile_basics_birth_year_error">Enter a valid year of birth.</string>
+    <string name="profile_basics_birth_year_value">Year of birth: %1$d</string>
+    <string name="profile_basics_age_value">Age: %1$d years</string>
+    <string name="profile_basics_sex">Sex</string>
+    <string name="profile_sex_female">Female</string>
+    <string name="profile_sex_male">Male</string>
+    <string name="profile_sex_other">Other</string>
+    <string name="profile_basics_pregnancy">Pregnant or breastfeeding?</string>
+    <string name="profile_basics_pregnancy_desc">Asked for women of childbearing age, and it can be left unanswered.</string>
+    <string name="profile_basics_pregnancy_yes">Yes</string>
+    <string name="profile_basics_pregnancy_no">No</string>
+    <string name="profile_basics_pregnancy_unset">Not set</string>
+    <string name="profile_basics_weight">Weight (kg)</string>
+    <string name="profile_basics_weight_error">Enter a weight in kilograms between %1$d and %2$d.</string>
+    <string name="profile_basics_weight_value">Weight: %1$d kg</string>
+    <string name="profile_basics_not_set">Not set</string>
+    <string name="profile_basics_saved">Basic information saved.</string>
+    <string name="profile_medications_title">Medications</string>
+    <string name="profile_section_not_asked">You have not been asked about this section yet.</string>
+    <string name="profile_section_none_confirmed">You confirmed there is nothing here.</string>
+    <string name="profile_section_listed">Recorded.</string>
+    <string name="profile_section_hint">Confirming makes this clear to the assistant instead of unknown.</string>
+    <string name="profile_section_confirm_none">I have nothing here</string>
+    <string name="profile_section_clear_confirmation">Remove the confirmation</string>
+    <string name="profile_section_confirmed">Confirmed.</string>
+    <string name="profile_section_confirmation_cleared">The confirmation was removed.</string>
+    <string name="profile_entry_severity">Severity (optional)</string>
+    <string name="profile_entry_severity_unset">Not set</string>
+    <string name="profile_severity_mild">Mild</string>
+    <string name="profile_severity_moderate">Moderate</string>
+    <string name="profile_severity_severe">Severe</string>
+    <string name="profile_entry_reaction">What happened? (optional)</string>
+    <string name="profile_entry_reaction_hint">For example: a rash</string>
+    <string name="profile_entry_since_year">Since year (optional)</string>
+    <string name="profile_entry_since_year_value">Since %1$d</string>
+    <string name="profile_entry_since_year_hint">For example: 2015</string>
+    <string name="profile_entry_year_error">Enter a valid year.</string>
+    <string name="profile_history_title">Medical history</string>
+    <string name="profile_history_desc">Past illnesses, surgeries, hospital stays, or family history.</string>
+    <string name="profile_history_open">Open medical history</string>
+    <string name="profile_history_empty">You have not added anything yet.</string>
+    <string name="profile_history_add">Add an item</string>
+    <string name="profile_history_edit">Edit an item</string>
+    <string name="profile_history_year_value">Year %1$d</string>
+    <string name="profile_history_count">%1$d items</string>
+    <string name="profile_history_label_field">What happened?</string>
+    <string name="profile_history_type_field">Type</string>
+    <string name="profile_history_type_past_illness">Past illness</string>
+    <string name="profile_history_type_surgery">Surgery</string>
+    <string name="profile_history_type_hospitalization">Hospital stay</string>
+    <string name="profile_history_type_family">Family history</string>
+    <string name="profile_history_type_other">Other</string>
+    <string name="profile_history_year">Year (optional)</string>
+    <string name="profile_history_year_hint">For example: 2019</string>
+    <string name="profile_history_saved">Medical history item saved.</string>
+    <string name="data_pdf_basics_title">Basic information</string>
+    <string name="data_pdf_basics_empty">Basic information was not entered.</string>
+    <string name="data_pdf_birth_year">Year of birth: %1$d</string>
+    <string name="data_pdf_weight">Weight: %1$d kg</string>
+    <string name="data_pdf_pregnant_breastfeeding">Pregnant or breastfeeding</string>
+    <string name="data_pdf_history_title">Medical history</string>
+    <string name="data_pdf_since_year">Since %1$d</string>
+    <string name="data_pdf_in_year">Year %1$d</string>
 </resources>
 

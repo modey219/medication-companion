@@ -4,13 +4,19 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import com.medcompanion.app.data.local.dao.DoseEventDao
+import com.medcompanion.app.data.local.dao.MedicalHistoryEntryDao
 import com.medcompanion.app.data.local.dao.MedicationDao
+import com.medcompanion.app.data.local.dao.PatientBasicsDao
 import com.medcompanion.app.data.local.dao.ProfileEntryDao
+import com.medcompanion.app.data.local.dao.ProfileSectionStateDao
 import com.medcompanion.app.data.local.dao.ScheduleDao
 import com.medcompanion.app.data.local.dao.SymptomLogDao
 import com.medcompanion.app.data.local.entity.DoseEventEntity
+import com.medcompanion.app.data.local.entity.MedicalHistoryEntryEntity
 import com.medcompanion.app.data.local.entity.MedicationEntity
+import com.medcompanion.app.data.local.entity.PatientBasicsEntity
 import com.medcompanion.app.data.local.entity.ProfileEntryEntity
+import com.medcompanion.app.data.local.entity.ProfileSectionStateEntity
 import com.medcompanion.app.data.local.entity.ScheduleEntity
 import com.medcompanion.app.data.local.entity.SymptomLogEntity
 
@@ -27,8 +33,11 @@ import com.medcompanion.app.data.local.entity.SymptomLogEntity
         DoseEventEntity::class,
         SymptomLogEntity::class,
         ProfileEntryEntity::class,
+        PatientBasicsEntity::class,
+        MedicalHistoryEntryEntity::class,
+        ProfileSectionStateEntity::class,
     ],
-    version = 2,
+    version = 3,
     exportSchema = true,
 )
 @TypeConverters(Converters::class)
@@ -42,6 +51,12 @@ abstract class MedCompanionDatabase : RoomDatabase() {
     abstract fun symptomLogDao(): SymptomLogDao
 
     abstract fun profileEntryDao(): ProfileEntryDao
+
+    abstract fun patientBasicsDao(): PatientBasicsDao
+
+    abstract fun medicalHistoryEntryDao(): MedicalHistoryEntryDao
+
+    abstract fun profileSectionStateDao(): ProfileSectionStateDao
 
     companion object {
         const val NAME = "medcompanion.db"

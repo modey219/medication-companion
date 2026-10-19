@@ -1,8 +1,11 @@
 package com.medcompanion.app.domain.export
 
 import com.medcompanion.app.domain.model.DoseEvent
+import com.medcompanion.app.domain.model.MedicalHistoryEntry
 import com.medcompanion.app.domain.model.Medication
+import com.medcompanion.app.domain.model.PatientBasics
 import com.medcompanion.app.domain.model.ProfileEntry
+import com.medcompanion.app.domain.model.ProfileSectionState
 import com.medcompanion.app.domain.model.Schedule
 import com.medcompanion.app.domain.model.SymptomLog
 import com.medcompanion.app.domain.settings.AppSettings
@@ -21,14 +24,19 @@ data class MedicationWithSchedules(
 data class FullData(
     val generatedAt: Instant,
     val settings: AppSettings,
+    val patientBasics: PatientBasics?,
     val profileEntries: List<ProfileEntry>,
+    val medicalHistory: List<MedicalHistoryEntry>,
+    val sectionStates: List<ProfileSectionState>,
     val medications: List<MedicationWithSchedules>,
     val doses: List<DoseEvent>,
     val symptoms: List<SymptomLog>,
 ) {
     val isEmpty: Boolean
         get() =
-            profileEntries.isEmpty() &&
+            (patientBasics == null || patientBasics.isEmpty) &&
+                profileEntries.isEmpty() &&
+                medicalHistory.isEmpty() &&
                 medications.isEmpty() &&
                 doses.isEmpty() &&
                 symptoms.isEmpty()

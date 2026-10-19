@@ -13,7 +13,7 @@ Medication Companion is an Android app that helps patients take their medication
 - **Symptoms**: Quick log of symptoms with severity and notes
 - **History**: Timeline of medications, doses, and symptoms with adherence summary; PDF export
 - **Assistant**: AI chat about the patient's own treatment (backend-protected)
-- **Profile**: Allergies, chronic conditions, preferences, export and delete data
+- **Profile**: Allergies and chronic conditions (with severity, reaction and since-year), basic information, medical history, preferences, export and delete data
 
 ## Tech Stack
 
@@ -111,7 +111,7 @@ release (see `docs/DECISIONS.md` D-019).
 
 ## APK
 
-Latest debug APK: app-debug.apk (15.20 MB)
+Latest debug APK: app-debug.apk (15.23 MB)
 
 ## Links
 
@@ -124,6 +124,7 @@ Latest debug APK: app-debug.apk (15.20 MB)
 - T8b shipped: patient reminder preferences (grace period, snooze, repeat interval), low-stock level and pharmacy number
 - T9 shipped: assistant backend proxy (`backend/`) — one `POST /v1/chat`, provider-agnostic, rate-limited, no logging of content, 85 Vitest tests
 - T10 shipped: assistant chat UI — first-use consent with the (off-by-default) share-medication switch, in-memory conversation, client-side emergency card, retry/offline sentences, "Report a problem"
-- T11 next: release preparation (R8/resource shrinking, signing config, Play Store listing)
+- T12 shipped: health profile — basic information (birth year, sex, pregnancy/breastfeeding, weight), medical history, detail fields on allergies/conditions (severity, reaction, since year), and a derived "how complete is this section" state (Room v3; JSON export `schemaVersion` 2)
+- T13–T18 planned: patient context + consents, review-then-answer backend, assistant response cards, media capture, vision path, evaluation harness (see AGENTS.md and docs/DECISIONS.md D-021)
 - See docs/DECISIONS.md for key architectural decisions
 - See AGENTS.md for full specifications

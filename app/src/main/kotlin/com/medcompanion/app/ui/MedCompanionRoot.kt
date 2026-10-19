@@ -32,6 +32,8 @@ import com.medcompanion.app.feature.medications.MedicationsScreen
 import com.medcompanion.app.feature.medications.edit.MedicationEditScreen
 import com.medcompanion.app.feature.onboarding.PrivacyPolicyContent
 import com.medcompanion.app.feature.profile.ProfileScreen
+import com.medcompanion.app.feature.profile.basics.ProfileBasicsScreen
+import com.medcompanion.app.feature.profile.history.MedicalHistoryScreen
 import com.medcompanion.app.feature.reminders.ReminderSetupScreen
 import com.medcompanion.app.feature.symptoms.SymptomsScreen
 import com.medcompanion.app.feature.today.TodayScreen
@@ -39,10 +41,13 @@ import com.medcompanion.app.ui.navigation.ARG_MEDICATION_ID
 import com.medcompanion.app.ui.navigation.MEDICATION_ADD_ROUTE
 import com.medcompanion.app.ui.navigation.MEDICATION_EDIT_ROUTE
 import com.medcompanion.app.ui.navigation.PRIVACY_ROUTE
+import com.medcompanion.app.ui.navigation.PROFILE_BASICS_ROUTE
+import com.medcompanion.app.ui.navigation.PROFILE_HISTORY_ROUTE
 import com.medcompanion.app.ui.navigation.PROFILE_ROUTE
 import com.medcompanion.app.ui.navigation.REMINDERS_SETUP_ROUTE
 import com.medcompanion.app.ui.navigation.TopLevelDestination
 import com.medcompanion.app.ui.navigation.isMedicationEditRoute
+import com.medcompanion.app.ui.navigation.isProfileSectionRoute
 import com.medcompanion.app.ui.navigation.medicationEditRoute
 import com.medcompanion.app.ui.navigation.topLevelDestinationFromRoute
 
@@ -61,7 +66,8 @@ fun MedCompanionRoot(nudgeReminderSetup: Boolean = false) {
     val isReminderSetup = currentRoute == REMINDERS_SETUP_ROUTE
     val isPrivacy = currentRoute == PRIVACY_ROUTE
     val isMedicationEdit = isMedicationEditRoute(currentRoute)
-    val showBack = isProfile || isMedicationEdit || isReminderSetup || isPrivacy
+    val isProfileSection = isProfileSectionRoute(currentRoute)
+    val showBack = isProfile || isMedicationEdit || isReminderSetup || isPrivacy || isProfileSection
 
     LaunchedEffect(nudgeReminderSetup) {
         if (nudgeReminderSetup) navController.navigate(REMINDERS_SETUP_ROUTE)
@@ -76,6 +82,8 @@ fun MedCompanionRoot(nudgeReminderSetup: Boolean = false) {
                             stringResource(
                                 when {
                                     isProfile -> R.string.profile_title
+                                    currentRoute == PROFILE_BASICS_ROUTE -> R.string.profile_basics_title
+                                    currentRoute == PROFILE_HISTORY_ROUTE -> R.string.profile_history_title
                                     isPrivacy -> R.string.privacy_title
                                     isReminderSetup -> R.string.reminders_setup_title
                                     currentRoute == MEDICATION_ADD_ROUTE -> R.string.medication_add_title
@@ -164,8 +172,12 @@ fun MedCompanionRoot(nudgeReminderSetup: Boolean = false) {
                 ProfileScreen(
                     onOpenPrivacy = { navController.navigate(PRIVACY_ROUTE) },
                     onOpenReminderSetup = { navController.navigate(REMINDERS_SETUP_ROUTE) },
+                    onOpenBasics = { navController.navigate(PROFILE_BASICS_ROUTE) },
+                    onOpenHistory = { navController.navigate(PROFILE_HISTORY_ROUTE) },
                 )
             }
+            composable(PROFILE_BASICS_ROUTE) { ProfileBasicsScreen() }
+            composable(PROFILE_HISTORY_ROUTE) { MedicalHistoryScreen() }
             composable(PRIVACY_ROUTE) { PrivacyPolicyContent() }
             composable(REMINDERS_SETUP_ROUTE) { ReminderSetupScreen() }
             composable(MEDICATION_ADD_ROUTE) {
