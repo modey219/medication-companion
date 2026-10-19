@@ -4,6 +4,31 @@ Short entries. Newest first. Format: ID, date, decision, why, status.
 
 ---
 
+## D-020 — Backend identity and the CI typecheck fix (T9/T10 follow-up)
+
+Decision: the Worker, its npm package and the Cloudflare project all use the
+single name `medication-companion`, the Cloudflare root directory is `backend`,
+and `@types/node` becomes a dev-only dependency of the backend so `npm ci` +
+`npm run typecheck` pass on a clean machine.
+
+1. **Name and root directory**: Workers Builds requires the `name` in
+   `backend/wrangler.toml` to equal the Worker name in the dashboard and the
+   configured root directory to be the folder that holds that file. It was
+   `medcompanion-assistant` at the repository root, which failed the deploy step
+   ("Missing entry-point" / name mismatch). The deployed URL is therefore
+   `https://medication-companion.<subdomain>.workers.dev`.
+2. **`@types/node` is a build-only tool**: `vitest.config.ts` reads
+   `prompts/system-prompt.txt` with `node:fs` so the tests load the same prompt
+   the Worker ships. Vite and Vitest list `@types/node` as an *optional peer*, so
+   a clean `npm ci` never installs it and `tsc` failed with TS2591. Pinning
+   `@types/node@^22.12.0` (the CI Node line) and adding `"node"` to `types` in
+   `tsconfig.json` fixes it. It is a devDependency: nothing ships to the Worker,
+   and mixing the Node globals with `@cloudflare/workers-types` is safe here
+   because `skipLibCheck` is on.
+3. **Status**: verified locally with a clean `npm ci` → `npm run typecheck` →
+   `npm test` (85 passing) → `npm run build`. The Android side is untouched by
+   both changes.
+
 ## D-019 — Assistant chat UI: no new dependencies, nothing kept (T10)
 
 Decision: the Assistant tab is a plain Jetpack Compose screen that talks to the

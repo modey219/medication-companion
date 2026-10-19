@@ -4,7 +4,9 @@
 # No secrets live here. The LLM key and the Play Integrity service account are
 # set with `wrangler secret put ...` and are never committed.
 
-name = "medcompanion-assistant"
+# Must match the Worker name in the Cloudflare dashboard (Workers Builds
+# requirement) and the root directory must be this folder. See README.md.
+name = "medication-companion"
 main = "src/index.ts"
 compatibility_date = "2026-01-01"
 
