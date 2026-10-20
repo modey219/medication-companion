@@ -4,6 +4,43 @@ Short entries. Newest first. Format: ID, date, decision, why, status.
 
 ---
 
+## D-025 — Show the review, never compute it (T15)
+
+Decision: the Assistant tab displays the backend's `urgency` and `review` next to
+each answer, and computes nothing itself. What the server did not send is not
+shown.
+
+1. **Display only**: `AssistantUrgency.fromWire` maps the four known values and
+   returns null for anything else. The app never derives an urgency, never
+   upgrades or downgrades the server's level, and never fills a missing review.
+   With a Worker deployed before T14 the answer simply has no cards, which is the
+   honest state.
+2. **The level is framed as a level**: the line reads "Urgency level: <label>"
+   with the label written out in text. There is no colour coding and no icon, so
+   nothing relies on colour alone (AGENTS.md > Localization and UX). `SELF_CARE`
+   is shown as "general information" in the patient's language so the label
+   cannot read as "you do not need a doctor"; the clinical reviewer owns that
+   call (TODO(clinical-review, T15)).
+3. **The review panel is secondary**: it is collapsed by default and opens from a
+   48dp text button under the answer. It shows three groups - considered, gaps,
+   questions - and a group with no items is not rendered at all. An entirely
+   empty review is treated as "no review" by the parser, so no empty panel can
+   appear.
+4. **Expansion is per answer and in memory**: `AssistantUiState.expandedReviews`
+   holds the ids of the open panels, so opening one answer does not open the
+   others. Clearing the conversation or leaving the tab drops it; nothing is
+   stored.
+5. **The device does not re-filter the words**: the server already filters and
+   caps the phrases (D-024), so the app only trims, drops blanks and applies a
+   hard display cap (8 bullets, 300 characters each) against a bad response. A
+   second, divergent medical filter on the device would be harder to audit than
+   the one the server owns.
+6. **No request change**: T15 only reads fields that T14 already returns, so the
+   wire format, the consents and the request body are untouched, and the T13
+   request still works against both the old and the new Worker.
+
+---
+
 ## D-024 — Review, then answer, on the backend (T14)
 
 Decision: every chat request now goes through two model passes — a strict JSON

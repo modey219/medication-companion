@@ -102,6 +102,13 @@ returned. A review that cannot be parsed fails closed, and an emergency or a
 forbidden request never reaches the answer pass (see `docs/DECISIONS.md` D-024
 and the three prompt files under `backend/prompts/`).
 
+Since T15 each answer shows what that review decided: a line naming the urgency
+level in words, and a collapsed "What I considered" panel with the three groups
+(considered, missing information, questions to ask a clinician). The app displays
+only what the server sent - an unknown urgency is dropped and an empty review
+shows no panel - so it can never invent or soften a level, and nothing relies on
+colour alone (see `docs/DECISIONS.md` D-025).
+
 The base URL is a Gradle property
 (`-PassistantBaseUrl=...`), so a local `wrangler dev` or a deployed Worker needs no
 code change; the checked-in default is a placeholder and must be replaced before
@@ -142,6 +149,7 @@ Latest debug APK: app-debug.apk (15.23 MB)
 - T12 shipped: health profile — basic information (birth year, sex, pregnancy/breastfeeding, weight), medical history, detail fields on allergies/conditions (severity, reaction, since year), and a derived "how complete is this section" state (Room v3; JSON export `schemaVersion` 2)
 - T13 shipped: patient context + two versioned consents — a device-built, capped `PatientContext` sent only with the profile consent, `GENERIC`/`PERSONALIZED` modes on the wire, and an all-or-nothing rule that never sends a personalized question without its context (legacy `shareMedications` still accepted by the Worker)
 - T14 shipped: review-then-answer backend — a JSON review pass (urgency, forbidden request, considered/gaps/questions), gates that skip the answer pass for an emergency or a forbidden request, a server-rendered and fenced patient context, an answer guard that blocks medicine/dose instructions and "safe to combine" claims, and a fail-closed invalid review (see docs/DECISIONS.md D-024)
-- T15–T18 planned: assistant response cards, media capture, vision path, evaluation harness (see AGENTS.md and docs/DECISIONS.md D-021)
+- T15 shipped: assistant response cards — an urgency line written in words (never colour alone) and a collapsed "What I considered" panel per answer (considered, missing information, questions for a clinician), display-only so an unknown or missing level is never guessed (see docs/DECISIONS.md D-025)
+- T16–T18 planned: media capture, vision path, evaluation harness (see AGENTS.md and docs/DECISIONS.md D-021)
 - See docs/DECISIONS.md for key architectural decisions
 - See AGENTS.md for full specifications

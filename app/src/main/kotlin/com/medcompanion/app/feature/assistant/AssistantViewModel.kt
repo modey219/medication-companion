@@ -172,7 +172,28 @@ class AssistantViewModel
         }
 
         fun onClearConversation() {
-            _uiState.update { it.copy(messages = emptyList(), error = null, failedText = null, isUrgentInput = false) }
+            _uiState.update {
+                it.copy(
+                    messages = emptyList(),
+                    expandedReviews = emptySet(),
+                    error = null,
+                    failedText = null,
+                    isUrgentInput = false,
+                )
+            }
+        }
+
+        /** Opens or closes one answer's "what I considered" panel (T15). */
+        fun onReviewToggled(messageId: Long) {
+            _uiState.update { state ->
+                val expanded =
+                    if (messageId in state.expandedReviews) {
+                        state.expandedReviews - messageId
+                    } else {
+                        state.expandedReviews + messageId
+                    }
+                state.copy(expandedReviews = expanded)
+            }
         }
 
         fun onErrorDismissed() = _uiState.update { it.copy(error = null, failedText = null) }
@@ -268,7 +289,13 @@ class AssistantViewModel
         private fun AssistantReply.toMessage(): AssistantMessage =
             when (this) {
                 is AssistantReply.Answer ->
-                    AssistantMessage(id = nextId(), fromPatient = false, text = text)
+                    AssistantMessage(
+                        id = nextId(),
+                        fromPatient = false,
+                        text = text,
+                        urgency = urgency,
+                        review = review,
+                    )
 
                 AssistantReply.Emergency ->
                     AssistantMessage(id = nextId(), fromPatient = false, isEmergency = true)

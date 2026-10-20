@@ -8,6 +8,8 @@ import com.medcompanion.app.domain.assistant.AssistantMode
 import com.medcompanion.app.domain.assistant.AssistantReply
 import com.medcompanion.app.domain.assistant.AssistantRequest
 import com.medcompanion.app.domain.assistant.AssistantResult
+import com.medcompanion.app.domain.assistant.AssistantReview
+import com.medcompanion.app.domain.assistant.AssistantUrgency
 import com.medcompanion.app.domain.assistant.PatientContext
 import com.medcompanion.app.domain.settings.FakeSettingsRepository
 import io.mockk.coEvery
@@ -284,6 +286,77 @@ class AssistantViewModelTest {
 
         assertNull(viewModel.uiState.value.error)
         assertFalse(viewModel.uiState.value.canRetry)
+    }
+
+    @Test
+    fun `the answer keeps the urgency and the review`() {
+        chatClient.result =
+            AssistantResult.Replied(
+                AssistantReply.Answer(
+                    text = ANSWER,
+                    urgency = AssistantUrgency.SEE_DOCTOR_SOON,
+                    review =
+                        AssistantReview(
+                            considered = listOf("جدولك"),
+                            gaps = listOf("ضغط الدم"),
+                            questions = listOf("هل أحتاج تعديلًا؟"),
+                        ),
+                ),
+            )
+        val viewModel = viewModel()
+        viewModel.onInputChange("متى آخذ دوائي؟")
+
+        viewModel.onSend()
+
+        val state = viewModel.uiState.value
+        val last = state.messages.last()
+        assertEquals(AssistantUrgency.SEE_DOCTOR_SOON, last.urgency)
+        assertEquals(listOf("جدولك"), last.review?.considered)
+        assertEquals(listOf("ضغط الدم"), last.review?.gaps)
+        assertEquals(listOf("هل أحتاج تعديلًا؟"), last.review?.questions)
+    }
+
+    @Test
+    fun `an answer without a review shows no cards`() {
+        val viewModel = viewModel()
+        viewModel.onInputChange("متى آخذ دوائي؟")
+
+        viewModel.onSend()
+
+        val state = viewModel.uiState.value
+        val last = state.messages.last()
+        assertNull(last.urgency)
+        assertNull(last.review)
+    }
+
+    @Test
+    fun `the review panel opens and closes for one answer`() {
+        val viewModel = viewModel()
+        viewModel.onInputChange("متى آخذ دوائي؟")
+        viewModel.onSend()
+        val state = viewModel.uiState.value
+        val id = state.messages.last().id
+
+        viewModel.onReviewToggled(id)
+        assertTrue(id in viewModel.uiState.value.expandedReviews)
+
+        viewModel.onReviewToggled(id)
+        assertFalse(id in viewModel.uiState.value.expandedReviews)
+    }
+
+    @Test
+    fun `clearing the conversation closes every review panel`() {
+        val viewModel = viewModel()
+        viewModel.onInputChange("متى آخذ دوائي؟")
+        viewModel.onSend()
+        val state = viewModel.uiState.value
+        val id = state.messages.last().id
+        viewModel.onReviewToggled(id)
+
+        viewModel.onClearConversation()
+
+        val expanded = viewModel.uiState.value.expandedReviews
+        assertTrue(expanded.isEmpty())
     }
 
     private class RecordingChatClient : AssistantChatClient {

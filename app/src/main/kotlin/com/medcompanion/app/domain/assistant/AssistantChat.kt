@@ -54,9 +54,17 @@ data class AssistantRequest(
 
 /** What the backend answered. */
 sealed interface AssistantReply {
-    /** A normal answer to show in the chat. */
+    /**
+     * A normal answer to show in the chat.
+     *
+     * [urgency] and [review] come from the backend's review pass (T14, T15).
+     * They are null when the answer came from a Worker built before T14, and
+     * the app never guesses them: it shows only what the server decided.
+     */
     data class Answer(
         val text: String,
+        val urgency: AssistantUrgency? = null,
+        val review: AssistantReview? = null,
     ) : AssistantReply
 
     /**
@@ -64,6 +72,48 @@ sealed interface AssistantReply {
      * card and never treats this as medical guidance.
      */
     data object Emergency : AssistantReply
+}
+
+/**
+ * How urgent the backend judged the patient's last message (T15).
+ *
+ * The app only displays this level; it never computes it and never lowers it.
+ * An unknown value from a newer backend is ignored rather than guessed.
+ */
+enum class AssistantUrgency {
+    EMERGENCY,
+    URGENT_TODAY,
+    SEE_DOCTOR_SOON,
+    SELF_CARE,
+    ;
+
+    companion object {
+        fun fromWire(value: String?): AssistantUrgency? =
+            when (value) {
+                "EMERGENCY" -> EMERGENCY
+                "URGENT_TODAY" -> URGENT_TODAY
+                "SEE_DOCTOR_SOON" -> SEE_DOCTOR_SOON
+                "SELF_CARE" -> SELF_CARE
+                else -> null
+            }
+    }
+}
+
+/**
+ * The patient-safe part of the backend's review (T14): what it looked at, what
+ * was missing, and questions the patient can ask a clinician.
+ *
+ * The server already filters these phrases for safety and length; the app only
+ * displays them and keeps its own hard cap so a bad response cannot flood the
+ * screen.
+ */
+data class AssistantReview(
+    val considered: List<String> = emptyList(),
+    val gaps: List<String> = emptyList(),
+    val questions: List<String> = emptyList(),
+) {
+    val isEmpty: Boolean
+        get() = considered.isEmpty() && gaps.isEmpty() && questions.isEmpty()
 }
 
 /**
