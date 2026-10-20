@@ -100,7 +100,7 @@ class HttpAssistantChatClient
             /** Header the backend rate-limits by; see backend/README.md. */
             const val INSTALL_ID_HEADER = "X-Install-Id"
             const val CONNECT_TIMEOUT_MILLIS = 10_000
-            const val READ_TIMEOUT_MILLIS = 20_000
+            const val READ_TIMEOUT_MILLIS = 30_000
             const val MAX_RESPONSE_CHARS = 64 * 1024
             const val CHAR_BUFFER_SIZE = 8 * 1024
         }

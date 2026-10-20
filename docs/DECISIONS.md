@@ -4,6 +4,26 @@ Short entries. Newest first. Format: ID, date, decision, why, status.
 
 ---
 
+## D-029 — Groq `openai/gpt-oss-120b` is the provider model; client waits 30 s
+
+Decision: the Worker runs on Groq (`https://api.groq.com/openai/v1`) with
+`openai/gpt-oss-120b`, and the app's `READ_TIMEOUT_MILLIS` becomes 30 s.
+
+1. **Why this model**: the dashboard was set to `llama-3.3-70b-versatile`, which
+   Groq answers with `404 model_not_found` (Llama 3.x is enterprise-only there
+   since the 08/2026 deprecation). The documented successors are
+   `openai/gpt-oss-120b` and `openai/gpt-oss-20b`; the 120B was chosen for
+   Arabic quality, the 20B remains the fallback if latency regresses.
+2. **Measured**: three requests answered `200` in 2.27 s, 2.44 s and 1.57 s
+   end to end (review plus answer), well inside the 10 s target.
+3. **Why 30 s and not 45 s**: the Worker still allows 45 s per provider call as a
+   ceiling, but the client no longer needs to sit through a full minute; 30 s
+   covers a slow provider moment without leaving the user on a spinner.
+
+Status: applied (D-028 stays valid for the `reasoning_effort` support).
+
+---
+
 ## D-028 — Optional `reasoning_effort` hint, and what the latency measurement showed
 
 Decision: the OpenAI-compatible adapter can send `reasoning_effort` when
