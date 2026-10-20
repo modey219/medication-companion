@@ -81,6 +81,28 @@ describe("createOpenAiCompatibleClient", () => {
     expect((failure as LlmError).detail).toBe("non-json text/html");
   });
 
+  it("says so when the provider error body is empty", async () => {
+    const fetchImpl = (async () => new Response("", { status: 404 })) as unknown as typeof fetch;
+    const client = createOpenAiCompatibleClient({ apiKey: "k", baseUrl: "https://api.example.com", fetchImpl });
+
+    const failure = await client.complete(INPUT).catch((reason: unknown) => reason);
+
+    expect((failure as LlmError).detail).toBe("empty-body");
+  });
+
+  it("falls back to the JSON key names when no known field is present", async () => {
+    const fetchImpl = (async () =>
+      new Response(JSON.stringify({ error: { status: "NOT_FOUND" } }), {
+        status: 404,
+        headers: { "content-type": "application/json" },
+      })) as unknown as typeof fetch;
+    const client = createOpenAiCompatibleClient({ apiKey: "k", baseUrl: "https://api.example.com", fetchImpl });
+
+    const failure = await client.complete(INPUT).catch((reason: unknown) => reason);
+
+    expect((failure as LlmError).detail).toBe("json-keys: status");
+  });
+
   it("maps an aborted request to an llm_timeout", async () => {
     const fetchImpl = (async () => {
       throw new DOMException("The operation was aborted.", "AbortError");

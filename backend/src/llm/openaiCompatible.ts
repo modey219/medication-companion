@@ -49,14 +49,17 @@ function redactSecrets(value: string): string {
  * The provider's own explanation of a failed call, for the server log only
  * (T15 diagnostic fix). JSON bodies contribute only their `error.*` diagnostic
  * fields, so a body that echoes the request cannot carry patient text into the
- * log; anything else is reported by content type alone. The result is capped,
- * single-line and secret-free, and is never returned to the patient.
+ * log; anything else is reported by content type alone. When a body has none of
+ * those fields the line says what shape it was (`empty-body`, the content type,
+ * or the JSON key names) so a provider can be diagnosed without logging values.
+ * The result is capped, single-line and secret-free, and is never returned to
+ * the patient.
  */
 async function readErrorDetail(response: Response): Promise<string | undefined> {
   try {
     const raw = await response.text();
     if (raw.trim().length === 0) {
-      return undefined;
+      return "empty-body";
     }
     let parsed: unknown;
     try {
@@ -66,20 +69,24 @@ async function readErrorDetail(response: Response): Promise<string | undefined> 
       return `non-json ${contentType}`.slice(0, MAX_DETAIL_CHARS);
     }
     if (typeof parsed !== "object" || parsed === null) {
-      return undefined;
+      return `json-${parsed === null ? "null" : typeof parsed}`;
     }
     const root = parsed as Record<string, unknown>;
+    if (typeof root.error === "string" && root.error.trim().length > 0) {
+      return redactSecrets(root.error.replace(/\s+/g, " ").trim()).slice(0, MAX_DETAIL_CHARS);
+    }
     const error = typeof root.error === "object" && root.error !== null ? (root.error as Record<string, unknown>) : root;
     const parts = ["type", "code", "param", "message"]
       .map((key) => error[key])
       .filter((value): value is string => typeof value === "string" && value.trim().length > 0)
       .map((value) => value.replace(/\s+/g, " ").trim());
     if (parts.length === 0) {
-      return undefined;
+      const keys = Object.keys(error).slice(0, 6).join(",");
+      return `json-keys: ${keys.length > 0 ? keys : "none"}`.slice(0, MAX_DETAIL_CHARS);
     }
     return redactSecrets(parts.join(" | ")).slice(0, MAX_DETAIL_CHARS);
   } catch {
-    return undefined;
+    return "unreadable-body";
   }
 }
 
