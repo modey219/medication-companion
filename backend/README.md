@@ -139,6 +139,7 @@ to `mock` during T15 diagnostics.
 | `LLM_BASE_URL` | `https://api.openai.com/v1` | Base URL for the OpenAI-compatible adapter |
 | `LLM_MAX_OUTPUT_TOKENS` | `512` | Upper bound on the reply length |
 | `LLM_MAX_REVIEW_TOKENS` | `400` | Upper bound on the review JSON |
+| `LLM_REASONING_EFFORT` | `low` | Optional thinking hint (`minimal` \| `low` \| `medium` \| `high`) for reasoning models; unset sends no field |
 | `REQUEST_TIMEOUT_MS` | `45000` | One provider call (review and answer each get this) |
 | `MAX_REQUEST_BYTES` | `65536` | Body size limit |
 | `MAX_MESSAGE_CHARS` | `2000` | Per-message limit |

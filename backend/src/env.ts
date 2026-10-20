@@ -14,6 +14,8 @@ export interface Env {
   LLM_BASE_URL?: string;
   LLM_MAX_OUTPUT_TOKENS?: string;
   LLM_MAX_REVIEW_TOKENS?: string;
+  /** Optional "minimal" | "low" hint for reasoning models; unset sends nothing. */
+  LLM_REASONING_EFFORT?: string;
 
   REQUEST_TIMEOUT_MS?: string;
   MAX_REQUEST_BYTES?: string;

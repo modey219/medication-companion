@@ -108,17 +108,21 @@ export function createOpenAiCompatibleClient(options: OpenAiCompatibleOptions): 
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), input.timeoutMs);
       try {
+        const body: Record<string, unknown> = {
+          model: input.model,
+          messages: [{ role: "system", content: input.system }, ...input.messages],
+          max_tokens: input.maxOutputTokens,
+        };
+        if (input.reasoningEffort !== undefined) {
+          body.reasoning_effort = input.reasoningEffort;
+        }
         const response = await doFetch(`${baseUrl}/chat/completions`, {
           method: "POST",
           headers: {
             "content-type": "application/json",
             authorization: `Bearer ${options.apiKey}`,
           },
-          body: JSON.stringify({
-            model: input.model,
-            messages: [{ role: "system", content: input.system }, ...input.messages],
-            max_tokens: input.maxOutputTokens,
-          }),
+          body: JSON.stringify(body),
           signal: controller.signal,
         });
 

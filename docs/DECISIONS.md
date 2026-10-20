@@ -4,6 +4,30 @@ Short entries. Newest first. Format: ID, date, decision, why, status.
 
 ---
 
+## D-028 — Optional `reasoning_effort` hint, and what the latency measurement showed
+
+Decision: the OpenAI-compatible adapter can send `reasoning_effort` when
+`LLM_REASONING_EFFORT` is set (`minimal` | `low` | `medium` | `high`); unset
+sends no field, so providers that reject it are unaffected. `low` is set on the
+live Worker.
+
+1. **Why**: the review pass plus the answer pass of `gemini-3.8-flash` exceeded
+   the request budget, and a cheaper thinking level is the provider-agnostic way
+   to ask for less latency.
+2. **Measurement (3 requests, target < 10 s)**: two `504` at 45.2 s / 45.4 s and
+   one `502` in 0.55 s. The log shows the fast failure is
+   `upstream: 429`, "You exceeded your current quota" - the provider key has no
+   quota left. `gemini-3.8-flash-lite` does not exist (`upstream: 404`,
+   "Call ModelService.ListModels"). So the target is unverified: the blocker is
+   quota, not the thinking level.
+3. **Consequence**: `LLM_MODEL` stays `gemini-3.8-flash`; the app's
+   `READ_TIMEOUT_MILLIS` change is deferred until a request actually answers in
+   a few seconds, otherwise 30 s only buys a slower timeout message.
+
+Status: applied; latency target open (needs a key with quota or another provider).
+
+---
+
 ## D-027 — Provider settings live on the Worker, not in `wrangler.toml`
 
 Decision: `LLM_PROVIDER`, `LLM_MODEL` and `LLM_BASE_URL` are removed from the

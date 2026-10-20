@@ -11,6 +11,11 @@ export interface LlmCompleteInput {
   model: string;
   maxOutputTokens: number;
   timeoutMs: number;
+  /**
+   * Optional provider hint (for example "minimal" or "low") that asks a
+   * reasoning model to spend less time thinking. Unset means "send nothing".
+   */
+  reasoningEffort?: string;
 }
 
 /** Provider-agnostic LLM client. */

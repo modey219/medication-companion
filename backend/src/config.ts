@@ -16,7 +16,7 @@ export const DEFAULT_MAX_MESSAGE_CHARS = 2000;
 export const DEFAULT_MAX_MESSAGES = 20;
 export const DEFAULT_MAX_MEDICATION_CONTEXT_CHARS = 4000;
 export const DEFAULT_MAX_CONTEXT_CHARS = 12_000;
-export const DEFAULT_TIMEOUT_MS = 20_000;
+export const DEFAULT_TIMEOUT_MS = 45_000;
 export const DEFAULT_MAX_OUTPUT_TOKENS = 512;
 export const DEFAULT_MAX_REVIEW_TOKENS = 400;
 
@@ -48,6 +48,7 @@ export interface Config {
   maxMedicationContextChars: number;
   maxContextChars: number;
   maxReviewTokens: number;
+  reasoningEffort: string | undefined;
   limits: {
     perMinute: number;
     perDay: number;
@@ -71,6 +72,11 @@ function readInt(value: string | undefined, fallback: number, minimum: number, m
     return fallback;
   }
   return Math.min(Math.max(parsed, minimum), maximum);
+}
+
+function readOptional(value: string | undefined): string | undefined {
+  const trimmed = readString(value, "");
+  return trimmed.length > 0 ? trimmed.toLowerCase() : undefined;
 }
 
 function readIntegrityMode(value: string | undefined): IntegrityMode {
@@ -97,6 +103,7 @@ export function loadConfig(env: Env): Config {
     ),
     maxContextChars: readInt(env.MAX_CONTEXT_CHARS, DEFAULT_MAX_CONTEXT_CHARS, 0, 40_000),
     maxReviewTokens: readInt(env.LLM_MAX_REVIEW_TOKENS, DEFAULT_MAX_REVIEW_TOKENS, 64, 2048),
+    reasoningEffort: readOptional(env.LLM_REASONING_EFFORT),
     limits: {
       perMinute: readInt(env.RATE_LIMIT_PER_MINUTE, DEFAULT_LIMITS.perMinute, 1, 10_000),
       perDay: readInt(env.RATE_LIMIT_PER_DAY, DEFAULT_LIMITS.perDay, 1, 100_000),

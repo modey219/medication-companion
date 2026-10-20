@@ -36,6 +36,26 @@ describe("createOpenAiCompatibleClient", () => {
     expect(messages[1]).toEqual({ role: "user", content: "مرحبا" });
   });
 
+  it("sends reasoning_effort only when it is configured", async () => {
+    const bodies: Record<string, unknown>[] = [];
+    const fetchImpl = (async (_input: RequestInfo | URL, init?: RequestInit) => {
+      bodies.push(JSON.parse(String(init?.body ?? "{}")) as Record<string, unknown>);
+      return new Response(JSON.stringify({ choices: [{ message: { content: "ok" } }] }), { status: 200 });
+    }) as unknown as typeof fetch;
+
+    const client = createOpenAiCompatibleClient({
+      apiKey: "test-key",
+      baseUrl: "https://api.example.com/v1",
+      fetchImpl,
+    });
+
+    await client.complete(INPUT);
+    await client.complete({ ...INPUT, reasoningEffort: "low" });
+
+    expect(bodies[0]?.reasoning_effort).toBeUndefined();
+    expect(bodies[1]?.reasoning_effort).toBe("low");
+  });
+
   it("maps a provider error status to an llm_http_error", async () => {
     const fetchImpl = (async () => new Response("nope", { status: 429 })) as unknown as typeof fetch;
     const client = createOpenAiCompatibleClient({ apiKey: "k", baseUrl: "https://api.example.com", fetchImpl });

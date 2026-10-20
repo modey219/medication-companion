@@ -74,6 +74,7 @@ async function review(
       model: config.model,
       maxOutputTokens: config.maxReviewTokens,
       timeoutMs: config.timeoutMs,
+      reasoningEffort: config.reasoningEffort,
     });
     return parseReview(raw);
   } catch (error) {
@@ -179,6 +180,7 @@ async function handleChat(request: Request, env: Env, deps: AppDeps): Promise<Re
       model: config.model,
       maxOutputTokens: config.maxOutputTokens,
       timeoutMs: config.timeoutMs,
+      reasoningEffort: config.reasoningEffort,
     });
   } catch (error) {
     return llmFailure(error, installTag, deps);
