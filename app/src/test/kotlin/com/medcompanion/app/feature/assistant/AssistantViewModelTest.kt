@@ -2,6 +2,7 @@ package com.medcompanion.app.feature.assistant
 
 import com.medcompanion.app.data.assistant.AssistantMedicationContextBuilder
 import com.medcompanion.app.data.assistant.PatientContextBuilder
+import com.medcompanion.app.domain.assistant.AssistantAuthor
 import com.medcompanion.app.domain.assistant.AssistantChatClient
 import com.medcompanion.app.domain.assistant.AssistantError
 import com.medcompanion.app.domain.assistant.AssistantMode
@@ -357,6 +358,32 @@ class AssistantViewModelTest {
 
         val expanded = viewModel.uiState.value.expandedReviews
         assertTrue(expanded.isEmpty())
+    }
+
+    @Test
+    fun `the request never grows past the backend message limit`() {
+        val viewModel = viewModel()
+        repeat(15) { index ->
+            viewModel.onInputChange("question $index")
+            viewModel.onSend()
+        }
+
+        viewModel.onInputChange("the newest question")
+        viewModel.onSend()
+
+        val request = chatClient.requests.last()
+        assertTrue(request.exchanges.size <= 20)
+        assertEquals(AssistantAuthor.PATIENT, request.exchanges.first().author)
+        assertEquals("the newest question", request.exchanges.last().text)
+    }
+
+    @Test
+    fun `a turn longer than the backend limit is capped instead of being rejected`() {
+        val viewModel = viewModel()
+
+        viewModel.onInputChange("a".repeat(2_500))
+
+        assertEquals(2_000, viewModel.uiState.value.input.length)
     }
 
     private class RecordingChatClient : AssistantChatClient {

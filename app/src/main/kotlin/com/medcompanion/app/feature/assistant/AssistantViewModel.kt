@@ -92,10 +92,11 @@ class AssistantViewModel
         }
 
         fun onInputChange(text: String) {
-            val urgent = EmergencySymptoms.isEmergencyText(text)
+            val capped = text.take(MAX_MESSAGE_CHARS)
+            val urgent = EmergencySymptoms.isEmergencyText(capped)
             _uiState.update {
                 it.copy(
-                    input = text,
+                    input = capped,
                     isUrgentInput = urgent,
                     // A new sentence clears a previous failure, and an urgent one
                     // shows the emergency card straight away.
@@ -239,17 +240,17 @@ class AssistantViewModel
             context: PatientContext?,
             patientTurn: String?,
         ): AssistantRequest {
-            val exchanges =
+            val history =
                 messages
                     .filterNot { it.isEmergency }
                     .map { AssistantExchange(author = it.author(), text = it.text) }
-                    .let { history ->
-                        if (patientTurn == null) {
-                            history
-                        } else {
-                            history + AssistantExchange(AssistantAuthor.PATIENT, patientTurn)
-                        }
-                    }
+            val withTurn =
+                if (patientTurn == null) {
+                    history
+                } else {
+                    history + AssistantExchange(AssistantAuthor.PATIENT, patientTurn)
+                }
+            val exchanges = trimHistory(withTurn)
 
             val medicationContext =
                 if (personalize) {
@@ -281,6 +282,17 @@ class AssistantViewModel
                 null
             }
 
+        /**
+         * Keeps the request inside the backend's limits: the oldest turns are
+         * dropped first, and the window always starts with the patient so the
+         * model never sees an answer to a question that was left out. Without
+         * this the 21st message made every send and every retry fail with 400.
+         */
+        private fun trimHistory(exchanges: List<AssistantExchange>): List<AssistantExchange> =
+            exchanges
+                .takeLast(MAX_REQUEST_MESSAGES)
+                .dropWhile { it.author == AssistantAuthor.ASSISTANT }
+
         private fun nextId(): Long = nextMessageId++
 
         private fun AssistantMessage.author(): AssistantAuthor =
@@ -300,4 +312,14 @@ class AssistantViewModel
                 AssistantReply.Emergency ->
                     AssistantMessage(id = nextId(), fromPatient = false, isEmergency = true)
             }
+
+        private companion object {
+            /**
+             * Mirrors the backend defaults (`MAX_MESSAGE_CHARS` 2000,
+             * `MAX_MESSAGES` 20). A longer turn or history is rejected with 400,
+             * and a retry would repeat the same rejected request.
+             */
+            const val MAX_MESSAGE_CHARS = 2000
+            const val MAX_REQUEST_MESSAGES = 20
+        }
     }

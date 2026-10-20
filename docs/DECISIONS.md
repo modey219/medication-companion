@@ -4,6 +4,29 @@ Short entries. Newest first. Format: ID, date, decision, why, status.
 
 ---
 
+## D-030 - One reminder, not one per reply; requests that always fit the limits
+
+Decision: the assistant prompt stops appending a "confirm with your doctor or
+pharmacist" line to every answer; the persistent line under the chat is the
+reminder, and a clinician is mentioned only when the answer depends on their
+judgment. The client also trims every request to the backend limits.
+
+1. **Why**: a reminder in every reply becomes wallpaper and makes the text
+   longer without adding safety. The persistent disclaimer stays visible for as
+   long as the chat does.
+2. **What is unchanged**: every hard rule from AGENTS.md and D-021 (no
+   prescribing, no dose amounts, no "safe to combine", no diagnosis) still
+   applies, and the answer guard still runs after the provider's reply. This
+   change is about repeated boilerplate, not about removing protection.
+3. **Retry failures fixed**: the backend accepts at most 20 messages and 2000
+   characters per message. Once a conversation reached 21 messages, every send
+   and every retry returned 400, which looked like "the assistant disconnects".
+   The client now caps the input, keeps the last 20 turns and starts the window
+   with the patient's turn, so a retry is always a valid request.
+
+Status: applied.
+
+---
 ## D-029 — Groq `openai/gpt-oss-120b` is the provider model; client waits 30 s
 
 Decision: the Worker runs on Groq (`https://api.groq.com/openai/v1`) with

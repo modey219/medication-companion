@@ -266,6 +266,14 @@ English mirrors of every row above: `values-en/strings.xml` (same
 
 ---
 
+## Assistant prompt polish (2026-10-20)
+
+| Item | Location | Why flagged | Status |
+| --- | --- | --- | --- |
+| The system prompt no longer asks for a closing "confirm with your doctor or pharmacist" in every reply. It now points at the app's persistent one-line disclaimer and allows one brief clinician mention only when the answer depends on a clinician's judgment | `backend/prompts/system-prompt.txt` (last bullet under "Privacy and safety") | A repeated reminder is easy to ignore; removing it can make a single answer feel more authoritative. Confirm the remaining cases (side effect, missed or doubled dose, pregnancy or breastfeeding, uncertainty) are the right ones, and that the persistent line under the chat is visible enough | Open |
+| The client caps a turn at 2000 characters and sends at most the last 20 messages, starting with the patient's turn | `AssistantViewModel.kt` (`MAX_MESSAGE_CHARS`, `MAX_REQUEST_MESSAGES`, `trimHistory`) | Not medical copy. Listed so review knows older turns are dropped, never summarized, and that the newest question is always included | Open |
+
+---
 ## Not yet written (future tasks — keep this list growing)
 
 - T16-T18: every screen and string up to and including T15 is recorded above.
