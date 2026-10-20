@@ -11,6 +11,7 @@ import { createLlmClient } from "./llm";
 import { LlmError, type LlmClient } from "./llm/types";
 import { createConsoleLogger, pseudonymize, type Logger } from "./logging";
 import { guardAnswer } from "./safety/answerGuard";
+import { stripClosingReminder } from "./safety/closingReminder";
 import { detectEmergency, emergencyReply } from "./safety/emergency";
 import { parseReview, ReviewError, toPublicReview, type Review } from "./safety/review";
 import { safeBlockedReply, safeDeclineReply } from "./safety/safeReplies";
@@ -191,6 +192,14 @@ async function handleChat(request: Request, env: Env, deps: AppDeps): Promise<Re
   if (!guarded.ok) {
     deps.logger.warn("chat.answer_blocked", { installTag, reason: guarded.reason });
     reply = safeBlockedReply();
+  } else {
+    // The app shows one persistent disclaimer, so a model that still closes
+    // with "confirm with your doctor or pharmacist" has that line removed.
+    const trimmedReply = stripClosingReminder(reply);
+    if (trimmedReply !== reply) {
+      deps.logger.info("chat.reminder_stripped", { installTag });
+      reply = trimmedReply;
+    }
   }
 
   deps.logger.info("chat.ok", {

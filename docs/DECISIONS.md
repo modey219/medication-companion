@@ -23,6 +23,20 @@ judgment. The client also trims every request to the backend limits.
    and every retry returned 400, which looked like "the assistant disconnects".
    The client now caps the input, keeps the last 20 turns and starts the window
    with the patient's turn, so a retry is always a valid request.
+4. **The model kept doing it anyway**. Measured on `openai/gpt-oss-120b`:
+   replies still ended with "تذكّر دائمًا مراجعة الطبيب أو الصيدلي" or
+   "*تأكد من استشارة طبيبك أو الصيدلي*". A narrow deterministic filter
+   (`backend/src/safety/closingReminder.ts`) now removes at most two trailing
+   sentences, and only when a sentence mentions a clinician *and* a reminder
+   cue. A sentence with an emergency word or the emergency number is never
+   removed, and a reply is never cut below a short paragraph, so a one-line
+   "see a doctor" answer stays. The removal is logged as
+   `chat.reminder_stripped` without any text.
+5. **Groq reasoning budget**: `openai/gpt-oss-120b` spends reasoning tokens
+   from the same budget, so the 400-token review pass was truncated and every
+   medical question failed with `llm_invalid_review` (502). The Worker now runs
+   `LLM_REASONING_EFFORT=low`, `LLM_MAX_REVIEW_TOKENS=1200` and
+   `LLM_MAX_OUTPUT_TOKENS=700`; measured 1.2-1.9 s per answer.
 
 Status: applied.
 
