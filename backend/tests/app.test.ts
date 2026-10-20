@@ -231,6 +231,72 @@ describe("POST /v1/chat behaviour", () => {
     expect(logs.join("\n")).toContain("chat.answer_blocked");
   });
 
+  it("answers a general question warmly without the symptom questions", async () => {
+    const { handler, llmCalls, setAnswer } = harness();
+    const warmReply = "أهلاً بك! كيف أساعدك اليوم؟";
+    setAnswer(warmReply);
+    const response = await callWorker(handler, chatRequest({ messages: [userMessage("مرحبا، شلونك؟")] }));
+    expect(response.status).toBe(200);
+    const payload = await body(response);
+    expect(payload.reply).toBe(warmReply);
+    expect(payload.emergency).toBe(false);
+    const answerSystem = llmCalls.inputs[1]?.system ?? "";
+    expect(answerSystem).toContain("answer it directly and warmly");
+    expect(answerSystem).toContain("Never refuse a harmless question");
+  });
+
+  it("keeps the questions-first rule in the prompt for a symptom without detail", async () => {
+    const { handler, llmCalls, setReview, setAnswer } = harness();
+    setReview('{"urgency":"SEE_DOCTOR_SOON","forbiddenRequest":false,"usesProfile":false,"considered":[],"gaps":[],"questions":[]}');
+    setAnswer("سلامتك. من متى الألم؟ وشكد شدته من 0 إلى 10؟");
+    const response = await callWorker(handler, chatRequest({ messages: [userMessage("عندي ألم في قدمي")] }));
+    expect(response.status).toBe(200);
+    const payload = await body(response);
+    expect(payload.emergency).toBe(false);
+    expect(payload.urgency).toBe("SEE_DOCTOR_SOON");
+    expect(String(payload.reply)).toContain("من متى الألم");
+    const answerSystem = llmCalls.inputs[1]?.system ?? "";
+    expect(answerSystem).toContain("then two to four focused questions");
+    expect(answerSystem).toContain("Do not explain, advise, suggest home care, or name a medicine in this reply");
+  });
+
+  it("allows the symptom advice turn once the detail exists", async () => {
+    const { handler, llmCalls, setAnswer } = harness();
+    setAnswer("قد يكون السبب إجهاداً في أربطة القدم. أرح قدمك وارفعها. راجع طبيب العظام، ويمكن للصيدلي أن يرشدك لخيارات بدون وصفة.");
+    const response = await callWorker(
+      handler,
+      chatRequest({
+        messages: [
+          userMessage("عندي ألم في قدمي"),
+          { role: "assistant", content: "سلامتك. من متى الألم؟ وهل صار بسبب إصابة؟" },
+          userMessage("من يومين بعد ما تعثرت، الألم 5 من 10 وما في تورم"),
+        ],
+      }),
+    );
+    expect(response.status).toBe(200);
+    const payload = await body(response);
+    expect(payload.reply).not.toBe(safeBlockedReply());
+    expect(llmCalls.purposes).toEqual(["review", "answer"]);
+    const answerSystem = llmCalls.inputs[1]?.system ?? "";
+    expect(answerSystem).toContain("the clinician who fits");
+    expect(answerSystem).toContain("without naming any medicine and without a dose");
+    expect(answerSystem).toContain("do not repeat them");
+  });
+
+  it("sends a life-threatening red flag to the emergency card with no questions", async () => {
+    const { handler, llmCalls } = harness();
+    const response = await callWorker(
+      handler,
+      chatRequest({ messages: [userMessage("عندي ألم بالقدم ومعه صعوبة بالتنفس")] }),
+      { EMERGENCY_NUMBER: "997" },
+    );
+    expect(response.status).toBe(200);
+    const payload = await body(response);
+    expect(payload.emergency).toBe(true);
+    expect(String(payload.reply)).toContain("997");
+    expect(llmCalls.count).toBe(0);
+  });
+
   it("keeps a cautious warning that tells the patient not to change anything", async () => {
     const { handler, setAnswer } = harness();
     const cautious = "Do not stop taking your medicine without asking your doctor or pharmacist first.";

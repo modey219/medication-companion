@@ -275,6 +275,19 @@ English mirrors of every row above: `values-en/strings.xml` (same
 | The client caps a turn at 2000 characters and sends at most the last 20 messages, starting with the patient's turn | `AssistantViewModel.kt` (`MAX_MESSAGE_CHARS`, `MAX_REQUEST_MESSAGES`, `trimHistory`) | Not medical copy. Listed so review knows older turns are dropped, never summarized, and that the newest question is always included | Open |
 
 ---
+
+## Assistant symptom flow (2026-10-20)
+
+| Item | Location | Why flagged | Status |
+| --- | --- | --- | --- |
+| A symptom with too little detail now gets one empathetic sentence and two to four focused questions before any explanation, advice, home care or medicine; the questions are spread over two or three turns | `backend/prompts/system-prompt.txt` ("Symptom questions"), `backend/prompts/answer-prompt.txt` (step 2) | This is the biggest change in behaviour: the model now withholds information on the first turn. Confirm the question set (place and side, severity 0-10, onset and pattern, injury, swelling or numbness, chronic conditions or allergy, current medicines) is the right clinical minimum, and that asking over several turns is acceptable for an elderly user who may only answer once | Open |
+| The symptom caveat sentence ("سلامتك، ما بيك شر إن شاء الله") is given to the model as an example of the opening line | `backend/prompts/system-prompt.txt` ("Symptom questions") | A religiously worded reassurance must be checked for tone and for users who would not want it | Open |
+| After the answers, the assistant may give a preliminary idea with explicit uncertainty, medicine-free home care, and the name of the clinician who fits (orthopedist for a foot, internist for a persistent fever) | `backend/prompts/answer-prompt.txt` (step 3) | The home-care examples and the specialist matching are clinical content; confirm they are safe and correct for the listed complaints, and that "safe for anyone" stays true | Open |
+| The assistant says once that a pharmacist can advise on over-the-counter options and deliberately names no medicine. The user's request to name common over-the-counter products (e.g. paracetamol) was not implemented | `backend/prompts/system-prompt.txt` ("What you never do"), `docs/DECISIONS.md` D-031 point 4 | This is a contested decision. AGENTS.md and D-021 forbid suggesting a medicine; the user asked for it with a caution sentence. The clinical reviewer must confirm that naming no product is correct for a companion app, or approve a narrow exception with exact wording and guard rules | Open |
+| A suspected fracture, a sudden severe pain without the emergency signs, and a high fever that does not settle are URGENT_TODAY (same-day care with the named clinician) and not the emergency card; the emergency list itself is unchanged | `backend/prompts/review-prompt.txt` (URGENT_TODAY), `backend/prompts/answer-prompt.txt` (step 4), `backend/prompts/system-prompt.txt` ("Symptom questions") | Previously the emergency wording covered "a severe sudden pain or a likely fracture". Confirm the new split is right and that nothing life-threatening was moved down a level | Open |
+| Greetings, thanks, general and non-medical questions are never refused; "I cannot help with that" is reserved for harmful, illegal or dangerous requests | `backend/prompts/system-prompt.txt` ("What you do"), `backend/prompts/review-prompt.txt` (`SELF_CARE`, `forbiddenRequest`) | Confirm the refusal boundary is described correctly and that nothing in the medical rules became optional | Open |
+
+---
 ## Not yet written (future tasks — keep this list growing)
 
 - T16-T18: every screen and string up to and including T15 is recorded above.

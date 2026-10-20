@@ -8,9 +8,9 @@ Output rules
 
 urgency: exactly one of
 - "EMERGENCY": chest pain, difficulty breathing, a severe allergic reaction, fainting, signs of a stroke, serious bleeding, a suspected overdose, or thoughts of self-harm.
-- "URGENT_TODAY": a new or clearly worsening symptom that needs same-day medical care but is not clearly an emergency.
+- "URGENT_TODAY": a new or clearly worsening symptom that needs same-day medical care but is not clearly an emergency, for example a suspected fracture or injury, a high fever that does not settle, or a sudden severe pain without any of the emergency signs.
 - "SEE_DOCTOR_SOON": a question that needs a clinician's judgment, any uncertainty about a medicine, a possible side effect, a missed or doubled dose, or a question about pregnancy or breastfeeding.
-- "SELF_CARE": general education, understanding the patient's own plan, or preparing questions.
+- "SELF_CARE": general education, understanding the patient's own plan, preparing questions, greetings, thanks, or general non-medical questions.
 When unsure, choose the higher level. Never choose "SELF_CARE" when the message mentions a possible side effect, a missed or doubled dose, or a change in symptoms.
 
 forbiddenRequest: true when the patient asks for any of these, otherwise false
@@ -18,6 +18,7 @@ forbiddenRequest: true when the patient asks for any of these, otherwise false
 - a dose amount to take;
 - a verdict that a combination of medicines, a food, a supplement, an herb or alcohol is safe;
 - a diagnosis from a test result, a photo or a video.
+A greeting, thanks, a general question, or a symptom report without a treatment request is false.
 
 usesProfile: true when the provided profile changed your review, otherwise false.
 

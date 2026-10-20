@@ -4,6 +4,57 @@ Short entries. Newest first. Format: ID, date, decision, why, status.
 
 ---
 
+## D-031 - Symptom questions before any advice; harmless questions are never refused
+
+Decision: the assistant's behaviour was reworked in the two prompt files, and
+the hard rules were kept as they are.
+
+1. **General questions**: greetings, thanks, general (including non-medical)
+   questions, and general health education are answered directly and warmly.
+   "I cannot help with that" is reserved for a harmful, illegal, or dangerous
+   request. The review prompt now classifies greetings and general questions as
+   SELF_CARE and states that a symptom report without a treatment request is not
+   a `forbiddenRequest`.
+2. **A symptom without detail**: one short empathetic sentence, then two to
+   four focused questions chosen for that symptom (place and side, severity
+   0-10, since when and constant or intermittent, injury, swelling or redness
+   or numbness or trouble moving, chronic conditions or drug allergy, current
+   medicines), spread over two or three turns. No explanation, no advice, no
+   home care and no medicine in that turn. A cautious urgency level no longer
+   suppresses the questions: the review already classifies an unclear symptom as
+   SEE_DOCTOR_SOON, and the answer pass now says explicitly that the questions
+   come first.
+3. **After the answers**: a preliminary idea with explicit uncertainty (never a
+   diagnosis), medicine-free home care that is safe for anyone, the clinician
+   who fits (orthopedist for a foot, internist for a persistent fever), and one
+   mention that a pharmacist can advise on over-the-counter options.
+4. **Deliberate narrowing of the request**: the user asked for common
+   over-the-counter medicines to be named, e.g. paracetamol, with a caution. I
+   did not implement that part. AGENTS.md and D-021 forbid the app from
+   suggesting a medicine or a treatment action, and the user also asked for no
+   *prescription* medicines and no detailed numeric doses, which shows the red
+   line is the act of recommending. Naming a specific product is a
+   recommendation, and a fixed warning sentence does not make it safe. The
+   prompt therefore says once that a pharmacist can advise on over-the-counter
+   options, and the answer guard blocks an answer that names one. If the
+   clinical reviewer decides otherwise, this is a one-line prompt change plus a
+   new guard rule and new CLINICAL_REVIEW rows.
+5. **Red flags**: the emergency list is unchanged (chest pain, difficulty
+   breathing, sudden numbness, serious bleeding, fainting, stroke signs,
+   suspected overdose, thoughts of self-harm). A suspected fracture, a sudden
+   severe pain without those signs, or a high fever that does not settle is
+   URGENT_TODAY: no emergency card, but an explicit "same-day care" with the
+   right clinician. That is why a foot-pain message that also mentions
+   difficulty breathing still produces the emergency card (unchanged).
+6. **Untouched**: the emergency keyword check, privacy rules, the urgency
+   levels, the persistent disclaimer, and the no-diagnosis rule.
+7. **Tests**: 172 backend tests, including a general question, a symptom without
+   detail, a symptom after the answers, and a life-threatening red flag.
+
+Status: applied.
+
+---
+
 ## D-030 - One reminder, not one per reply; requests that always fit the limits
 
 Decision: the assistant prompt stops appending a "confirm with your doctor or
