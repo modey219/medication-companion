@@ -232,7 +232,27 @@ English mirrors of every row above: `values-en/strings.xml` (same
 
 ---
 
+## T14 — Review, then answer, on the backend (2026-10-20)
+
+| Item | Location | Why flagged | Status |
+| --- | --- | --- | --- |
+| Review prompt: the four urgency definitions, the `forbiddenRequest` list, the "when unsure choose the higher level" rule and the "never SELF_CARE for a side effect, a missed or doubled dose, or a change in symptoms" rule | `backend/prompts/review-prompt.txt` (`TODO(clinical-review, T14)` in `backend/src/safety/systemPrompt.ts`) | The urgency level decides whether the app shows an emergency card, a same-day card, or nothing urgent; every definition and every exception needs clinical sign-off | Open |
+| Review prompt: the allowed `considered` / `gaps` / `questions` phrases | `backend/prompts/review-prompt.txt`, `backend/src/safety/review.ts` | These are shown to the patient in the T15 cards; confirm they can only ever be descriptive and never a recommendation | Open |
+| Answer prompt: "match the review's urgency", the gap sentence, the "unknown / none confirmed" rule, the six-sentence limit and the closing reminder | `backend/prompts/answer-prompt.txt` (`TODO(clinical-review, T14)`) | Shapes every answer that reaches the patient; must not invite self-diagnosis or a treatment change | Open |
+| Extended system prompt: the "What you may do" list (possible explanations with uncertainty, urgency, medicine-free self-care, profile cautions, questions for a clinician), the profile rules and the urgency section | `backend/prompts/system-prompt.txt` (T14 additions) | New permissions granted to the model; the reviewer must confirm each one stays inside AGENTS.md and that "possible explanation" cannot read as a diagnosis | Open |
+| Calm decline wording (`safeDeclineReply`, Arabic + English) | `backend/src/safety/safeReplies.ts` (`TODO(clinical-review, T14)`) | The whole reply when the patient asks for a treatment change or a combination verdict; must be respectful, non-judgemental and must not hint at an answer | Open |
+| Calm fallback wording (`safeBlockedReply`, Arabic + English) | `backend/src/safety/safeReplies.ts` (`TODO(clinical-review, T14)`) | Shown when the answer guard rejects a generated answer; must not reveal that a filter fired, blame the patient, or suggest an action | Open |
+| Answer guard: the instruction and combination patterns, the negation list and the 40-character look-behind | `backend/src/safety/answerGuard.ts` (`TODO(clinical-review, T14)`) | A false positive replaces a safe answer; a false negative lets an instruction through. Both directions are clinical calls, and the Arabic patterns need a native reviewer | Open |
+| Review bullet filter: a bullet containing an instruction is dropped before it can be shown | `backend/src/safety/review.ts` (`readBullets`, `isUnsafeText`) | The T15 cards must never display a "considered" phrase that is actually advice | Open |
+| Profile rendering: `NOT_ASKED` / `NONE_CONFIRMED` / `LISTED` wording, "unknown" for an omitted section, the `[the rest of the profile was omitted]` marker, and one-line flattening | `backend/src/safety/patientContext.ts` | This is the "absence of data is not evidence of absence" rule as the model sees it; a clinician must confirm the wording cannot be read as "the patient has none" | Open |
+| Decision: a review that cannot be parsed fails closed with `502 llm_invalid_review` and no answer is attempted | `backend/src/app.ts`, `docs/DECISIONS.md` D-024 point 2 | Patient-facing consequence of a safety failure (a calm "try again"); confirm that showing no answer is preferable to a generic one | Open |
+| Gate order: emergency keyword, then review emergency, then forbidden request, then answer; the answer pass is skipped when a gate fires | `backend/src/app.ts`, `docs/DECISIONS.md` D-024 point 3 | Confirm a refusal or an emergency must never be followed by a generated answer | Open |
+| Caps: 12 000 characters for the serialized context, 400 tokens for the review, 5/5/3 bullets, 160 characters per bullet | `backend/src/config.ts`, `backend/src/safety/review.ts` | Truncation can hide a clinically relevant entry; confirm the caps and that the truncation marker is enough warning | Open |
+| Compat: `mode` present ignores the legacy `shareMedications` / `medicationContext`, and the old shape is read as generic | `backend/src/validation.ts`, `docs/DECISIONS.md` D-024 point 7 | During the overlap a legacy request still carries the old free-text block; confirm it may still be used until T15 ships | Open |
+
+---
+
 ## Not yet written (future tasks — keep this list growing)
 
-- Nothing pending: every screen and string up to and including T13 is recorded
-  above. New tasks add their rows here before release.
+- Nothing pending: every screen and string up to and including T14 is recorded
+  above. New tasks (T15-T18) add their rows here before release.

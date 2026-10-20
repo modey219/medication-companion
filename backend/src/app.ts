@@ -10,10 +10,13 @@ import {
 import { createLlmClient } from "./llm";
 import { LlmError, type LlmClient } from "./llm/types";
 import { createConsoleLogger, pseudonymize, type Logger } from "./logging";
+import { guardAnswer } from "./safety/answerGuard";
 import { detectEmergency, emergencyReply } from "./safety/emergency";
-import { buildSystemPrompt } from "./safety/systemPrompt";
+import { parseReview, ReviewError, toPublicReview, type Review } from "./safety/review";
+import { safeBlockedReply, safeDeclineReply } from "./safety/safeReplies";
+import { buildAnswerPrompt, buildReviewPrompt } from "./safety/systemPrompt";
 import { verifyIntegrityToken } from "./security/integrity";
-import { parseChatRequest, readJsonBody, requireInstallId } from "./validation";
+import { parseChatRequest, readJsonBody, requireInstallId, type ChatRequest } from "./validation";
 
 export interface AppDeps {
   llm: (config: Config) => LlmClient;
@@ -33,6 +36,47 @@ function defaultDeps(): AppDeps {
     now: () => Date.now(),
     fetchImpl: fetch,
   };
+}
+
+function llmFailure(error: unknown, installTag: string, deps: AppDeps): never {
+  if (error instanceof LlmError) {
+    const status = error.code === "llm_timeout" ? 504 : 502;
+    deps.logger.warn("chat.llm_failed", { installTag, code: error.code, status });
+    throw new HttpError(status, error.code, error.message);
+  }
+  deps.logger.error("chat.unexpected", { installTag });
+  throw error;
+}
+
+/**
+ * The review pass (T14, D-024): the model inspects the request and the profile
+ * before it is allowed to write anything for the patient. A review that cannot
+ * be parsed fails closed: no answer is produced.
+ */
+async function review(
+  client: LlmClient,
+  chat: ChatRequest,
+  config: Config,
+  deps: AppDeps,
+  installTag: string,
+): Promise<Review> {
+  try {
+    const raw = await client.complete({
+      purpose: "review",
+      system: buildReviewPrompt(),
+      messages: chat.messages,
+      model: config.model,
+      maxOutputTokens: config.maxReviewTokens,
+      timeoutMs: config.timeoutMs,
+    });
+    return parseReview(raw);
+  } catch (error) {
+    if (error instanceof ReviewError) {
+      deps.logger.warn("chat.invalid_review", { installTag });
+      throw new HttpError(502, "llm_invalid_review", "The assistant could not check the request. Please try again.");
+    }
+    return llmFailure(error, installTag, deps);
+  }
 }
 
 async function handleChat(request: Request, env: Env, deps: AppDeps): Promise<Response> {
@@ -83,34 +127,82 @@ async function handleChat(request: Request, env: Env, deps: AppDeps): Promise<Re
   }
 
   const client = deps.llm(config);
+  const reviewed = await review(client, chat, config, deps, installTag);
+
+  if (reviewed.urgency === "EMERGENCY") {
+    deps.logger.info("chat.emergency", {
+      installTag,
+      kind: "review",
+      urgency: reviewed.urgency,
+      durationMs: deps.now() - startedAt,
+    });
+    return jsonResponse({
+      reply: emergencyReply(config.emergencyNumber),
+      emergency: true,
+      kind: "review",
+      urgency: reviewed.urgency,
+      review: toPublicReview(reviewed),
+    });
+  }
+
+  if (reviewed.forbiddenRequest) {
+    deps.logger.info("chat.declined", {
+      installTag,
+      urgency: reviewed.urgency,
+      durationMs: deps.now() - startedAt,
+    });
+    return jsonResponse({
+      reply: safeDeclineReply(),
+      emergency: false,
+      urgency: "SEE_DOCTOR_SOON",
+      review: toPublicReview(reviewed),
+    });
+  }
+
   let reply: string;
   try {
     reply = await client.complete({
-      system: buildSystemPrompt(chat.medicationContext),
+      purpose: "answer",
+      system: buildAnswerPrompt({
+        ...(chat.medicationContext !== undefined ? { medicationContext: chat.medicationContext } : {}),
+        ...(chat.context !== undefined ? { context: chat.context } : {}),
+        review: reviewed,
+        maxContextChars: config.maxContextChars,
+      }),
       messages: chat.messages,
       model: config.model,
       maxOutputTokens: config.maxOutputTokens,
       timeoutMs: config.timeoutMs,
     });
   } catch (error) {
-    if (error instanceof LlmError) {
-      const status = error.code === "llm_timeout" ? 504 : 502;
-      deps.logger.warn("chat.llm_failed", { installTag, code: error.code, status });
-      throw new HttpError(status, error.code, error.message);
-    }
-    deps.logger.error("chat.unexpected", { installTag });
-    throw error;
+    return llmFailure(error, installTag, deps);
+  }
+
+  // The answer itself is checked before it can reach the patient (T14).
+  const guarded = guardAnswer(reply);
+  if (!guarded.ok) {
+    deps.logger.warn("chat.answer_blocked", { installTag, reason: guarded.reason });
+    reply = safeBlockedReply();
   }
 
   deps.logger.info("chat.ok", {
     installTag,
     provider: config.provider,
     model: config.model,
+    mode: chat.mode,
+    contextShared: chat.context !== undefined,
+    urgency: reviewed.urgency,
+    reviewed: true,
+    answerBlocked: !guarded.ok,
     messages: chat.messages.length,
-    sharedContext: chat.medicationContext !== undefined,
     durationMs: deps.now() - startedAt,
   });
-  return jsonResponse({ reply, emergency: false });
+  return jsonResponse({
+    reply,
+    emergency: false,
+    urgency: reviewed.urgency,
+    review: toPublicReview(reviewed),
+  });
 }
 
 export function createApp(overrides: Partial<AppDeps> = {}): ExportedHandler<Env> {

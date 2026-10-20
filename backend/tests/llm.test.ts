@@ -1,11 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { createLlmClient } from "../src/llm";
-import { createMockClient, MOCK_REPLY } from "../src/llm/mock";
+import { createMockClient, MOCK_REPLY, MOCK_REVIEW } from "../src/llm/mock";
 import { createOpenAiCompatibleClient } from "../src/llm/openaiCompatible";
 import { LlmError } from "../src/llm/types";
 import { testConfig } from "./helpers";
 
 const INPUT = {
+  purpose: "answer" as const,
   system: "system prompt",
   messages: [{ role: "user" as const, content: "مرحبا" }],
   model: "test-model",
@@ -75,6 +76,13 @@ describe("createMockClient", () => {
   it("returns the canned reply without touching the network", async () => {
     const client = createMockClient();
     await expect(client.complete(INPUT)).resolves.toBe(MOCK_REPLY);
+  });
+
+  it("returns a valid review for the review pass", async () => {
+    const client = createMockClient();
+    const raw = await client.complete({ ...INPUT, purpose: "review" });
+    expect(raw).toBe(MOCK_REVIEW);
+    expect(JSON.parse(raw)).toMatchObject({ urgency: "SELF_CARE", forbiddenRequest: false });
   });
 });
 

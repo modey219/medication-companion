@@ -1,7 +1,11 @@
 import type { ChatMessage } from "../validation";
 
+/** Which half of the review-then-answer flow a completion belongs to (T14). */
+export type LlmPurpose = "review" | "answer";
+
 /** A completion request handed to a provider adapter. */
 export interface LlmCompleteInput {
+  purpose: LlmPurpose;
   system: string;
   messages: ChatMessage[];
   model: string;

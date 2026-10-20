@@ -13,12 +13,14 @@ export interface Env {
   LLM_API_KEY?: string;
   LLM_BASE_URL?: string;
   LLM_MAX_OUTPUT_TOKENS?: string;
+  LLM_MAX_REVIEW_TOKENS?: string;
 
   REQUEST_TIMEOUT_MS?: string;
   MAX_REQUEST_BYTES?: string;
   MAX_MESSAGE_CHARS?: string;
   MAX_MESSAGES?: string;
   MAX_MEDICATION_CONTEXT_CHARS?: string;
+  MAX_CONTEXT_CHARS?: string;
 
   RATE_LIMIT_PER_MINUTE?: string;
   RATE_LIMIT_PER_DAY?: string;

@@ -88,12 +88,22 @@ variables, tests and deploy steps, and `docs/DECISIONS.md` D-018 for the rationa
 The app side of that conversation is the Assistant tab (T10, T13): a first-use
 consent screen, the chat itself, an urgent-symptom check that runs before anything is sent,
 and a "Report a problem" action. Since T13 the assistant has two explicit,
-versioned consents — a profile consent (off by default) that attaches a small,
+versioned consents - a profile consent (off by default) that attaches a small,
 fixed `PatientContext` built on the device, and a media consent stored for T16.
 Without the profile consent every question is answered in `GENERIC` mode and
 nothing about the patient leaves the phone; with it on but the profile unreadable,
-the question is not sent at all (see `docs/DECISIONS.md` D-023). The base URL is a Gradle property
-(`-PassistantBaseUrl=…`), so a local `wrangler dev` or a deployed Worker needs no
+the question is not sent at all (see `docs/DECISIONS.md` D-023).
+
+Since T14 the Worker checks every question twice: a strict JSON **review** pass
+decides the urgency (`EMERGENCY`, `URGENT_TODAY`, `SEE_DOCTOR_SOON`,
+`SELF_CARE`) and whether the request asks for a treatment change, and only then
+an **answer** pass writes the reply, which a last-line guard checks before it is
+returned. A review that cannot be parsed fails closed, and an emergency or a
+forbidden request never reaches the answer pass (see `docs/DECISIONS.md` D-024
+and the three prompt files under `backend/prompts/`).
+
+The base URL is a Gradle property
+(`-PassistantBaseUrl=...`), so a local `wrangler dev` or a deployed Worker needs no
 code change; the checked-in default is a placeholder and must be replaced before
 release (see `docs/DECISIONS.md` D-019).
 
@@ -127,10 +137,11 @@ Latest debug APK: app-debug.apk (15.23 MB)
 - T1–T7 shipped and verified (foundation, data layer, medications, today, reminders, symptoms, history + PDF export)
 - T8a shipped: profile (allergies/conditions), first-run consent + privacy placeholder, language choice, emergency number, export/delete all data
 - T8b shipped: patient reminder preferences (grace period, snooze, repeat interval), low-stock level and pharmacy number
-- T9 shipped: assistant backend proxy (`backend/`) — one `POST /v1/chat`, provider-agnostic, rate-limited, no logging of content, 85 Vitest tests
+- T9 shipped: assistant backend proxy (`backend/`) — one `POST /v1/chat`, provider-agnostic, rate-limited, no logging of content, 153 Vitest tests
 - T10 shipped: assistant chat UI — first-use consent with the (off-by-default) share-medication switch, in-memory conversation, client-side emergency card, retry/offline sentences, "Report a problem"
 - T12 shipped: health profile — basic information (birth year, sex, pregnancy/breastfeeding, weight), medical history, detail fields on allergies/conditions (severity, reaction, since year), and a derived "how complete is this section" state (Room v3; JSON export `schemaVersion` 2)
-- T13 shipped: patient context + two versioned consents — a device-built, capped `PatientContext` sent only with the profile consent, `GENERIC`/`PERSONALIZED` modes on the wire, and an all-or-nothing rule that never sends a personalized question without its context (legacy `shareMedications` kept until T14)
-- T14–T18 planned: review-then-answer backend, assistant response cards, media capture, vision path, evaluation harness (see AGENTS.md and docs/DECISIONS.md D-021)
+- T13 shipped: patient context + two versioned consents — a device-built, capped `PatientContext` sent only with the profile consent, `GENERIC`/`PERSONALIZED` modes on the wire, and an all-or-nothing rule that never sends a personalized question without its context (legacy `shareMedications` still accepted by the Worker)
+- T14 shipped: review-then-answer backend — a JSON review pass (urgency, forbidden request, considered/gaps/questions), gates that skip the answer pass for an emergency or a forbidden request, a server-rendered and fenced patient context, an answer guard that blocks medicine/dose instructions and "safe to combine" claims, and a fail-closed invalid review (see docs/DECISIONS.md D-024)
+- T15–T18 planned: assistant response cards, media capture, vision path, evaluation harness (see AGENTS.md and docs/DECISIONS.md D-021)
 - See docs/DECISIONS.md for key architectural decisions
 - See AGENTS.md for full specifications
