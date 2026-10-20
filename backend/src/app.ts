@@ -12,7 +12,7 @@ import { LlmError, type LlmClient } from "./llm/types";
 import { createConsoleLogger, pseudonymize, type Logger } from "./logging";
 import { guardAnswer } from "./safety/answerGuard";
 import { stripClosingReminder } from "./safety/closingReminder";
-import { detectEmergency, emergencyReply } from "./safety/emergency";
+import { emergencyReply } from "./safety/emergency";
 import { parseReview, ReviewError, toPublicReview, type Review } from "./safety/review";
 import { safeBlockedReply, safeDeclineReply } from "./safety/safeReplies";
 import { buildAnswerPrompt, buildReviewPrompt } from "./safety/systemPrompt";
@@ -123,17 +123,6 @@ async function handleChat(request: Request, env: Env, deps: AppDeps): Promise<Re
     );
   }
 
-  const lastUserMessage = [...chat.messages].reverse().find((message) => message.role === "user");
-  const emergencyKind = lastUserMessage ? detectEmergency(lastUserMessage.content) : undefined;
-  if (emergencyKind) {
-    deps.logger.info("chat.emergency", { installTag, kind: emergencyKind, durationMs: deps.now() - startedAt });
-    return jsonResponse({
-      reply: emergencyReply(config.emergencyNumber),
-      emergency: true,
-      kind: emergencyKind,
-    });
-  }
-
   const client = deps.llm(config);
   const reviewed = await review(client, chat, config, deps, installTag);
 
@@ -141,17 +130,23 @@ async function handleChat(request: Request, env: Env, deps: AppDeps): Promise<Re
     deps.logger.info("chat.emergency", {
       installTag,
       kind: "review",
-      urgency: reviewed.urgency,
+      emergencyOpen: reviewed.isEmergency,
       durationMs: deps.now() - startedAt,
     });
-    return jsonResponse({
-      reply: emergencyReply(config.emergencyNumber),
-      emergency: true,
-      kind: "review",
-      urgency: reviewed.urgency,
-      review: toPublicReview(reviewed),
-    });
+    // The card is shown once, on the turn that enters the emergency: a
+    // follow-up turn inside the same emergency gets emergency first aid from
+    // the model instead of the same card again (T16, D-032).
+    if (!reviewed.isEmergency) {
+      return jsonResponse({
+        reply: emergencyReply(config.emergencyNumber),
+        emergency: true,
+        kind: "review",
+        urgency: reviewed.urgency,
+        review: toPublicReview(reviewed),
+      });
+    }
   }
+
 
   if (reviewed.forbiddenRequest) {
     deps.logger.info("chat.declined", {

@@ -15,6 +15,13 @@ export interface Review {
   urgency: Urgency;
   /** True when the patient asked for a treatment change or a combination verdict. */
   forbiddenRequest: boolean;
+  /**
+   * True while the conversation is inside an emergency that already started
+   * (T16, D-032). The emergency card is shown once, on the turn that enters the
+   * emergency; every later turn is answered by the model with emergency
+   * follow-up instructions instead of repeating the card.
+   */
+  isEmergency: boolean;
   usesProfile: boolean;
   /** Short, patient-safe phrases naming what the review looked at. */
   considered: string[];
@@ -94,6 +101,7 @@ export function parseReview(raw: string): Review {
   return {
     urgency: parsed.urgency,
     forbiddenRequest: parsed.forbiddenRequest,
+    isEmergency: parsed.isEmergency === true,
     usesProfile: parsed.usesProfile === true,
     considered: readBullets(parsed.considered, MAX_CONSIDERED),
     gaps: readBullets(parsed.gaps, MAX_GAPS),
@@ -110,6 +118,7 @@ export function reviewForPrompt(review: Review): string {
   return JSON.stringify({
     urgency: review.urgency,
     forbiddenRequest: review.forbiddenRequest,
+    isEmergency: review.isEmergency,
     considered: review.considered,
     gaps: review.gaps,
     questions: review.questions,

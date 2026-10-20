@@ -4,10 +4,11 @@ import { parseReview, ReviewError, reviewForPrompt, toPublicReview } from "../sr
 const VALID = {
   urgency: "SEE_DOCTOR_SOON",
   forbiddenRequest: false,
+  isEmergency: false,
   usesProfile: true,
-  considered: ["جدول المضاد الحيوي"],
-  gaps: ["آخر قراءة لضغط الدم"],
-  questions: ["هل أحتاج تحليل دم؟"],
+  considered: ["O�O_U^U, OU,U.OOO_ OU,O-USU^US"],
+  gaps: ["O�OrO� U,O�OO�Oc U,OO�O� OU,O_U."],
+  questions: ["U�U, O�O-O�OO� O�O-U,USU, O_U.OY"],
 };
 
 describe("parseReview", () => {
@@ -22,7 +23,7 @@ describe("parseReview", () => {
 
   it("ignores prose around the JSON object", () => {
     const raw = `Here is the review:\n${JSON.stringify(VALID)}\nDone.`;
-    expect(parseReview(raw).considered).toEqual(["جدول المضاد الحيوي"]);
+    expect(parseReview(raw).considered).toEqual(["O�O_U^U, OU,U.OOO_ OU,O-USU^US"]);
   });
 
   it("rejects a reply that is not JSON", () => {
@@ -40,6 +41,12 @@ describe("parseReview", () => {
 
   it("treats usesProfile as false unless it is exactly true", () => {
     expect(parseReview(JSON.stringify({ ...VALID, usesProfile: "yes" })).usesProfile).toBe(false);
+  });
+
+  it("treats isEmergency as false unless it is exactly true", () => {
+    expect(parseReview(JSON.stringify({ ...VALID, isEmergency: "yes" })).isEmergency).toBe(false);
+    expect(parseReview(JSON.stringify({ ...VALID, isEmergency: undefined })).isEmergency).toBe(false);
+    expect(parseReview(JSON.stringify({ ...VALID, isEmergency: true })).isEmergency).toBe(true);
   });
 
   it("caps the bullet lists", () => {

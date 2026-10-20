@@ -172,32 +172,47 @@ describe("POST /v1/chat behaviour", () => {
     expect(llmCalls.inputs[1]?.system).toContain("Aspirin 100 mg");
   });
 
-  it("short-circuits urgent symptoms without calling the model", async () => {
-    const { handler, llmCalls } = harness();
+  it("shows the emergency card once, then answers the follow-up with first aid", async () => {
+    const first = harness();
+    first.setReview(
+      '{"urgency":"EMERGENCY","forbiddenRequest":false,"isEmergency":false,"usesProfile":false,"considered":[],"gaps":[],"questions":[]}',
+    );
     const response = await callWorker(
-      handler,
-      chatRequest({ messages: [userMessage("عندي ألم شديد في الصدر")] }),
+      first.handler,
+      chatRequest({ messages: [userMessage("عندي نزيف قوي في ذراعي")] }),
       { EMERGENCY_NUMBER: "997" },
     );
-    expect(response.status).toBe(200);
     const payload = await body(response);
+    expect(response.status).toBe(200);
     expect(payload.emergency).toBe(true);
     expect(String(payload.reply)).toContain("997");
-    expect(llmCalls.count).toBe(0);
+    expect(first.llmCalls.purposes).toEqual(["review"]);
   });
 
-  it("turns an emergency review into the emergency card without answering", async () => {
-    const { handler, llmCalls, setReview } = harness();
-    setReview('{"urgency":"EMERGENCY","forbiddenRequest":false,"usesProfile":true,"considered":[],"gaps":[],"questions":[]}');
-    const response = await callWorker(handler, chatRequest(personalizedChat("أشعر بضيق شديد")), {
-      EMERGENCY_NUMBER: "997",
-    });
-    expect(response.status).toBe(200);
+  it("keeps answering inside an open emergency without repeating the card", async () => {
+    const { handler, llmCalls, setReview, setAnswer, logs } = harness();
+    setReview(
+      '{"urgency":"EMERGENCY","forbiddenRequest":false,"isEmergency":true,"usesProfile":false,"considered":[],"gaps":[],"questions":[]}',
+    );
+    setAnswer("اضغط بقوة على الجرح بقطعة قماش نظيفة ولا ترفعها. هل المصاب واعي؟");
+    const response = await callWorker(
+      handler,
+      chatRequest({
+        messages: [
+          userMessage("عندي نزيف قوي في ذراعي"),
+          { role: "assistant", content: "هذه الحالة قد تكون طارئة. اتصل بالطوارئ." },
+          userMessage("نزفت كثير، شنو أسوي هسه؟"),
+        ],
+      }),
+      { EMERGENCY_NUMBER: "997" },
+    );
     const payload = await body(response);
-    expect(payload.emergency).toBe(true);
-    expect(payload.kind).toBe("review");
-    expect(String(payload.reply)).toContain("997");
-    expect(llmCalls.purposes).toEqual(["review"]);
+    expect(response.status).toBe(200);
+    expect(payload.emergency).toBe(false);
+    expect(String(payload.reply)).toContain("اضغط بقوة");
+    expect(llmCalls.purposes).toEqual(["review", "answer"]);
+    expect(llmCalls.inputs[1]?.system).toContain("Emergency follow-up");
+    expect(logs.join("\n")).toContain("emergencyOpen");
   });
 
   it("declines a request to change a medicine without answering", async () => {
@@ -284,7 +299,10 @@ describe("POST /v1/chat behaviour", () => {
   });
 
   it("sends a life-threatening red flag to the emergency card with no questions", async () => {
-    const { handler, llmCalls } = harness();
+    const { handler, llmCalls, setReview } = harness();
+    setReview(
+      '{"urgency":"EMERGENCY","forbiddenRequest":false,"isEmergency":false,"usesProfile":false,"considered":[],"gaps":[],"questions":[]}',
+    );
     const response = await callWorker(
       handler,
       chatRequest({ messages: [userMessage("عندي ألم بالقدم ومعه صعوبة بالتنفس")] }),
@@ -294,7 +312,7 @@ describe("POST /v1/chat behaviour", () => {
     const payload = await body(response);
     expect(payload.emergency).toBe(true);
     expect(String(payload.reply)).toContain("997");
-    expect(llmCalls.count).toBe(0);
+    expect(llmCalls.purposes).toEqual(["review"]);
   });
 
   it("keeps a cautious warning that tells the patient not to change anything", async () => {
