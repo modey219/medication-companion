@@ -3,11 +3,15 @@ package com.medcompanion.app.data.local
 import androidx.room.TypeConverter
 import com.medcompanion.app.domain.model.DoseStatus
 import com.medcompanion.app.domain.model.FoodRelation
+import com.medcompanion.app.domain.model.MedicalHistoryType
 import com.medcompanion.app.domain.model.MedicationForm
 import com.medcompanion.app.domain.model.MedicationSource
 import com.medcompanion.app.domain.model.MedicationStatus
 import com.medcompanion.app.domain.model.ProfileEntryType
+import com.medcompanion.app.domain.model.ProfileSection
+import com.medcompanion.app.domain.model.ProfileSectionStatus
 import com.medcompanion.app.domain.model.ScheduleType
+import com.medcompanion.app.domain.model.Sex
 import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalTime
@@ -76,6 +80,30 @@ class Converters {
 
     @TypeConverter
     fun toProfileEntryType(value: String): ProfileEntryType = ProfileEntryType.valueOf(value)
+
+    @TypeConverter
+    fun fromSex(value: Sex): String = value.name
+
+    @TypeConverter
+    fun toSex(value: String): Sex = Sex.valueOf(value)
+
+    @TypeConverter
+    fun fromMedicalHistoryType(value: MedicalHistoryType): String = value.name
+
+    @TypeConverter
+    fun toMedicalHistoryType(value: String): MedicalHistoryType = MedicalHistoryType.valueOf(value)
+
+    @TypeConverter
+    fun fromProfileSection(value: ProfileSection): String = value.name
+
+    @TypeConverter
+    fun toProfileSection(value: String): ProfileSection = ProfileSection.valueOf(value)
+
+    @TypeConverter
+    fun fromProfileSectionStatus(value: ProfileSectionStatus): String = value.name
+
+    @TypeConverter
+    fun toProfileSectionStatus(value: String): ProfileSectionStatus = ProfileSectionStatus.valueOf(value)
 
     private fun String.splitToTokens(): List<String> = if (isBlank()) emptyList() else split(SEPARATOR)
 

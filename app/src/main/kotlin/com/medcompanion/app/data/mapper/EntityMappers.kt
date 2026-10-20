@@ -1,13 +1,19 @@
 package com.medcompanion.app.data.mapper
 
 import com.medcompanion.app.data.local.entity.DoseEventEntity
+import com.medcompanion.app.data.local.entity.MedicalHistoryEntryEntity
 import com.medcompanion.app.data.local.entity.MedicationEntity
+import com.medcompanion.app.data.local.entity.PatientBasicsEntity
 import com.medcompanion.app.data.local.entity.ProfileEntryEntity
+import com.medcompanion.app.data.local.entity.ProfileSectionStateEntity
 import com.medcompanion.app.data.local.entity.ScheduleEntity
 import com.medcompanion.app.data.local.entity.SymptomLogEntity
 import com.medcompanion.app.domain.model.DoseEvent
+import com.medcompanion.app.domain.model.MedicalHistoryEntry
 import com.medcompanion.app.domain.model.Medication
+import com.medcompanion.app.domain.model.PatientBasics
 import com.medcompanion.app.domain.model.ProfileEntry
+import com.medcompanion.app.domain.model.ProfileSectionState
 import com.medcompanion.app.domain.model.Schedule
 import com.medcompanion.app.domain.model.SymptomLog
 
@@ -115,6 +121,9 @@ fun ProfileEntryEntity.toDomain(): ProfileEntry =
         id = id,
         type = type,
         label = label,
+        severity = severity,
+        reaction = reaction,
+        sinceYear = sinceYear,
         note = note,
     )
 
@@ -123,5 +132,49 @@ fun ProfileEntry.toEntity(): ProfileEntryEntity =
         id = id,
         type = type,
         label = label,
+        severity = severity,
+        reaction = reaction,
+        sinceYear = sinceYear,
         note = note,
+    )
+
+fun PatientBasicsEntity.toDomain(): PatientBasics =
+    PatientBasics(
+        birthYear = birthYear,
+        sex = sex,
+        pregnantOrBreastfeeding = pregnantOrBreastfeeding,
+        weightKg = weightKg,
+    )
+
+fun PatientBasics.toEntity(): PatientBasicsEntity =
+    PatientBasicsEntity(
+        birthYear = birthYear,
+        sex = sex,
+        pregnantOrBreastfeeding = pregnantOrBreastfeeding,
+        weightKg = weightKg,
+    )
+
+fun MedicalHistoryEntryEntity.toDomain(): MedicalHistoryEntry =
+    MedicalHistoryEntry(
+        id = id,
+        type = type,
+        label = label,
+        year = year,
+        note = note,
+    )
+
+fun MedicalHistoryEntry.toEntity(): MedicalHistoryEntryEntity =
+    MedicalHistoryEntryEntity(
+        id = id,
+        type = type,
+        label = label,
+        year = year,
+        note = note,
+    )
+
+fun ProfileSectionStateEntity.toDomain(): ProfileSectionState =
+    ProfileSectionState(
+        section = section,
+        status = status,
+        confirmedAt = confirmedAt,
     )

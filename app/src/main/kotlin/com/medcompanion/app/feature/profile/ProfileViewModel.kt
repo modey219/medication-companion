@@ -8,6 +8,7 @@ import com.medcompanion.app.data.export.DataPdfExporter
 import com.medcompanion.app.domain.maintenance.DataMaintenance
 import com.medcompanion.app.domain.model.ProfileEntry
 import com.medcompanion.app.domain.model.ProfileEntryType
+import com.medcompanion.app.domain.model.ProfileSection
 import com.medcompanion.app.domain.repository.ProfileRepository
 import com.medcompanion.app.domain.settings.AppLanguage
 import com.medcompanion.app.domain.settings.ReminderPreferences
@@ -70,6 +71,21 @@ class ProfileViewModel
             viewModelScope.launch {
                 profileRepository.observeAll().collect { entries ->
                     _uiState.update { it.copy(entries = entries) }
+                }
+            }
+            viewModelScope.launch {
+                profileRepository.observeBasics().collect { basics ->
+                    _uiState.update { it.copy(basics = basics) }
+                }
+            }
+            viewModelScope.launch {
+                profileRepository.observeHistory().collect { history ->
+                    _uiState.update { it.copy(history = history) }
+                }
+            }
+            viewModelScope.launch {
+                profileRepository.observeSections().collect { sections ->
+                    _uiState.update { it.copy(sections = sections) }
                 }
             }
         }
@@ -171,6 +187,9 @@ class ProfileViewModel
                             type = entry.type,
                             entryId = entry.id,
                             label = entry.label,
+                            severity = entry.severity,
+                            reaction = entry.reaction.orEmpty(),
+                            sinceYear = entry.sinceYear?.toString().orEmpty(),
                             note = entry.note.orEmpty(),
                         ),
                 )
@@ -180,6 +199,24 @@ class ProfileViewModel
         fun onEntryLabelChanged(label: String) {
             _uiState.update { state ->
                 state.copy(entryDialog = state.entryDialog?.copy(label = label))
+            }
+        }
+
+        fun onEntrySeverityChanged(severity: Int?) {
+            _uiState.update { state ->
+                state.copy(entryDialog = state.entryDialog?.copy(severity = severity))
+            }
+        }
+
+        fun onEntryReactionChanged(reaction: String) {
+            _uiState.update { state ->
+                state.copy(entryDialog = state.entryDialog?.copy(reaction = reaction))
+            }
+        }
+
+        fun onEntrySinceYearChanged(sinceYear: String) {
+            _uiState.update { state ->
+                state.copy(entryDialog = state.entryDialog?.copy(sinceYear = sinceYear))
             }
         }
 
@@ -203,6 +240,9 @@ class ProfileViewModel
                             id = dialog.entryId ?: 0,
                             type = dialog.type,
                             label = dialog.label.trim(),
+                            severity = dialog.severity,
+                            reaction = dialog.reaction.trim().ifBlank { null },
+                            sinceYear = dialog.sinceYearValue,
                             note = dialog.note.trim().ifBlank { null },
                         )
                     if (dialog.entryId == null) profileRepository.add(entry) else profileRepository.update(entry)
@@ -211,6 +251,34 @@ class ProfileViewModel
                     throw cancellation
                 } catch (_: Exception) {
                     _uiState.update { it.copy(entryDialog = null, message = ProfileMessage.SAVE_FAILED) }
+                }
+            }
+        }
+
+        /** The patient confirms a section has nothing to list. */
+        fun onConfirmSectionEmpty(section: ProfileSection) {
+            viewModelScope.launch {
+                try {
+                    profileRepository.confirmSectionEmpty(section)
+                    _uiState.update { it.copy(message = ProfileMessage.SECTION_CONFIRMED) }
+                } catch (cancellation: CancellationException) {
+                    throw cancellation
+                } catch (_: Exception) {
+                    _uiState.update { it.copy(message = ProfileMessage.SAVE_FAILED) }
+                }
+            }
+        }
+
+        /** Puts a section back to "not asked". */
+        fun onClearSectionConfirmation(section: ProfileSection) {
+            viewModelScope.launch {
+                try {
+                    profileRepository.clearSectionConfirmation(section)
+                    _uiState.update { it.copy(message = ProfileMessage.SECTION_CONFIRMATION_CLEARED) }
+                } catch (cancellation: CancellationException) {
+                    throw cancellation
+                } catch (_: Exception) {
+                    _uiState.update { it.copy(message = ProfileMessage.SAVE_FAILED) }
                 }
             }
         }

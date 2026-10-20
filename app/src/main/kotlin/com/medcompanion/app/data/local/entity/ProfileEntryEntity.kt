@@ -13,5 +13,8 @@ data class ProfileEntryEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val type: ProfileEntryType,
     val label: String,
+    val severity: Int? = null,
+    val reaction: String? = null,
+    val sinceYear: Int? = null,
     val note: String?,
 )

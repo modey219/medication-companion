@@ -33,6 +33,15 @@ const val REMINDERS_SETUP_ROUTE: String = "reminders/setup"
 /** Privacy policy screen (T8a), reached from the first run and the profile. */
 const val PRIVACY_ROUTE: String = "privacy"
 
+/** Basic information screen (T12), reached from the profile. */
+const val PROFILE_BASICS_ROUTE: String = "profile/basics"
+
+/** Medical history screen (T12), reached from the profile. */
+const val PROFILE_HISTORY_ROUTE: String = "profile/history"
+
+/** True for the profile screens that are opened on top of the profile tab. */
+fun isProfileSectionRoute(route: String?): Boolean = route == PROFILE_BASICS_ROUTE || route == PROFILE_HISTORY_ROUTE
+
 /** Navigation argument for the medication id on the edit route. */
 const val ARG_MEDICATION_ID: String = "medicationId"
 

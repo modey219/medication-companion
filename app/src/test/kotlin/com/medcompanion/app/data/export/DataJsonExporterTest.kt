@@ -6,11 +6,20 @@ import com.medcompanion.app.domain.export.MedicationWithSchedules
 import com.medcompanion.app.domain.model.DoseEvent
 import com.medcompanion.app.domain.model.DoseStatus
 import com.medcompanion.app.domain.model.FoodRelation
+import com.medcompanion.app.domain.model.MedicalHistoryEntry
+import com.medcompanion.app.domain.model.MedicalHistoryType
 import com.medcompanion.app.domain.model.Medication
 import com.medcompanion.app.domain.model.MedicationForm
 import com.medcompanion.app.domain.model.MedicationSource
+import com.medcompanion.app.domain.model.PatientBasics
+import com.medcompanion.app.domain.model.ProfileEntry
+import com.medcompanion.app.domain.model.ProfileEntryType
+import com.medcompanion.app.domain.model.ProfileSection
+import com.medcompanion.app.domain.model.ProfileSectionState
+import com.medcompanion.app.domain.model.ProfileSectionStatus
 import com.medcompanion.app.domain.model.Schedule
 import com.medcompanion.app.domain.model.ScheduleType
+import com.medcompanion.app.domain.model.Sex
 import com.medcompanion.app.domain.model.SymptomLog
 import com.medcompanion.app.domain.settings.AppLanguage
 import com.medcompanion.app.domain.settings.AppSettings
@@ -46,7 +55,7 @@ class DataJsonExporterTest {
         val json = json(emptyData())
 
         assertEquals("com.medcompanion.app", json.getString("app"))
-        assertEquals(1, json.getInt("schemaVersion"))
+        assertEquals(2, json.getInt("schemaVersion"))
         assertEquals(generatedAt.toString(), json.getString("exportedAt"))
     }
 
@@ -55,11 +64,78 @@ class DataJsonExporterTest {
         val json = json(emptyData())
 
         assertTrue(json.has("settings"))
+        assertTrue(json.has("basics"))
         assertTrue(json.has("profile"))
+        assertTrue(json.has("medicalHistory"))
+        assertTrue(json.has("profileSections"))
         assertTrue(json.has("medications"))
         assertTrue(json.has("doses"))
         assertTrue(json.has("symptoms"))
         assertEquals(0, json.getJSONArray("doses").length())
+    }
+
+    @Test
+    fun `the health profile exports the basics, the history and the section states`() {
+        val json =
+            json(
+                emptyData().copy(
+                    patientBasics =
+                        PatientBasics(
+                            birthYear = 1960,
+                            sex = Sex.FEMALE,
+                            pregnantOrBreastfeeding = null,
+                            weightKg = 70,
+                        ),
+                    profileEntries =
+                        listOf(
+                            ProfileEntry(
+                                id = 1,
+                                type = ProfileEntryType.ALLERGY,
+                                label = "البنسلين",
+                                severity = 3,
+                                reaction = "طفح جلدي",
+                                sinceYear = 2015,
+                            ),
+                        ),
+                    medicalHistory =
+                        listOf(
+                            MedicalHistoryEntry(
+                                id = 2,
+                                type = MedicalHistoryType.SURGERY,
+                                label = "استئصال المرارة",
+                                year = 2019,
+                            ),
+                        ),
+                    sectionStates =
+                        listOf(
+                            ProfileSectionState(
+                                section = ProfileSection.CONDITIONS,
+                                status = ProfileSectionStatus.NONE_CONFIRMED,
+                                confirmedAt = generatedAt,
+                            ),
+                        ),
+                ),
+            )
+
+        val basics = json.getJSONObject("basics")
+        assertEquals(1960, basics.getInt("birthYear"))
+        assertEquals("FEMALE", basics.getString("sex"))
+        assertEquals(70, basics.getInt("weightKg"))
+
+        val allergy = json.getJSONArray("profile").getJSONObject(0)
+        assertEquals(3, allergy.getInt("severity"))
+        assertEquals("طفح جلدي", allergy.getString("reaction"))
+        assertEquals(2015, allergy.getInt("sinceYear"))
+
+        val history = json.getJSONArray("medicalHistory").getJSONObject(0)
+        assertEquals("SURGERY", history.getString("type"))
+        assertEquals("استئصال المرارة", history.getString("label"))
+        assertEquals(2019, history.getInt("year"))
+
+        val section = json.getJSONArray("profileSections").getJSONObject(0)
+        assertEquals("CONDITIONS", section.getString("section"))
+        assertEquals("NONE_CONFIRMED", section.getString("status"))
+        assertEquals(generatedAt.toString(), section.getString("confirmedAt"))
     }
 
     @Test
@@ -150,7 +226,10 @@ class DataJsonExporterTest {
         FullData(
             generatedAt = generatedAt,
             settings = AppSettings(),
+            patientBasics = null,
             profileEntries = emptyList(),
+            medicalHistory = emptyList(),
+            sectionStates = emptyList(),
             medications = emptyList(),
             doses = emptyList(),
             symptoms = emptyList(),

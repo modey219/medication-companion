@@ -4,7 +4,10 @@ import android.content.Context
 import com.medcompanion.app.domain.export.FullData
 import com.medcompanion.app.domain.export.MedicationWithSchedules
 import com.medcompanion.app.domain.model.DoseEvent
+import com.medcompanion.app.domain.model.MedicalHistoryEntry
+import com.medcompanion.app.domain.model.PatientBasics
 import com.medcompanion.app.domain.model.ProfileEntry
+import com.medcompanion.app.domain.model.ProfileSectionState
 import com.medcompanion.app.domain.model.Schedule
 import com.medcompanion.app.domain.model.SymptomLog
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -64,16 +67,42 @@ class DataJsonExporter
                     JSONObject()
                         .put("language", data.settings.language.name)
                         .put("emergencyNumber", data.settings.emergencyNumber),
-                ).put("profile", data.profileEntries.toJsonArray(::profileJson))
+                ).put("basics", data.patientBasics?.let(::basicsJson) ?: JSONObject.NULL)
+                .put("profile", data.profileEntries.toJsonArray(::profileJson))
+                .put("medicalHistory", data.medicalHistory.toJsonArray(::historyJson))
+                .put("profileSections", data.sectionStates.toJsonArray(::sectionJson))
                 .put("medications", data.medications.toJsonArray(::medicationJson))
                 .put("doses", data.doses.toJsonArray(::doseJson))
                 .put("symptoms", data.symptoms.toJsonArray(::symptomJson))
+
+        private fun basicsJson(basics: PatientBasics): JSONObject =
+            JSONObject()
+                .put("birthYear", basics.birthYear ?: JSONObject.NULL)
+                .put("sex", basics.sex?.name ?: JSONObject.NULL)
+                .put("pregnantOrBreastfeeding", basics.pregnantOrBreastfeeding ?: JSONObject.NULL)
+                .put("weightKg", basics.weightKg ?: JSONObject.NULL)
 
         private fun profileJson(entry: ProfileEntry): JSONObject =
             JSONObject()
                 .put("type", entry.type.name)
                 .put("label", entry.label)
+                .put("severity", entry.severity ?: JSONObject.NULL)
+                .put("reaction", entry.reaction ?: JSONObject.NULL)
+                .put("sinceYear", entry.sinceYear ?: JSONObject.NULL)
                 .put("note", entry.note.orEmpty())
+
+        private fun historyJson(entry: MedicalHistoryEntry): JSONObject =
+            JSONObject()
+                .put("type", entry.type.name)
+                .put("label", entry.label)
+                .put("year", entry.year ?: JSONObject.NULL)
+                .put("note", entry.note ?: JSONObject.NULL)
+
+        private fun sectionJson(state: ProfileSectionState): JSONObject =
+            JSONObject()
+                .put("section", state.section.name)
+                .put("status", state.status.name)
+                .put("confirmedAt", state.confirmedAt?.toString() ?: JSONObject.NULL)
 
         private fun medicationJson(item: MedicationWithSchedules): JSONObject {
             val medication = item.medication
@@ -124,7 +153,12 @@ class DataJsonExporter
 
         private companion object {
             const val APP_ID = "com.medcompanion.app"
-            const val SCHEMA_VERSION = 1
+
+            /**
+             * Version 2 added the health profile: `basics`, the new profile
+             * entry fields, `medicalHistory` and `profileSections`.
+             */
+            const val SCHEMA_VERSION = 2
             const val FILE_PREFIX = "data-"
             const val EXTENSION = "json"
             const val INDENT = 2

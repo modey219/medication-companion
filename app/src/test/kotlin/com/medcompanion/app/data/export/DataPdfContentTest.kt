@@ -7,9 +7,12 @@ import com.medcompanion.app.domain.export.FullData
 import com.medcompanion.app.domain.export.MedicationWithSchedules
 import com.medcompanion.app.domain.model.DoseEvent
 import com.medcompanion.app.domain.model.DoseStatus
+import com.medcompanion.app.domain.model.MedicalHistoryEntry
+import com.medcompanion.app.domain.model.MedicalHistoryType
 import com.medcompanion.app.domain.model.Medication
 import com.medcompanion.app.domain.model.MedicationForm
 import com.medcompanion.app.domain.model.MedicationSource
+import com.medcompanion.app.domain.model.PatientBasics
 import com.medcompanion.app.domain.model.ProfileEntry
 import com.medcompanion.app.domain.model.ProfileEntryType
 import com.medcompanion.app.domain.model.Schedule
@@ -17,6 +20,7 @@ import com.medcompanion.app.domain.model.ScheduleType
 import com.medcompanion.app.domain.model.SymptomLog
 import com.medcompanion.app.domain.settings.AppSettings
 import com.medcompanion.app.feature.medications.labelRes
+import com.medcompanion.app.feature.profile.labelRes
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -64,11 +68,27 @@ class DataPdfContentTest {
     fun `the profile, medication, dose and symptom sections are all present`() {
         val texts = texts(fullData())
 
+        assertTrue(texts.contains(context.getString(R.string.data_pdf_basics_title)))
         assertTrue(texts.contains(context.getString(R.string.profile_allergy_title)))
         assertTrue(texts.contains(context.getString(R.string.profile_condition_title)))
+        assertTrue(texts.contains(context.getString(R.string.data_pdf_history_title)))
         assertTrue(texts.contains(context.getString(R.string.data_pdf_medications_title)))
         assertTrue(texts.contains(context.getString(R.string.history_pdf_doses_title)))
         assertTrue(texts.contains(context.getString(R.string.history_pdf_symptoms_title)))
+    }
+
+    @Test
+    fun `the basic facts and the medical history are written line by line`() {
+        val texts = texts(fullData())
+
+        assertTrue(texts.any { it.contains(context.getString(R.string.data_pdf_birth_year, 1960)) })
+        assertTrue(texts.any { it.contains(context.getString(R.string.data_pdf_weight, 70)) })
+        assertTrue(
+            texts.any {
+                it.contains(context.getString(MedicalHistoryType.HOSPITALIZATION.labelRes())) &&
+                    it.contains("التهاب رئوي")
+            },
+        )
     }
 
     @Test
@@ -76,14 +96,17 @@ class DataPdfContentTest {
         val texts =
             texts(
                 fullData(
+                    patientBasics = null,
                     profileEntries = emptyList(),
+                    medicalHistory = emptyList(),
                     medications = emptyList(),
                     doses = emptyList(),
                     symptoms = emptyList(),
                 ),
             )
 
-        assertEquals(5, texts.count { it == context.getString(R.string.history_pdf_none) })
+        assertEquals(6, texts.count { it == context.getString(R.string.history_pdf_none) })
+        assertTrue(texts.contains(context.getString(R.string.data_pdf_basics_empty)))
     }
 
     @Test
@@ -150,18 +173,31 @@ class DataPdfContentTest {
     }
 
     private fun fullData(
+        patientBasics: PatientBasics? = PatientBasics(birthYear = 1960, weightKg = 70),
         profileEntries: List<ProfileEntry> = listOf(allergy(), condition()),
+        medicalHistory: List<MedicalHistoryEntry> = listOf(history()),
         medications: List<MedicationWithSchedules> = listOf(medicationWithSchedule()),
         doses: List<DoseEvent> = listOf(dose()),
         symptoms: List<SymptomLog> = listOf(symptom()),
     ) = FullData(
         generatedAt = generatedAt,
         settings = AppSettings(),
+        patientBasics = patientBasics,
         profileEntries = profileEntries,
+        medicalHistory = medicalHistory,
+        sectionStates = emptyList(),
         medications = medications,
         doses = doses,
         symptoms = symptoms,
     )
+
+    private fun history() =
+        MedicalHistoryEntry(
+            id = 1,
+            type = MedicalHistoryType.HOSPITALIZATION,
+            label = "التهاب رئوي",
+            year = 2019,
+        )
 
     private fun allergy() = ProfileEntry(type = ProfileEntryType.ALLERGY, label = "البنسلين")
 

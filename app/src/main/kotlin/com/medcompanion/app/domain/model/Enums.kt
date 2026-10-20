@@ -55,3 +55,45 @@ enum class ProfileEntryType {
     ALLERGY,
     CONDITION,
 }
+
+/**
+ * Sex as the patient reports it. Only used to shape the assistant's context and
+ * the profile wording, never to draw a medical conclusion.
+ *
+ * TODO(clinical-review): the wording of the three options.
+ */
+enum class Sex {
+    FEMALE,
+    MALE,
+    OTHER,
+}
+
+/** A fact from the patient's past, used as context for the assistant. */
+enum class MedicalHistoryType {
+    PAST_ILLNESS,
+    SURGERY,
+    HOSPITALIZATION,
+    FAMILY_HISTORY,
+    OTHER,
+}
+
+/**
+ * A section of the health profile. [MEDICATIONS] is derived from the medication
+ * table and is never stored: an empty profile section is not the same as "none".
+ */
+enum class ProfileSection {
+    ALLERGIES,
+    CONDITIONS,
+    HISTORY,
+    MEDICATIONS,
+}
+
+/**
+ * How complete a profile section is. [LISTED] is derived from the entries the
+ * patient has, so it is never persisted on its own.
+ */
+enum class ProfileSectionStatus {
+    NOT_ASKED,
+    NONE_CONFIRMED,
+    LISTED,
+}
