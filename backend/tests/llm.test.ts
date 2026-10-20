@@ -103,6 +103,22 @@ describe("createOpenAiCompatibleClient", () => {
     expect((failure as LlmError).detail).toBe("json-keys: status");
   });
 
+  it("reads an array-wrapped provider error", async () => {
+    const payload = JSON.stringify([
+      { error: { code: 404, message: "models/gemini-2.0-flash is not found", status: "NOT_FOUND" } },
+    ]);
+    const fetchImpl = (async () =>
+      new Response(payload, {
+        status: 404,
+        headers: { "content-type": "application/json" },
+      })) as unknown as typeof fetch;
+    const client = createOpenAiCompatibleClient({ apiKey: "k", baseUrl: "https://api.example.com", fetchImpl });
+
+    const failure = await client.complete(INPUT).catch((reason: unknown) => reason);
+
+    expect((failure as LlmError).detail).toBe("models/gemini-2.0-flash is not found");
+  });
+
   it("maps an aborted request to an llm_timeout", async () => {
     const fetchImpl = (async () => {
       throw new DOMException("The operation was aborted.", "AbortError");

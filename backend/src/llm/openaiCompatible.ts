@@ -71,7 +71,10 @@ async function readErrorDetail(response: Response): Promise<string | undefined> 
     if (typeof parsed !== "object" || parsed === null) {
       return `json-${parsed === null ? "null" : typeof parsed}`;
     }
-    const root = parsed as Record<string, unknown>;
+    const root = (Array.isArray(parsed) ? parsed[0] : parsed) as Record<string, unknown> | undefined;
+    if (typeof root !== "object" || root === null) {
+      return "json-array-empty";
+    }
     if (typeof root.error === "string" && root.error.trim().length > 0) {
       return redactSecrets(root.error.replace(/\s+/g, " ").trim()).slice(0, MAX_DETAIL_CHARS);
     }
