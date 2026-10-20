@@ -4,6 +4,33 @@ Short entries. Newest first. Format: ID, date, decision, why, status.
 
 ---
 
+## D-026 — Provider diagnostics go to the log, never to the patient
+
+Decision: when the provider rejects a call, the server logs the upstream status
+and a redacted slice of the provider's own explanation. Nothing about it reaches
+the client.
+
+1. **What is logged**: `chat.llm_failed` gains `upstream` (the provider's HTTP
+   status, previously captured on `LlmError.status` and then dropped) and
+   `providerDetail`. The mapped status (502/504) stays as `status` so existing
+   dashboards keep working.
+2. **What is kept from the body**: JSON error bodies contribute only their
+   `error.type` / `error.code` / `error.param` / `error.message` fields, joined,
+   whitespace-collapsed and capped at 300 characters. A non-JSON body is never
+   logged - only `non-json <content-type>`. This is what keeps a provider from
+   echoing patient text (or an HTML error page) into the log.
+3. **Secrets are redacted**: `sk-...` tokens and `Authorization: Bearer ...`
+   fragments are masked before the line is emitted, and `logging.ts` still
+   refuses free-text keys. The patient-facing message remains the fixed
+   "The assistant is unavailable right now." with the same 502 code, so the app
+   behaves exactly as before.
+
+Ops: read the line with `npx wrangler tail medication-companion` or Workers Logs
+in the dashboard. This is a diagnostic aid, not a contract; no client field
+depends on it.
+
+---
+
 ## D-025 — Show the review, never compute it (T15)
 
 Decision: the Assistant tab displays the backend's `urgency` and `review` next to

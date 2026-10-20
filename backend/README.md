@@ -106,6 +106,13 @@ Structured errors (`{"error":{"code":"...","message":"..."}}`):
 | 504 | `llm_timeout` | Upstream model exceeded the timeout |
 | 500 | `internal_error` | Unexpected failure |
 
+Upstream status and the provider's own explanation are **diagnostics only**: the
+`chat.llm_failed` log line carries `upstream` (the provider's HTTP status) and
+`providerDetail` (the provider's `error.*` fields, single-line, secrets redacted,
+capped at 300 characters). Neither is ever returned to the client, and a
+non-JSON provider body is reported by content type alone. Read them with
+`npx wrangler tail medication-companion` or Workers Logs in the dashboard.
+
 ### `GET /health`
 
 Returns `{ "status": "ok" }`.

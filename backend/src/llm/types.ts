@@ -22,11 +22,17 @@ export interface LlmClient {
 export class LlmError extends Error {
   readonly code: string;
   readonly status: number | undefined;
+  /**
+   * Diagnostic detail from the provider, for the server log only (T15 fix).
+   * Already capped and redacted by the adapter; never returned to the client.
+   */
+  readonly detail: string | undefined;
 
-  constructor(code: string, message: string, status?: number) {
+  constructor(code: string, message: string, status?: number, detail?: string) {
     super(message);
     this.name = "LlmError";
     this.code = code;
     this.status = status;
+    this.detail = detail;
   }
 }

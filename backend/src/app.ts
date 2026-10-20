@@ -41,7 +41,13 @@ function defaultDeps(): AppDeps {
 function llmFailure(error: unknown, installTag: string, deps: AppDeps): never {
   if (error instanceof LlmError) {
     const status = error.code === "llm_timeout" ? 504 : 502;
-    deps.logger.warn("chat.llm_failed", { installTag, code: error.code, status });
+    deps.logger.warn("chat.llm_failed", {
+      installTag,
+      code: error.code,
+      status,
+      upstream: error.status,
+      providerDetail: error.detail,
+    });
     throw new HttpError(status, error.code, error.message);
   }
   deps.logger.error("chat.unexpected", { installTag });

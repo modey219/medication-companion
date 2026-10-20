@@ -34,6 +34,55 @@ export interface OpenAiCompatibleOptions {
   fetchImpl?: typeof fetch;
 }
 
+/** Longest provider detail kept for the log; never shown to the patient. */
+const MAX_DETAIL_CHARS = 300;
+
+/**
+ * Drop anything that looks like a key so a diagnostic line cannot leak a secret.
+ * OpenAI-style 401 bodies echo a masked key, and a proxy may echo the header.
+ */
+function redactSecrets(value: string): string {
+  return value.replace(/sk-[A-Za-z0-9_*.-]{6,}/g, "sk-***").replace(/Bearer\s+[^\s",]+/gi, "Bearer ***");
+}
+
+/**
+ * The provider's own explanation of a failed call, for the server log only
+ * (T15 diagnostic fix). JSON bodies contribute only their `error.*` diagnostic
+ * fields, so a body that echoes the request cannot carry patient text into the
+ * log; anything else is reported by content type alone. The result is capped,
+ * single-line and secret-free, and is never returned to the patient.
+ */
+async function readErrorDetail(response: Response): Promise<string | undefined> {
+  try {
+    const raw = await response.text();
+    if (raw.trim().length === 0) {
+      return undefined;
+    }
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      const contentType = response.headers.get("content-type")?.split(";")[0]?.trim() ?? "unknown";
+      return `non-json ${contentType}`.slice(0, MAX_DETAIL_CHARS);
+    }
+    if (typeof parsed !== "object" || parsed === null) {
+      return undefined;
+    }
+    const root = parsed as Record<string, unknown>;
+    const error = typeof root.error === "object" && root.error !== null ? (root.error as Record<string, unknown>) : root;
+    const parts = ["type", "code", "param", "message"]
+      .map((key) => error[key])
+      .filter((value): value is string => typeof value === "string" && value.trim().length > 0)
+      .map((value) => value.replace(/\s+/g, " ").trim());
+    if (parts.length === 0) {
+      return undefined;
+    }
+    return redactSecrets(parts.join(" | ")).slice(0, MAX_DETAIL_CHARS);
+  } catch {
+    return undefined;
+  }
+}
+
 /**
  * Adapter for any OpenAI-compatible `POST /chat/completions` endpoint
  * (OpenAI, Azure OpenAI gateways, and most third-party providers). The base URL,
@@ -68,6 +117,7 @@ export function createOpenAiCompatibleClient(options: OpenAiCompatibleOptions): 
             "llm_http_error",
             "The assistant is unavailable right now. Please try again.",
             response.status,
+            await readErrorDetail(response),
           );
         }
 

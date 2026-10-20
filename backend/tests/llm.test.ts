@@ -42,6 +42,45 @@ describe("createOpenAiCompatibleClient", () => {
     await expect(client.complete(INPUT)).rejects.toMatchObject({ code: "llm_http_error", status: 429 });
   });
 
+  it("keeps the provider status and a redacted detail for the log", async () => {
+    const payload = JSON.stringify({
+      error: {
+        type: "invalid_request_error",
+        code: "invalid_api_key",
+        message: "Incorrect API key provided: sk-abcdef1234567890",
+      },
+    });
+    const fetchImpl = (async () =>
+      new Response(payload, {
+        status: 401,
+        headers: { "content-type": "application/json" },
+      })) as unknown as typeof fetch;
+    const client = createOpenAiCompatibleClient({ apiKey: "k", baseUrl: "https://api.example.com", fetchImpl });
+
+    const failure = await client.complete(INPUT).catch((reason: unknown) => reason);
+
+    expect(failure).toBeInstanceOf(LlmError);
+    const llmError = failure as LlmError;
+    expect(llmError.status).toBe(401);
+    expect(llmError.detail).toContain("invalid_api_key");
+    expect(llmError.detail).toContain("Incorrect API key provided");
+    expect(llmError.detail).not.toContain("abcdef1234567890");
+    expect((llmError.detail ?? "").length).toBeLessThanOrEqual(300);
+  });
+
+  it("reports a non-JSON provider error by content type only", async () => {
+    const fetchImpl = (async () =>
+      new Response("<html>bad gateway</html>", {
+        status: 502,
+        headers: { "content-type": "text/html; charset=utf-8" },
+      })) as unknown as typeof fetch;
+    const client = createOpenAiCompatibleClient({ apiKey: "k", baseUrl: "https://api.example.com", fetchImpl });
+
+    const failure = await client.complete(INPUT).catch((reason: unknown) => reason);
+
+    expect((failure as LlmError).detail).toBe("non-json text/html");
+  });
+
   it("maps an aborted request to an llm_timeout", async () => {
     const fetchImpl = (async () => {
       throw new DOMException("The operation was aborted.", "AbortError");

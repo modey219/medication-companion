@@ -282,6 +282,38 @@ describe("POST /v1/chat behaviour", () => {
     expect((await body(response)).error).toMatchObject({ code: "llm_http_error" });
   });
 
+  it("logs the upstream status and the provider detail but never returns them", async () => {
+    const { handler, logs } = harness({
+      llm: () => ({
+        complete: () =>
+          Promise.reject(
+            new LlmError(
+              "llm_http_error",
+              "The assistant is unavailable right now. Please try again.",
+              401,
+              "invalid_api_key | Incorrect API key provided",
+            ),
+          ),
+      }),
+    });
+
+    const response = await callWorker(handler, chatRequest({ messages: [userMessage("مرحبا")] }));
+
+    expect(response.status).toBe(502);
+    const raw = JSON.stringify(await body(response));
+    expect(raw).not.toContain("invalid_api_key");
+    expect(raw).not.toContain("Incorrect API key");
+
+    const events = logs.map((line) => JSON.parse(line) as Record<string, unknown>);
+    const failure = events.find((entry) => entry.event === "chat.llm_failed");
+    expect(failure).toMatchObject({
+      code: "llm_http_error",
+      status: 502,
+      upstream: 401,
+      providerDetail: "invalid_api_key | Incorrect API key provided",
+    });
+  });
+
   it("never writes message content to the logs", async () => {
     const { handler, logs } = harness();
     const secret = "سر طبي خاص بالمريض";
