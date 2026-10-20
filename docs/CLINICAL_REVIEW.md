@@ -252,7 +252,21 @@ English mirrors of every row above: `values-en/strings.xml` (same
 
 ---
 
+## T15 — Urgency line and "what I considered" panel (2026-10-20)
+
+| Item | Location | Why flagged | Status |
+| --- | --- | --- | --- |
+| The four urgency labels: "حالة طارئة" / "Emergency", "راجع الطبيب اليوم" / "See a doctor today", "راجع الطبيب قريبًا" / "See a doctor soon", "معلومة عامة" / "General information" (`SELF_CARE`) | `app/src/main/res/values/strings.xml`, `app/src/main/res/values-en/strings.xml` (`TODO(clinical-review, T15)`) | They translate a backend safety decision into the patient's words; "General information" in particular must not be read as "no doctor needed" | Open |
+| The frame around the level: "مستوى الاستعجال: %1$s" / "Urgency level: %1$s", shown under the answer, never with colour or an icon alone | `assistant_urgency_label`, `AssistantScreen.kt` (`UrgencyLabel`), `docs/DECISIONS.md` D-025 point 2 | The wording must stay descriptive. "Emergency" in particular must not compete with the emergency card, which stays the emergency route (it names the number to call) | Open |
+| The panel's open/close wording: "ما أخذته في الحسبان" / "What I considered" and "إخفاء التفاصيل" / "Hide details" | `assistant_review_open`, `assistant_review_close` | Must not claim the assistant verified, checked or approved anything | Open |
+| The three group titles: "ما أخذته في الحسبان" / "What I considered", "معلومات ناقصة" / "Missing information", "أسئلة يمكنك سؤال طبيبك أو الصيدلي عنها" / "Questions you can ask your doctor or pharmacist" | `assistant_review_considered_title`, `assistant_review_gaps_title`, `assistant_review_questions_title` | "Missing information" must not blame the patient, and the questions group must not read as instructions to act | Open |
+| The bullet template "• %1$s" and the 48dp text button used for the panel toggle | `assistant_review_bullet`, `AssistantScreen.kt` (`ReviewPanel`) | A bulleted list can look like a checklist or a plan; confirm the presentation stays neutral, and check the touch target and TalkBack order at 200% font scale | Open |
+| Decision: the app shows only what the server sent — unknown urgency is dropped, a missing or empty review shows no panel, and the level is never computed, upgraded or downgraded on the device | `AssistantPayloads.parseReply`, `AssistantUrgency.fromWire`, `docs/DECISIONS.md` D-025 points 1-3 | A client-side guess would bypass every review rule; confirm that "show nothing" is the right fallback when the Worker is older or the field is missing | Open |
+| Decision: the device does not re-filter the review text; it only trims, drops blanks and caps the display at 8 bullets and 300 characters per bullet | `AssistantPayloads.toReview`, `docs/DECISIONS.md` D-025 point 5 | Confirm that the server-side filter (T14 row "Review bullet filter") is sufficient, and that the display cap cannot hide a clinically important phrase | Open |
+
+---
+
 ## Not yet written (future tasks — keep this list growing)
 
-- Nothing pending: every screen and string up to and including T14 is recorded
-  above. New tasks (T15-T18) add their rows here before release.
+- T16-T18: every screen and string up to and including T15 is recorded above.
+  New tasks add their rows here before release.

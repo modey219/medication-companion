@@ -388,6 +388,24 @@ TODO(legal): the consent text and what leaves the device need sign-off.
 <string name="assistant_error_rate_limited">أسئلة كثيرة في وقت قصير. انتظر قليلًا ثم أعد المحاولة.</string>
 <string name="assistant_error_server">تعذّر الوصول إلى المساعد الآن. أعد المحاولة بعد قليل.</string>
 <string name="assistant_error_invalid">تعذّر إرسال الرسالة. حاول مرة أخرى.</string>
+<!--
+    T15 answer cards: the urgency level and the "what I considered" panel.
+    TODO(clinical-review, T15): the four urgency labels and the panel titles.
+    The level is always written out, never shown with colour alone, and it is
+    framed as a level so it cannot read as advice. "معلومة عامة" for SELF_CARE
+    must not read as "you do not need a doctor".
+-->
+<string name="assistant_urgency_label">مستوى الاستعجال: %1$s</string>
+<string name="assistant_urgency_emergency">حالة طارئة</string>
+<string name="assistant_urgency_urgent_today">راجع الطبيب اليوم</string>
+<string name="assistant_urgency_see_doctor_soon">راجع الطبيب قريبًا</string>
+<string name="assistant_urgency_self_care">معلومة عامة</string>
+<string name="assistant_review_open">ما أخذته في الحسبان</string>
+<string name="assistant_review_close">إخفاء التفاصيل</string>
+<string name="assistant_review_considered_title">ما أخذته في الحسبان</string>
+<string name="assistant_review_gaps_title">معلومات ناقصة</string>
+<string name="assistant_review_questions_title">أسئلة يمكنك سؤال طبيبك أو الصيدلي عنها</string>
+<string name="assistant_review_bullet">• %1$s</string>
 
 <!--
 T12 health profile: basic facts, medical history, section states and the extra

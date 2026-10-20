@@ -7,6 +7,8 @@ import com.medcompanion.app.domain.assistant.AssistantMode
 import com.medcompanion.app.domain.assistant.AssistantReply
 import com.medcompanion.app.domain.assistant.AssistantRequest
 import com.medcompanion.app.domain.assistant.AssistantResult
+import com.medcompanion.app.domain.assistant.AssistantReview
+import com.medcompanion.app.domain.assistant.AssistantUrgency
 import com.medcompanion.app.domain.assistant.PatientAdherence
 import com.medcompanion.app.domain.assistant.PatientContext
 import com.medcompanion.app.domain.assistant.PatientContextEntry
@@ -141,9 +143,99 @@ class AssistantPayloadsTest {
 
     @Test
     fun `a 200 answer becomes the assistant text`() {
-        val result = AssistantPayloads.parseReply("""{"reply":"  جواب  "}""")
+        val result = AssistantPayloads.parseReply("""{"reply":"  اذهب  "}""")
 
-        assertEquals(AssistantResult.Replied(AssistantReply.Answer("جواب")), result)
+        assertEquals(AssistantResult.Replied(AssistantReply.Answer("اذهب")), result)
+    }
+
+    @Test
+    fun `the urgency and the review are read from the answer`() {
+        val result =
+            AssistantPayloads.parseReply(
+                """{"reply":"نص","urgency":"URGENT_TODAY","review":""" +
+                    """{"considered":["جدولك"],"gaps":["ضغط الدم"],"questions":["هل أحتاج تعديلًا؟"]}}""",
+            )
+
+        assertEquals(
+            AssistantResult.Replied(
+                AssistantReply.Answer(
+                    text = "نص",
+                    urgency = AssistantUrgency.URGENT_TODAY,
+                    review =
+                        AssistantReview(
+                            considered = listOf("جدولك"),
+                            gaps = listOf("ضغط الدم"),
+                            questions = listOf("هل أحتاج تعديلًا؟"),
+                        ),
+                ),
+            ),
+            result,
+        )
+    }
+
+    @Test
+    fun `an answer from an older Worker has no urgency and no review`() {
+        val result = AssistantPayloads.parseReply("""{"reply":"نص"}""")
+
+        assertEquals(AssistantResult.Replied(AssistantReply.Answer("نص")), result)
+    }
+
+    @Test
+    fun `an unknown urgency is ignored rather than guessed`() {
+        val answer = AssistantPayloads.parseReply("""{"reply":"نص","urgency":"SOON"}""") as AssistantResult.Replied
+        val reply = answer.reply as AssistantReply.Answer
+
+        assertEquals(null, reply.urgency)
+    }
+
+    @Test
+    fun `an empty review is not shown`() {
+        val result =
+            AssistantPayloads.parseReply(
+                """{"reply":"نص","review":{"considered":[],"gaps":[],"questions":[]}}""",
+            )
+        val answer = result as AssistantResult.Replied
+        val reply = answer.reply as AssistantReply.Answer
+
+        assertEquals(null, reply.review)
+    }
+
+    @Test
+    fun `a malformed review does not hide the answer`() {
+        val result = AssistantPayloads.parseReply("""{"reply":"نص","review":"نص حر"}""")
+        val answer = result as AssistantResult.Replied
+        val reply = answer.reply as AssistantReply.Answer
+
+        assertEquals("نص", reply.text)
+        assertEquals(null, reply.review)
+    }
+
+    @Test
+    fun `review bullets are trimmed, dropped when blank, and capped`() {
+        val long = "x".repeat(400)
+        val bullets = listOf(long, "  أول  ", "", "   ") + List(10) { "بند $it" }
+        val json =
+            """{"reply":"نص","review":{"considered":""" +
+                bullets.joinToString(prefix = "[", postfix = "]", separator = ",") { "\"$it\"" } +
+                "}}"
+
+        val answer = AssistantPayloads.parseReply(json) as AssistantResult.Replied
+        val review = (answer.reply as AssistantReply.Answer).review
+
+        requireNotNull(review)
+        assertEquals(8, review.considered.size)
+        assertEquals(300, review.considered.first().length)
+        assertEquals("أول", review.considered[1])
+    }
+
+    @Test
+    fun `the emergency flag wins over a review`() {
+        val result =
+            AssistantPayloads.parseReply(
+                """{"reply":"نص","emergency":true,"urgency":"URGENT_TODAY","review":{"considered":["x"]}}""",
+            )
+
+        assertEquals(AssistantResult.Replied(AssistantReply.Emergency), result)
     }
 
     @Test

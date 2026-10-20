@@ -2,6 +2,7 @@ package com.medcompanion.app.feature.assistant
 
 import android.content.Context
 import android.content.Intent
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -37,6 +38,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.medcompanion.app.R
+import com.medcompanion.app.domain.assistant.AssistantReview
+import com.medcompanion.app.domain.assistant.AssistantUrgency
 import com.medcompanion.app.ui.components.EmergencyCard
 import com.medcompanion.app.ui.preview.ScreenPreviews
 import com.medcompanion.app.ui.theme.MedCompanionTheme
@@ -72,6 +75,7 @@ internal data class AssistantActions(
     val onConsentReopened: () -> Unit,
     val onConsentClosed: () -> Unit,
     val onProfileConsentChanged: (Boolean) -> Unit,
+    val onReviewToggled: (Long) -> Unit,
 ) {
     constructor(viewModel: AssistantViewModel) : this(
         onInputChange = viewModel::onInputChange,
@@ -83,6 +87,7 @@ internal data class AssistantActions(
         onConsentReopened = viewModel::onConsentReopened,
         onConsentClosed = viewModel::onConsentClosed,
         onProfileConsentChanged = viewModel::onProfileConsentChanged,
+        onReviewToggled = viewModel::onReviewToggled,
     )
 }
 
@@ -222,6 +227,8 @@ private fun AssistantChatContent(
                 } else {
                     MessageBubble(
                         message = message,
+                        isReviewExpanded = message.id in state.expandedReviews,
+                        onToggleReview = { actions.onReviewToggled(message.id) },
                         onReport = { shareReport(context, message.text) },
                     )
                 }
@@ -294,6 +301,8 @@ private fun AssistantChatContent(
 @Composable
 private fun MessageBubble(
     message: AssistantMessage,
+    isReviewExpanded: Boolean,
+    onToggleReview: () -> Unit,
     onReport: () -> Unit,
 ) {
     val fromPatient = message.fromPatient
@@ -323,10 +332,86 @@ private fun MessageBubble(
                 )
             }
             if (!fromPatient) {
+                message.urgency?.let { UrgencyLabel(urgency = it) }
+                message.review?.let { review ->
+                    ReviewPanel(
+                        review = review,
+                        isExpanded = isReviewExpanded,
+                        onToggle = onToggleReview,
+                    )
+                }
                 TextButton(onClick = onReport) {
                     Text(stringResource(R.string.assistant_report))
                 }
             }
+        }
+    }
+}
+
+/**
+ * The level the backend's review decided (T15). It is labelled as a level so it
+ * cannot read as advice, and the level is always written out, never shown with
+ * colour alone.
+ */
+@Composable
+private fun UrgencyLabel(urgency: AssistantUrgency) {
+    Text(
+        text = stringResource(R.string.assistant_urgency_label, stringResource(urgency.labelRes())),
+        style = MaterialTheme.typography.labelLarge,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(start = 4.dp, top = 4.dp),
+    )
+}
+
+/**
+ * "What I considered" for one answer (T15): what the review looked at, what was
+ * missing, and questions for a clinician. Collapsed by default so the answer
+ * stays the focus; the server already filtered every phrase for safety.
+ */
+@Composable
+private fun ReviewPanel(
+    review: AssistantReview,
+    isExpanded: Boolean,
+    onToggle: () -> Unit,
+) {
+    TextButton(
+        onClick = onToggle,
+        modifier = Modifier.heightIn(min = 48.dp),
+    ) {
+        Text(
+            stringResource(
+                if (isExpanded) R.string.assistant_review_close else R.string.assistant_review_open,
+            ),
+        )
+    }
+    if (!isExpanded) return
+    Column(
+        modifier = Modifier.padding(start = 4.dp, bottom = 4.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        ReviewGroup(titleRes = R.string.assistant_review_considered_title, items = review.considered)
+        ReviewGroup(titleRes = R.string.assistant_review_gaps_title, items = review.gaps)
+        ReviewGroup(titleRes = R.string.assistant_review_questions_title, items = review.questions)
+    }
+}
+
+@Composable
+private fun ReviewGroup(
+    @StringRes titleRes: Int,
+    items: List<String>,
+) {
+    if (items.isEmpty()) return
+    Column {
+        Text(
+            text = stringResource(titleRes),
+            style = MaterialTheme.typography.labelLarge,
+        )
+        items.forEach { item ->
+            Text(
+                text = stringResource(R.string.assistant_review_bullet, item),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }
@@ -455,13 +540,23 @@ private fun AssistantChatPreview() {
                 AssistantUiState(
                     isLoading = false,
                     hasConsented = true,
+                    expandedReviews = setOf(2L),
                     messages =
                         listOf(
                             AssistantMessage(id = 1, fromPatient = true, text = "متى آخذ دوائي؟"),
                             AssistantMessage(
                                 id = 2,
                                 fromPatient = false,
-                                text = "حسب ما أدخلته، موعدك القادم الساعة 8 مساءً.",
+                                text =
+                                    "حسب ما أدخلته، موعدك القادم الساعة 8 مساءً. " +
+                                        "راجع طبيبك أو الصيدلي قبل أي تغيير.",
+                                urgency = AssistantUrgency.SEE_DOCTOR_SOON,
+                                review =
+                                    AssistantReview(
+                                        considered = listOf("جدول دوائك المسائي"),
+                                        gaps = listOf("آخر قراءة لضغط الدم"),
+                                        questions = listOf("هل يحتاج موعد الدواء تعديلًا؟"),
+                                    ),
                             ),
                         ),
                 ),
@@ -492,4 +587,5 @@ private fun previewActions() =
         onConsentReopened = {},
         onConsentClosed = {},
         onProfileConsentChanged = {},
+        onReviewToggled = {},
     )

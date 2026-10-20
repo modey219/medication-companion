@@ -381,6 +381,24 @@ TODO(legal): the privacy policy is a placeholder.
     <string name="assistant_error_rate_limited">Too many questions in a short time. Wait a moment and try again.</string>
     <string name="assistant_error_server">The assistant is unavailable right now. Please try again shortly.</string>
     <string name="assistant_error_invalid">The message could not be sent. Please try again.</string>
+<!--
+    T15 answer cards: the urgency level and the "what I considered" panel.
+    TODO(clinical-review, T15): the four urgency labels and the panel titles.
+    The level is always written out, never shown with colour alone, and it is
+    framed as a level so it cannot read as advice. "General information" for
+    SELF_CARE must not read as "you do not need a doctor".
+-->
+<string name="assistant_urgency_label">Urgency level: %1$s</string>
+<string name="assistant_urgency_emergency">Emergency</string>
+<string name="assistant_urgency_urgent_today">See a doctor today</string>
+<string name="assistant_urgency_see_doctor_soon">See a doctor soon</string>
+<string name="assistant_urgency_self_care">General information</string>
+<string name="assistant_review_open">What I considered</string>
+<string name="assistant_review_close">Hide details</string>
+<string name="assistant_review_considered_title">What I considered</string>
+<string name="assistant_review_gaps_title">Missing information</string>
+<string name="assistant_review_questions_title">Questions you can ask your doctor or pharmacist</string>
+<string name="assistant_review_bullet">• %1$s</string>
 
     <!--
     T12 health profile: basic facts, medical history, section states and the

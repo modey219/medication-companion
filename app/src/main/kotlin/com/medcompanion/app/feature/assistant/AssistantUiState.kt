@@ -1,6 +1,8 @@
 package com.medcompanion.app.feature.assistant
 
 import com.medcompanion.app.domain.assistant.AssistantError
+import com.medcompanion.app.domain.assistant.AssistantReview
+import com.medcompanion.app.domain.assistant.AssistantUrgency
 
 /** One bubble in the conversation; kept in memory only and never stored. */
 data class AssistantMessage(
@@ -9,6 +11,10 @@ data class AssistantMessage(
     val text: String = "",
     /** The backend recognised an urgent symptom; renders the emergency card. */
     val isEmergency: Boolean = false,
+    /** The review's urgency level (T15); null for an older backend. */
+    val urgency: AssistantUrgency? = null,
+    /** What the review looked at and what was missing (T15). */
+    val review: AssistantReview? = null,
 )
 
 /** Immutable UI state for the Assistant tab (T10, T13). */
@@ -24,6 +30,8 @@ data class AssistantUiState(
      */
     val personalizeConsent: Boolean = false,
     val messages: List<AssistantMessage> = emptyList(),
+    /** Ids of the answers whose "what I considered" panel is open (T15). */
+    val expandedReviews: Set<Long> = emptySet(),
     val input: String = "",
     val isSending: Boolean = false,
     /** The typed text matches the urgent list; shown before anything is sent. */

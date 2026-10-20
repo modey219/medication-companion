@@ -5,6 +5,8 @@ import com.medcompanion.app.domain.assistant.AssistantError
 import com.medcompanion.app.domain.assistant.AssistantReply
 import com.medcompanion.app.domain.assistant.AssistantRequest
 import com.medcompanion.app.domain.assistant.AssistantResult
+import com.medcompanion.app.domain.assistant.AssistantReview
+import com.medcompanion.app.domain.assistant.AssistantUrgency
 import com.medcompanion.app.domain.assistant.PatientContext
 import com.medcompanion.app.domain.assistant.PatientContextEntry
 import com.medcompanion.app.domain.assistant.PatientContextHistory
@@ -144,7 +146,13 @@ internal object AssistantPayloads {
             statuses.forEach { (section, status) -> put(section.name.lowercase(), status.name) }
         }
 
-    /** Parses a 200 body; a missing or empty answer becomes a server failure. */
+    /**
+     * Parses a 200 body; a missing or empty answer becomes a server failure.
+     *
+     * The urgency and the review are read only when the backend sent them. A
+     * Worker built before T14 sends neither, and a malformed section is dropped
+     * so a bad response can never hide the answer or invent a level.
+     */
     fun parseReply(body: String?): AssistantResult {
         val json =
             runCatching { JSONObject(body.orEmpty()) }
@@ -152,12 +160,36 @@ internal object AssistantPayloads {
         if (json.optBoolean("emergency", false)) return AssistantResult.Replied(AssistantReply.Emergency)
 
         val reply = json.optString("reply").trim()
-        return if (reply.isEmpty()) {
-            AssistantResult.Failed(AssistantError.SERVER)
-        } else {
-            AssistantResult.Replied(AssistantReply.Answer(reply))
-        }
+        if (reply.isEmpty()) return AssistantResult.Failed(AssistantError.SERVER)
+
+        val urgency = AssistantUrgency.fromWire(json.optString("urgency").trim())
+        val reviewJson = json.optJSONObject("review")
+        val review = reviewJson?.toReview()?.takeUnless { it.isEmpty }
+        return AssistantResult.Replied(AssistantReply.Answer(reply, urgency, review))
     }
+
+    /** The review card, capped locally as well as on the server. */
+    private fun JSONObject.toReview(): AssistantReview =
+        AssistantReview(
+            considered = bullets("considered"),
+            gaps = bullets("gaps"),
+            questions = bullets("questions"),
+        )
+
+    private fun JSONObject.bullets(key: String): List<String> {
+        val array = optJSONArray(key) ?: return emptyList()
+        return (0 until array.length())
+            .map { index -> array.optString(index).trim() }
+            .filter { it.isNotEmpty() }
+            .map { if (it.length > MAX_REVIEW_CHARS) it.take(MAX_REVIEW_CHARS) else it }
+            .take(MAX_REVIEW_BULLETS)
+    }
+
+    /** Hard display cap; the server caps its own review at 5 bullets per group. */
+    private const val MAX_REVIEW_BULLETS = 8
+
+    /** Hard display cap; the server caps its own phrases at 160 characters. */
+    private const val MAX_REVIEW_CHARS = 300
 
     /**
      * Maps a non-200 status to the error the screen shows. Returns null for a
