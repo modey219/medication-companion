@@ -4,6 +4,32 @@ Short entries. Newest first. Format: ID, date, decision, why, status.
 
 ---
 
+## D-027 — Provider settings live on the Worker, not in `wrangler.toml`
+
+Decision: `LLM_PROVIDER`, `LLM_MODEL` and `LLM_BASE_URL` are removed from the
+`[vars]` table in `backend/wrangler.toml` and set on the Worker itself, and the
+config turns on `keep_vars = true`. `REQUEST_TIMEOUT_MS` rises to 45000 ms and
+stays in the config because it is not sensitive.
+
+1. **Why**: every deploy replaces the bindings the config declares and deletes
+   the rest, so each push to `master` (Workers Builds) silently reset the live
+   Worker to `mock` / `REPLACE_ME_MODEL` and the assistant stopped answering.
+   Verified after the change: a real Workers Builds deploy of `a377754` kept the
+   three provider variables and the `LLM_API_KEY` secret intact.
+2. **Why 45 s**: one provider call (review and answer each get the timeout) took
+   longer than the former 20 s. Measured later: the current model either answers
+   with provider 503 "high demand" or exceeds 45 s, so the value is a ceiling,
+   not a promise. The Android client's own 20 s read timeout is separate and must
+   be revisited before the two numbers are consistent.
+3. **Not secrets yet**: the three values are not sensitive, but they are still
+   plain-text variables in the dashboard. Moving them to `wrangler secret put`
+   is `TODO(eng)` once the provider and model are settled; that removes the
+   dependence on `keep_vars` for them.
+
+Status: applied.
+
+---
+
 ## D-026 — Provider diagnostics go to the log, never to the patient
 
 Decision: when the provider rejects a call, the server logs the upstream status
