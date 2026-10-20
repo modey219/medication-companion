@@ -3,12 +3,23 @@
 #
 # No secrets live here. The LLM key and the Play Integrity service account are
 # set with `wrangler secret put ...` and are never committed.
+#
+# The provider settings (LLM_PROVIDER, LLM_MODEL, LLM_BASE_URL) deliberately do
+# NOT live here: they are set on the Worker itself (dashboard or
+# `wrangler secret put`) so a deploy never overwrites them. `keep_vars` is what
+# makes that safe - without it a deploy removes every variable the config does
+# not mention, which is how the provider settings were lost before.
+# TODO(eng): the dashboard still holds them as plain text; move them to secrets
+# once the provider and model are settled.
 
 # Must match the Worker name in the Cloudflare dashboard (Workers Builds
 # requirement) and the root directory must be this folder. See README.md.
 name = "medication-companion"
 main = "src/index.ts"
 compatibility_date = "2026-01-01"
+
+# Keep variables set outside this file (dashboard / secrets) across deploys.
+keep_vars = true
 
 # Only needed when Play Integrity is enforced. Leave the binding commented out
 # for local development and for deployments that run without rate-limit storage;
@@ -19,9 +30,7 @@ compatibility_date = "2026-01-01"
 # id = "<REPLACE_WITH_YOUR_KV_NAMESPACE_ID>"
 
 [vars]
-# Placeholders only. Real values are set with `wrangler secret put` or the
-# dashboard; see backend/.env.example for the full list.
-LLM_PROVIDER = "mock"
-LLM_MODEL = "REPLACE_ME_MODEL"
-LLM_BASE_URL = "https://api.openai.com/v1"
+# How long the Worker waits for one provider call (review and answer each get
+# this). Holds in the config because it is not sensitive and both passes need it.
+REQUEST_TIMEOUT_MS = "45000"
 PLAY_INTEGRITY_MODE = "off"

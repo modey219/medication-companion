@@ -124,6 +124,13 @@ Returns `{ "status": "ok" }`.
 All values are environment variables. Copy `.env.example` to `.env` for
 `wrangler dev`; for a deployed Worker set secrets with `wrangler secret put`.
 
+`LLM_PROVIDER`, `LLM_MODEL` and `LLM_BASE_URL` are intentionally **not** in
+`wrangler.toml`: they are set on the Worker (dashboard or `wrangler secret
+put`), and `keep_vars = true` in the config keeps them across deploys. Without
+that, every deploy - including each Workers Builds run - deletes any variable
+the config does not declare, which is how a working provider was silently reset
+to `mock` during T15 diagnostics.
+
 | Variable | Example | Meaning |
 | --- | --- | --- |
 | `LLM_PROVIDER` | `openai-compatible` \| `mock` | Which adapter to build |
@@ -132,7 +139,7 @@ All values are environment variables. Copy `.env.example` to `.env` for
 | `LLM_BASE_URL` | `https://api.openai.com/v1` | Base URL for the OpenAI-compatible adapter |
 | `LLM_MAX_OUTPUT_TOKENS` | `512` | Upper bound on the reply length |
 | `LLM_MAX_REVIEW_TOKENS` | `400` | Upper bound on the review JSON |
-| `REQUEST_TIMEOUT_MS` | `20000` | Upstream timeout |
+| `REQUEST_TIMEOUT_MS` | `45000` | One provider call (review and answer each get this) |
 | `MAX_REQUEST_BYTES` | `65536` | Body size limit |
 | `MAX_MESSAGE_CHARS` | `2000` | Per-message limit |
 | `MAX_MESSAGES` | `20` | Conversation length limit |
