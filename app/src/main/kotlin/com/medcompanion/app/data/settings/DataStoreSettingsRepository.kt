@@ -1,6 +1,7 @@
 package com.medcompanion.app.data.settings
 
 import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.MutablePreferences
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
@@ -8,14 +9,17 @@ import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import com.medcompanion.app.core.time.AppClock
 import com.medcompanion.app.domain.settings.AppLanguage
 import com.medcompanion.app.domain.settings.AppSettings
+import com.medcompanion.app.domain.settings.ConsentRecord
 import com.medcompanion.app.domain.settings.ReminderPreferences
 import com.medcompanion.app.domain.settings.SettingsRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 import java.io.IOException
+import java.time.Instant
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -32,6 +36,7 @@ class DataStoreSettingsRepository
     @Inject
     constructor(
         private val dataStore: DataStore<Preferences>,
+        private val clock: AppClock,
     ) : SettingsRepository {
         override fun observe(): Flow<AppSettings> =
             dataStore.data
@@ -60,7 +65,10 @@ class DataStoreSettingsRepository
                             ),
                         pharmacyNumber = preferences[PHARMACY_NUMBER].orEmpty(),
                         assistantConsentCompleted = preferences[ASSISTANT_CONSENT_COMPLETED] == true,
-                        shareMedicationsWithAssistant = preferences[SHARE_MEDICATIONS_WITH_ASSISTANT] == true,
+                        assistantProfileConsent =
+                            consentRecord(preferences, PROFILE_CONSENT_VERSION, PROFILE_CONSENT_ACCEPTED_AT),
+                        assistantMediaConsent =
+                            consentRecord(preferences, MEDIA_CONSENT_VERSION, MEDIA_CONSENT_ACCEPTED_AT),
                     )
                 }
 
@@ -116,9 +124,27 @@ class DataStoreSettingsRepository
             }
         }
 
-        override suspend fun setShareMedicationsWithAssistant(share: Boolean) {
+        override suspend fun grantAssistantProfileConsent() {
             dataStore.edit { preferences ->
-                preferences[SHARE_MEDICATIONS_WITH_ASSISTANT] = share
+                preferences.writeConsent(PROFILE_CONSENT_VERSION, PROFILE_CONSENT_ACCEPTED_AT)
+            }
+        }
+
+        override suspend fun revokeAssistantProfileConsent() {
+            dataStore.edit { preferences ->
+                preferences.clearConsent(PROFILE_CONSENT_VERSION, PROFILE_CONSENT_ACCEPTED_AT)
+            }
+        }
+
+        override suspend fun grantAssistantMediaConsent() {
+            dataStore.edit { preferences ->
+                preferences.writeConsent(MEDIA_CONSENT_VERSION, MEDIA_CONSENT_ACCEPTED_AT)
+            }
+        }
+
+        override suspend fun revokeAssistantMediaConsent() {
+            dataStore.edit { preferences ->
+                preferences.clearConsent(MEDIA_CONSENT_VERSION, MEDIA_CONSENT_ACCEPTED_AT)
             }
         }
 
@@ -136,6 +162,32 @@ class DataStoreSettingsRepository
             }
         }
 
+        private fun consentRecord(
+            preferences: Preferences,
+            versionKey: Preferences.Key<Int>,
+            acceptedAtKey: Preferences.Key<Long>,
+        ): ConsentRecord =
+            ConsentRecord(
+                version = preferences[versionKey] ?: ConsentRecord.NOT_ACCEPTED,
+                acceptedAt = preferences[acceptedAtKey]?.let(Instant::ofEpochMilli),
+            )
+
+        private fun MutablePreferences.writeConsent(
+            versionKey: Preferences.Key<Int>,
+            acceptedAtKey: Preferences.Key<Long>,
+        ) {
+            this[versionKey] = ConsentRecord.CURRENT_VERSION
+            this[acceptedAtKey] = clock.now().toEpochMilli()
+        }
+
+        private fun MutablePreferences.clearConsent(
+            versionKey: Preferences.Key<Int>,
+            acceptedAtKey: Preferences.Key<Long>,
+        ) {
+            remove(versionKey)
+            remove(acceptedAtKey)
+        }
+
         private companion object {
             val LANGUAGE = stringPreferencesKey("language")
             val EMERGENCY_NUMBER = stringPreferencesKey("emergency_number")
@@ -146,6 +198,9 @@ class DataStoreSettingsRepository
             val LOW_STOCK_THRESHOLD = intPreferencesKey("low_stock_threshold")
             val PHARMACY_NUMBER = stringPreferencesKey("pharmacy_number")
             val ASSISTANT_CONSENT_COMPLETED = booleanPreferencesKey("assistant_consent_completed")
-            val SHARE_MEDICATIONS_WITH_ASSISTANT = booleanPreferencesKey("share_medications_with_assistant")
+            val PROFILE_CONSENT_VERSION = intPreferencesKey("assistant_profile_consent_version")
+            val PROFILE_CONSENT_ACCEPTED_AT = longPreferencesKey("assistant_profile_consent_accepted_at")
+            val MEDIA_CONSENT_VERSION = intPreferencesKey("assistant_media_consent_version")
+            val MEDIA_CONSENT_ACCEPTED_AT = longPreferencesKey("assistant_media_consent_accepted_at")
         }
     }

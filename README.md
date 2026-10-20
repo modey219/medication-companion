@@ -85,9 +85,14 @@ rate-limits per install and stores no conversations. See
 [`backend/README.md`](backend/README.md) for the endpoint contract, environment
 variables, tests and deploy steps, and `docs/DECISIONS.md` D-018 for the rationale.
 
-The app side of that conversation is the Assistant tab (T10): a first-use consent
-screen, the chat itself, an urgent-symptom check that runs before anything is sent,
-and a "Report a problem" action. The base URL is a Gradle property
+The app side of that conversation is the Assistant tab (T10, T13): a first-use
+consent screen, the chat itself, an urgent-symptom check that runs before anything is sent,
+and a "Report a problem" action. Since T13 the assistant has two explicit,
+versioned consents — a profile consent (off by default) that attaches a small,
+fixed `PatientContext` built on the device, and a media consent stored for T16.
+Without the profile consent every question is answered in `GENERIC` mode and
+nothing about the patient leaves the phone; with it on but the profile unreadable,
+the question is not sent at all (see `docs/DECISIONS.md` D-023). The base URL is a Gradle property
 (`-PassistantBaseUrl=…`), so a local `wrangler dev` or a deployed Worker needs no
 code change; the checked-in default is a placeholder and must be replaced before
 release (see `docs/DECISIONS.md` D-019).
@@ -125,6 +130,7 @@ Latest debug APK: app-debug.apk (15.23 MB)
 - T9 shipped: assistant backend proxy (`backend/`) — one `POST /v1/chat`, provider-agnostic, rate-limited, no logging of content, 85 Vitest tests
 - T10 shipped: assistant chat UI — first-use consent with the (off-by-default) share-medication switch, in-memory conversation, client-side emergency card, retry/offline sentences, "Report a problem"
 - T12 shipped: health profile — basic information (birth year, sex, pregnancy/breastfeeding, weight), medical history, detail fields on allergies/conditions (severity, reaction, since year), and a derived "how complete is this section" state (Room v3; JSON export `schemaVersion` 2)
-- T13–T18 planned: patient context + consents, review-then-answer backend, assistant response cards, media capture, vision path, evaluation harness (see AGENTS.md and docs/DECISIONS.md D-021)
+- T13 shipped: patient context + two versioned consents — a device-built, capped `PatientContext` sent only with the profile consent, `GENERIC`/`PERSONALIZED` modes on the wire, and an all-or-nothing rule that never sends a personalized question without its context (legacy `shareMedications` kept until T14)
+- T14–T18 planned: review-then-answer backend, assistant response cards, media capture, vision path, evaluation harness (see AGENTS.md and docs/DECISIONS.md D-021)
 - See docs/DECISIONS.md for key architectural decisions
 - See AGENTS.md for full specifications

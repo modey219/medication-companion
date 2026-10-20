@@ -4,13 +4,16 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.medcompanion.app.core.emergency.EmergencySymptoms
 import com.medcompanion.app.data.assistant.AssistantMedicationContextBuilder
+import com.medcompanion.app.data.assistant.PatientContextBuilder
 import com.medcompanion.app.domain.assistant.AssistantAuthor
 import com.medcompanion.app.domain.assistant.AssistantChatClient
 import com.medcompanion.app.domain.assistant.AssistantError
 import com.medcompanion.app.domain.assistant.AssistantExchange
+import com.medcompanion.app.domain.assistant.AssistantMode
 import com.medcompanion.app.domain.assistant.AssistantReply
 import com.medcompanion.app.domain.assistant.AssistantRequest
 import com.medcompanion.app.domain.assistant.AssistantResult
+import com.medcompanion.app.domain.assistant.PatientContext
 import com.medcompanion.app.domain.settings.SettingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
@@ -22,18 +25,20 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
- * Assistant tab (T10): the chat with the backend proxy.
+ * Assistant tab (T10, T13): the chat with the backend proxy.
  *
  * The conversation is held in memory only, so it disappears with the process
- * and is never written to disk. Two safety rules live here as well as on the
+ * and is never written to disk. Three safety rules live here as well as on the
  * server:
  *
  * - the urgent keyword check runs on the device before anything is sent, and
  *   while it matches nothing leaves the phone;
+ * - a personalized question is only sent once the patient context was built, so
+ *   the assistant never answers as if it had the profile when it does not;
  * - a failure is turned into a calm sentence with a retry, never a crash.
  *
- * The medication block is attached only when the patient turned sharing on and
- * only through [AssistantMedicationContextBuilder].
+ * The context and the legacy medication block are attached only while the
+ * patient granted the profile consent (off by default).
  */
 @HiltViewModel
 class AssistantViewModel
@@ -41,6 +46,7 @@ class AssistantViewModel
     constructor(
         private val chatClient: AssistantChatClient,
         private val settingsRepository: SettingsRepository,
+        private val patientContextBuilder: PatientContextBuilder,
         private val medicationContextBuilder: AssistantMedicationContextBuilder,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(AssistantUiState())
@@ -55,7 +61,7 @@ class AssistantViewModel
                         it.copy(
                             isLoading = false,
                             hasConsented = settings.assistantConsentCompleted,
-                            shareMedications = settings.shareMedicationsWithAssistant,
+                            personalizeConsent = settings.assistantProfileConsent.isGranted(),
                             emergencyNumber = settings.emergencyNumber,
                         )
                     }
@@ -68,13 +74,21 @@ class AssistantViewModel
             viewModelScope.launch { settingsRepository.completeAssistantConsent() }
         }
 
-        /** Opens the consent text again so the sharing switch can be changed. */
+        /** Opens the consent text again so the sharing choice can be changed. */
         fun onConsentReopened() = _uiState.update { it.copy(isConsentReopened = true) }
 
         fun onConsentClosed() = _uiState.update { it.copy(isConsentReopened = false) }
 
-        fun onShareMedicationsChanged(share: Boolean) {
-            viewModelScope.launch { settingsRepository.setShareMedicationsWithAssistant(share) }
+        /** Grants or withdraws the profile consent, effective on the next message. */
+        fun onProfileConsentChanged(personalize: Boolean) {
+            if (!personalize) _uiState.update { it.copy(contextFailed = false) }
+            viewModelScope.launch {
+                if (personalize) {
+                    settingsRepository.grantAssistantProfileConsent()
+                } else {
+                    settingsRepository.revokeAssistantProfileConsent()
+                }
+            }
         }
 
         fun onInputChange(text: String) {
@@ -85,6 +99,7 @@ class AssistantViewModel
                     isUrgentInput = urgent,
                     // A new sentence clears a previous failure, and an urgent one
                     // shows the emergency card straight away.
+                    contextFailed = false,
                     error = null,
                     failedText = null,
                 )
@@ -100,18 +115,32 @@ class AssistantViewModel
                 return
             }
 
-            val patientMessage = AssistantMessage(id = nextId(), fromPatient = true, text = text)
-            _uiState.update {
-                it.copy(
-                    messages = it.messages + patientMessage,
-                    input = "",
-                    isUrgentInput = false,
-                    error = null,
-                    failedText = null,
-                )
-            }
             viewModelScope.launch {
-                val request = buildRequest(state.messages, state.shareMedications, patientTurn = text)
+                val context = buildContext(state.personalizeConsent)
+                if (state.personalizeConsent && context == null) {
+                    // A personalized question is never sent without its context.
+                    _uiState.update { it.copy(contextFailed = true, error = null, failedText = null) }
+                    return@launch
+                }
+
+                val patientMessage = AssistantMessage(id = nextId(), fromPatient = true, text = text)
+                _uiState.update {
+                    it.copy(
+                        messages = it.messages + patientMessage,
+                        input = "",
+                        isUrgentInput = false,
+                        contextFailed = false,
+                        error = null,
+                        failedText = null,
+                    )
+                }
+                val request =
+                    buildRequest(
+                        messages = state.messages,
+                        personalize = state.personalizeConsent,
+                        context = context,
+                        patientTurn = text,
+                    )
                 dispatch(request, retryText = text)
             }
         }
@@ -122,10 +151,22 @@ class AssistantViewModel
             val failedText = state.failedText ?: return
             if (state.isSending) return
 
-            val cleaned = state.messages.filterNot { it.isEmergency }
-            _uiState.update { it.copy(messages = cleaned, failedText = null, error = null) }
             viewModelScope.launch {
-                val request = buildRequest(cleaned, state.shareMedications, patientTurn = null)
+                val context = buildContext(state.personalizeConsent)
+                if (state.personalizeConsent && context == null) {
+                    _uiState.update { it.copy(contextFailed = true, error = null, failedText = null) }
+                    return@launch
+                }
+
+                val cleaned = state.messages.filterNot { it.isEmergency }
+                _uiState.update { it.copy(messages = cleaned, failedText = null, error = null) }
+                val request =
+                    buildRequest(
+                        messages = cleaned,
+                        personalize = state.personalizeConsent,
+                        context = context,
+                        patientTurn = null,
+                    )
                 dispatch(request, retryText = failedText)
             }
         }
@@ -173,7 +214,8 @@ class AssistantViewModel
          */
         private suspend fun buildRequest(
             messages: List<AssistantMessage>,
-            shareMedications: Boolean,
+            personalize: Boolean,
+            context: PatientContext?,
             patientTurn: String?,
         ): AssistantRequest {
             val exchanges =
@@ -188,20 +230,35 @@ class AssistantViewModel
                         }
                     }
 
-            val context =
-                if (shareMedications) {
-                    // A failure while reading the list must not stop the question:
-                    // the patient then simply asks without their medication block.
+            val medicationContext =
+                if (personalize) {
+                    // The legacy block is for a Worker deployed before T14. A
+                    // failure to read it must not stop the question: the model
+                    // still gets the structured context.
                     runCatching { medicationContextBuilder.build() }.getOrNull()
                 } else {
                     null
                 }
             return AssistantRequest(
                 exchanges = exchanges,
-                shareMedications = shareMedications,
-                medicationContext = context,
+                mode = if (personalize) AssistantMode.PERSONALIZED else AssistantMode.GENERIC,
+                context = context,
+                shareMedications = personalize,
+                medicationContext = medicationContext,
             )
         }
+
+        /**
+         * Reads the patient context, or null when the patient did not grant the
+         * profile consent or the read failed. A failure is never silently turned
+         * into a generic answer: the caller decides (and does not send).
+         */
+        private suspend fun buildContext(personalize: Boolean): PatientContext? =
+            if (personalize) {
+                runCatching { patientContextBuilder.build() }.getOrNull()
+            } else {
+                null
+            }
 
         private fun nextId(): Long = nextMessageId++
 

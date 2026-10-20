@@ -4,6 +4,51 @@ Short entries. Newest first. Format: ID, date, decision, why, status.
 
 ---
 
+## D-023 — The patient context and two consents (T13)
+
+Decision: the assistant has two explicit consents and, when the profile consent
+is on, sends a small, fixed, structured `context` built on the device. The
+context is the only thing about the patient that ever leaves the phone, and it
+never leaves without consent.
+
+1. **Two versioned consents instead of one flag**: `assistant_consent_completed`
+   (the first-use explanation) stays, and the old
+   `shareMedicationsWithAssistant` boolean is replaced by two `ConsentRecord`s —
+   `assistantProfileConsent` (send the profile context) and
+   `assistantMediaConsent` (the T16 media path) — each storing the consent
+   `version` and the `acceptedAt` instant. A consent is granted only when its
+   version is current, so raising `CURRENT_VERSION` re-asks. The media consent is
+   stored now but only read in T16.
+2. **`mode` plus `context` on the wire, legacy fields kept**: `AssistantRequest`
+   gains `mode` (`GENERIC`/`PERSONALIZED`) and `context` (`PatientContext?`), and
+   keeps `shareMedications`/`medicationContext`. The generic mode sends neither
+   the context nor the medication block. The legacy fields stay so an APK built
+   today still works against the **already deployed** T9 Worker, whose
+   `validation.ts` ignores unknown keys; T14 will read `mode`/`context` and treat
+   the legacy shape as generic. Marked `TODO(eng, T14)` (D-018, D-021).
+3. **All-or-nothing personalization**: when the profile consent is on but the
+   context cannot be read, the question is **not sent at all** — the input is
+   kept, `contextFailed` is shown, and no bubble is added. Answering
+   generically while the patient believes the assistant has their profile is
+   exactly the confusion AGENTS.md forbids. A failure to read the legacy
+   medication block alone is not fatal, because the structured context still
+   reaches the model.
+4. **The context is fixed and small**: `PatientContextBuilder` reads only the
+   repositories and caps everything — 20 allergies/conditions, 20 history
+   entries, 30 active medications, 10 symptoms (14 days), adherence over 14 days,
+   and medications stopped within 30 days — with active medications and
+   recent symptoms sorted deterministically. The section status
+   (`NOT_ASKED`/`NONE_CONFIRMED`/`LISTED`) travels with the data so the model can
+   tell "we never asked" from "the patient has none" (D-022 > 4).
+5. **No new permission, no new storage**: building the context reads existing
+   Room tables synchronously in the ViewModel coroutine; nothing is cached and
+   nothing is written.
+6. **TODO(clinical-review)**: the two consent wordings, the "not personalized"
+   banner, and the "could not read the profile" sentence; **TODO(eng)**: remove
+   the legacy medication fields once T14 is deployed everywhere.
+
+---
+
 ## D-022 — The health profile data model (T12)
 
 Decision: the profile grows from allergies and conditions into a small, complete

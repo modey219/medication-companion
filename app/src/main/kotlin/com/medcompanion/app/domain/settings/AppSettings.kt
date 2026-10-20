@@ -38,9 +38,16 @@ data class AppSettings(
      */
     val assistantConsentCompleted: Boolean = false,
     /**
-     * Whether the typed messages are sent together with the patient's
-     * medication names and schedules. Off by default: the assistant receives
-     * nothing about the patient's medicines unless they turn this on.
+     * Whether the assistant may personalize its answers with the patient's
+     * health profile: basic facts, allergies, conditions, medical history, the
+     * medication list, recent adherence and recent symptoms (T13, D-021).
+     * Versioned, timestamped and off by default.
      */
-    val shareMedicationsWithAssistant: Boolean = false,
+    val assistantProfileConsent: ConsentRecord = ConsentRecord(),
+    /**
+     * Whether the patient agreed to send a photo or a short video for analysis.
+     * Kept separate from the profile consent because media is the most sensitive
+     * thing the app can send; the capture screen arrives in T16.
+     */
+    val assistantMediaConsent: ConsentRecord = ConsentRecord(),
 )

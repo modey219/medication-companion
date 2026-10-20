@@ -350,9 +350,17 @@ TODO(legal): the privacy policy is a placeholder.
     <string name="assistant_consent_intro">The assistant explains what you recorded in plain language. It is not a doctor or a pharmacist: it never diagnoses and never asks you to change a medicine or a dose.</string>
     <string name="assistant_consent_sent_title">What is sent?</string>
     <string name="assistant_consent_sent_body">Only the messages you type are sent, to the assistant service, without your name, phone number or email.</string>
-    <string name="assistant_consent_medicine_body">Your medication names and schedules are not sent unless you turn on the option below, which is off by default.</string>
-    <string name="assistant_consent_share_title">Share my medication list with the assistant</string>
-    <string name="assistant_consent_share_desc">When on, your medication names and schedules are sent with your question so the answer is more accurate. You can turn it off at any time.</string>
+    <string name="assistant_consent_medicine_body">Your health information is not sent unless you turn on the option below, which is off by default.</string>
+    <!--
+        T13 patient context: the personalization consent, the generic-mode note
+        and the failed-context note.
+        TODO(clinical-review): the exact list of what is sent, and the wording of
+        the generic-mode and failed-context notes.
+    -->
+    <string name="assistant_consent_profile_title">Personalize answers with my health profile</string>
+    <string name="assistant_consent_profile_desc">When on, your health profile is sent with your question: age, sex, allergies and chronic conditions, medical history, your medicines, the last two weeks of doses, and recent symptoms. You can turn it off at any time.</string>
+    <string name="assistant_mode_generic">Answers are general because your health profile is not shared. You can turn personalization on under Privacy and sharing.</string>
+    <string name="assistant_context_failed">Your health profile could not be prepared, so your question was not sent. Please try again.</string>
     <string name="assistant_consent_privacy_note">The app does not keep the conversation when it closes, and the assistant service does not record what you type.</string>
     <string name="assistant_consent_accept">I agree, start</string>
     <string name="assistant_consent_close">Close</string>

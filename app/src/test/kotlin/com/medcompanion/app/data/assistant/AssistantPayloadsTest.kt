@@ -3,9 +3,21 @@ package com.medcompanion.app.data.assistant
 import com.medcompanion.app.domain.assistant.AssistantAuthor
 import com.medcompanion.app.domain.assistant.AssistantError
 import com.medcompanion.app.domain.assistant.AssistantExchange
+import com.medcompanion.app.domain.assistant.AssistantMode
 import com.medcompanion.app.domain.assistant.AssistantReply
 import com.medcompanion.app.domain.assistant.AssistantRequest
 import com.medcompanion.app.domain.assistant.AssistantResult
+import com.medcompanion.app.domain.assistant.PatientAdherence
+import com.medcompanion.app.domain.assistant.PatientContext
+import com.medcompanion.app.domain.assistant.PatientContextEntry
+import com.medcompanion.app.domain.assistant.PatientContextHistory
+import com.medcompanion.app.domain.assistant.PatientContextMedication
+import com.medcompanion.app.domain.assistant.PatientContextSymptom
+import com.medcompanion.app.domain.model.MedicalHistoryType
+import com.medcompanion.app.domain.model.MedicationStatus
+import com.medcompanion.app.domain.model.ProfileSection
+import com.medcompanion.app.domain.model.ProfileSectionStatus
+import com.medcompanion.app.domain.model.Sex
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -14,6 +26,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import java.time.Instant
 
 /**
  * The wire shape of `POST /v1/chat` (backend/README.md). A change on the
@@ -42,8 +55,58 @@ class AssistantPayloadsTest {
         assertEquals("user", messages.getJSONObject(0).getString("role"))
         assertEquals("سؤال", messages.getJSONObject(0).getString("content"))
         assertEquals("assistant", messages.getJSONObject(1).getString("role"))
+        assertEquals("generic", json.getString("mode"))
+        assertFalse(json.has("context"))
         assertFalse(json.getBoolean("shareMedications"))
         assertFalse(json.has("medicationContext"))
+    }
+
+    @Test
+    fun `a personalized request carries the whole context`() {
+        val body =
+            AssistantPayloads.requestBody(
+                AssistantRequest(
+                    exchanges = listOf(AssistantExchange(AssistantAuthor.PATIENT, "سؤال")),
+                    mode = AssistantMode.PERSONALIZED,
+                    context = sampleContext(),
+                    shareMedications = true,
+                ),
+            )
+
+        val json = JSONObject(body)
+        assertEquals("personalized", json.getString("mode"))
+        val context = json.getJSONObject("context")
+        assertEquals("2026-10-20T10:00:00Z", context.getString("generatedAt"))
+        assertEquals(62, context.getInt("ageYears"))
+        assertEquals("FEMALE", context.getString("sex"))
+        assertFalse(context.has("pregnantOrBreastfeeding"))
+
+        val allergy = context.getJSONArray("allergies").getJSONObject(0)
+        assertEquals("بنسلين", allergy.getString("label"))
+        assertEquals(2, allergy.getInt("severity"))
+        assertEquals("طفح جلدي", allergy.getString("reaction"))
+
+        val history = context.getJSONArray("medicalHistory").getJSONObject(0)
+        assertEquals("SURGERY", history.getString("type"))
+        assertEquals(2020, history.getInt("year"))
+
+        val medication = context.getJSONArray("medications").getJSONObject(0)
+        assertEquals("ميتفورمين", medication.getString("name"))
+        assertEquals("ACTIVE", medication.getString("status"))
+        assertEquals(1, medication.getJSONArray("schedules").length())
+
+        assertEquals("وصفة الطبيب", context.getJSONArray("stoppedLast30Days").getJSONObject(0).getString("stopReason"))
+
+        val adherence = context.getJSONObject("adherenceLast14Days")
+        assertEquals(12, adherence.getInt("taken"))
+        assertEquals(3, adherence.getInt("missed"))
+        assertEquals(20, adherence.getInt("recorded"))
+
+        assertEquals(3, context.getJSONArray("recentSymptoms").getJSONObject(0).getInt("severity"))
+
+        val sections = context.getJSONObject("sections")
+        assertEquals("LISTED", sections.getString("allergies"))
+        assertEquals("NOT_ASKED", sections.getString("conditions"))
     }
 
     @Test
@@ -110,4 +173,57 @@ class AssistantPayloadsTest {
         assertEquals(AssistantError.SERVER, AssistantPayloads.errorForStatus(502))
         assertEquals(null, AssistantPayloads.errorForStatus(200))
     }
+
+    private fun sampleContext() =
+        PatientContext(
+            generatedAt = Instant.parse("2026-10-20T10:00:00Z"),
+            ageYears = 62,
+            sex = Sex.FEMALE,
+            weightKg = 70,
+            allergies =
+                listOf(
+                    PatientContextEntry(label = "بنسلين", severity = 2, reaction = "طفح جلدي", sinceYear = 2019),
+                ),
+            conditions = listOf(PatientContextEntry(label = "سكري")),
+            medicalHistory =
+                listOf(
+                    PatientContextHistory(
+                        type = MedicalHistoryType.SURGERY,
+                        label = "استئصال المرارة",
+                        year = 2020,
+                    ),
+                ),
+            medications =
+                listOf(
+                    PatientContextMedication(
+                        name = "ميتفورمين",
+                        strength = "500 ملغ",
+                        status = MedicationStatus.ACTIVE,
+                        schedules = listOf("dose 1 قرص, food WITH, at 08:00"),
+                    ),
+                ),
+            stoppedLast30Days =
+                listOf(
+                    PatientContextMedication(
+                        name = "أسبرين",
+                        strength = "",
+                        status = MedicationStatus.STOPPED,
+                        stopReason = "وصفة الطبيب",
+                    ),
+                ),
+            adherenceLast14Days = PatientAdherence(taken = 12, missed = 3, recorded = 20),
+            recentSymptoms =
+                listOf(
+                    PatientContextSymptom(
+                        name = "صداع",
+                        severity = 3,
+                        loggedAt = Instant.parse("2026-10-15T09:00:00Z"),
+                    ),
+                ),
+            sections =
+                mapOf(
+                    ProfileSection.ALLERGIES to ProfileSectionStatus.LISTED,
+                    ProfileSection.CONDITIONS to ProfileSectionStatus.NOT_ASKED,
+                ),
+        )
 }
